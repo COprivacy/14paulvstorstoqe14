@@ -40,6 +40,7 @@ export default function Devolucoes() {
 
   const { data: devolucoes = [], isLoading: loadingDevolucoes } = useQuery<Devolucao[]>({
     queryKey: ["/api/devolucoes", { incluirArquivados: mostrarArquivados }],
+    refetchInterval: false, // Evitar refetch automático
   });
 
   const { data: produtos = [], isLoading: loadingProdutos } = useQuery<Produto[]>({

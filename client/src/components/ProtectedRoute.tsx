@@ -69,10 +69,13 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   const isMasterUser = user?.email === MASTER_USER_EMAIL;
 
   // Verificar se o usuário está bloqueado (buscar status atualizado do servidor)
+  // Funcionários não precisam verificar bloqueio a cada 5 segundos, apenas na conta principal
+  const isFuncionario = user?.tipo === "funcionario";
+  
   const { data: userStatus, isLoading: isCheckingStatus } = useQuery({
     queryKey: ["/api/user/check-blocked"],
-    enabled: isAuthenticated && !isMasterUser, // Apenas o master é imune
-    refetchInterval: 5000, // Verificar a cada 5 segundos
+    enabled: isAuthenticated && !isMasterUser && !isFuncionario, // Funcionários não verificam
+    refetchInterval: isFuncionario ? false : 5000, // Funcionários não refazem a verificação
   });
 
   // Se está verificando o status ou as permissões iniciais, mostrar loading

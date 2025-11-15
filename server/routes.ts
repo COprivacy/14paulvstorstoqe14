@@ -355,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (process.env.NODE_ENV === "development") {
           console.log(`⚠️ Tentativa de recuperação para email inexistente: ${email}`);
         }
-        
+
         // Retornar erro e encerrar a requisição
         return res.status(404).json({
           success: false,
@@ -2856,7 +2856,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ],
         payer: {
           email,
-          name: nome,
+          name,
           identification: cpfCnpj
             ? {
                 type: cpfCnpj.replace(/\D/g, "").length === 11 ? "CPF" : "CNPJ",
@@ -3958,10 +3958,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/check-blocked", async (req, res) => {
     try {
       const userId = req.headers["x-user-id"] as string;
+      const userType = req.headers["x-user-type"] as string;
+      const contaId = req.headers["x-conta-id"] as string;
+
       if (!userId) {
         return res.status(401).json({ error: "Não autorizado" });
       }
 
+      // Se for funcionário, verificar a conta principal
+      if (userType === "funcionario" && contaId) {
+        const users = await storage.getUsers();
+        const contaPrincipal = users.find((u) => u.id === contaId);
+
+        if (!contaPrincipal) {
+          return res.status(404).json({ error: "Conta principal não encontrada" });
+        }
+
+        // Retornar status da conta principal
+        const isBlocked = contaPrincipal.status === "bloqueado";
+        return res.json({
+          isBlocked,
+          status: contaPrincipal.status || "ativo",
+          userType: "funcionario",
+          contaId: contaPrincipal.id,
+        });
+      }
+
+      // Se for usuário comum
       const users = await storage.getUsers();
       const user = users.find((u) => u.id === userId);
 
