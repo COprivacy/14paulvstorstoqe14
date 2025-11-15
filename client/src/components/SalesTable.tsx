@@ -6,17 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
 import { formatDateTime } from "@/lib/dateUtils";
+import { validateVenda, validateArray } from "@/lib/dataValidator";
 
 interface Sale {
   id: number;
   produto: string;
   quantidade_vendida: number;
   valor_total: number;
-  forma_pagamento: string;
   data: string;
-  orcamento_id?: number; // Adicionado campo orcamento_id
-  vendedor?: string; // Adicionado campo vendedor
-  orcamento_numero?: string; // Adicionado campo orcamento_numero
+  forma_pagamento?: string;
+  itens?: string;
+  cliente_id?: number;
+  orcamento_numero?: string;
 }
 
 interface SalesTableProps {
@@ -32,11 +33,19 @@ export default function SalesTable({ sales }: SalesTableProps) {
     queryKey: ["/api/devolucoes"],
   });
 
+  // Validar e sanitizar dados de vendas
+  const { valid: validSales } = validateArray<Sale>(sales, validateVenda);
+
   // Ordenar vendas por data decrescente (mais recentes primeiro)
-  const sortedSales = [...sales].sort((a, b) => {
-    const dateA = new Date(a.data || 0).getTime();
-    const dateB = new Date(b.data || 0).getTime();
-    return dateB - dateA;
+  const sortedSales = [...validSales].sort((a, b) => {
+    try {
+      const dateA = new Date(a.data || 0).getTime();
+      const dateB = new Date(b.data || 0).getTime();
+      return dateB - dateA;
+    } catch (error) {
+      console.error('Erro ao ordenar vendas:', error);
+      return 0;
+    }
   });
 
   const totalPages = Math.ceil(sortedSales.length / itemsPerPage);

@@ -324,32 +324,47 @@ export default function Reports() {
     },
   });
 
-  // Calcular total de devoluções por período
+  // Calcular total de devoluções por período (APENAS aprovadas)
   const devolucoesAprovadas = devolucoes.filter((d: any) => d.status === "aprovada");
   
   const devolucoesDiarias = devolucoesAprovadas
     .filter((d: any) => {
       if (!d.data_devolucao) return false;
-      const devDate = new Date(d.data_devolucao).toISOString().split('T')[0];
-      return devDate === today;
+      try {
+        const devDate = new Date(d.data_devolucao).toISOString().split('T')[0];
+        return devDate === today;
+      } catch (error) {
+        console.error('Erro ao processar data de devolução:', d.data_devolucao);
+        return false;
+      }
     })
-    .reduce((sum: number, d: any) => sum + (d.valor_total || 0), 0);
+    .reduce((sum: number, d: any) => sum + (Number(d.valor_total) || 0), 0);
 
   const devolucoesSemanais = devolucoesAprovadas
     .filter((d: any) => {
       if (!d.data_devolucao) return false;
-      const devDate = new Date(d.data_devolucao).toISOString().split('T')[0];
-      return devDate >= weekAgo && devDate <= today;
+      try {
+        const devDate = new Date(d.data_devolucao).toISOString().split('T')[0];
+        return devDate >= weekAgo && devDate <= today;
+      } catch (error) {
+        console.error('Erro ao processar data de devolução:', d.data_devolucao);
+        return false;
+      }
     })
-    .reduce((sum: number, d: any) => sum + (d.valor_total || 0), 0);
+    .reduce((sum: number, d: any) => sum + (Number(d.valor_total) || 0), 0);
 
   const devolucoeMensais = devolucoesAprovadas
     .filter((d: any) => {
       if (!d.data_devolucao) return false;
-      const devDate = new Date(d.data_devolucao).toISOString().split('T')[0];
-      return devDate >= monthAgo && devDate <= today;
+      try {
+        const devDate = new Date(d.data_devolucao).toISOString().split('T')[0];
+        return devDate >= monthAgo && devDate <= today;
+      } catch (error) {
+        console.error('Erro ao processar data de devolução:', d.data_devolucao);
+        return false;
+      }
     })
-    .reduce((sum: number, d: any) => sum + (d.valor_total || 0), 0);
+    .reduce((sum: number, d: any) => sum + (Number(d.valor_total) || 0), 0);
 
   const dailyTotal = (startDate && endDate) 
     ? 0 // Não mostrar total diário quando há filtro customizado
@@ -488,56 +503,6 @@ export default function Reports() {
       </div>
 
       <ExpiringProductsReport products={expiringProducts} />
-
-      {/* Seção de Devoluções */}
-      {devolucoesAprovadas.length > 0 && (
-        <Card className="border-0 bg-gradient-to-br from-red-50/80 to-card backdrop-blur-sm shadow-xl">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600">
-              <Shield className="h-5 w-5" />
-              Devoluções
-            </CardTitle>
-            <CardDescription>
-              {devolucoesAprovadas.length} devolução(ões) aprovada(s)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Produto</TableHead>
-                    <TableHead className="text-center">Quantidade</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead>Motivo</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {devolucoesAprovadas
-                    .sort((a: any, b: any) => new Date(b.data_devolucao).getTime() - new Date(a.data_devolucao).getTime())
-                    .slice(0, 10)
-                    .map((dev: any) => (
-                      <TableRow key={dev.id}>
-                        <TableCell className="whitespace-nowrap">
-                          {dev.data_devolucao ? formatDateTime(dev.data_devolucao) : 'N/A'}
-                        </TableCell>
-                        <TableCell>{dev.produto_nome || 'N/A'}</TableCell>
-                        <TableCell className="text-center">{dev.quantidade || 0}</TableCell>
-                        <TableCell className="text-right font-semibold text-red-600">
-                          R$ {(dev.valor_total || 0).toFixed(2)}
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={dev.motivo}>
-                          {dev.motivo || 'Não informado'}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Alerta de Otimização */}
       {vendas.length > 100 && (

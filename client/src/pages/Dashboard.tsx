@@ -101,12 +101,28 @@ export default function Dashboard() {
     }
   };
 
-  const lowStockProducts = products.filter((p: any) => p.quantidade < p.estoque_minimo);
+  // Validar dados antes de processar
+  const validProducts = products.filter((p: any) => 
+    p && typeof p.quantidade === 'number' && typeof p.estoque_minimo === 'number'
+  );
+
+  const lowStockProducts = validProducts.filter((p: any) => 
+    p.quantidade < p.estoque_minimo
+  );
 
   const today = new Date().toISOString().split('T')[0];
-  const todaySales = vendas
-    .filter((v: any) => v.data?.startsWith(today))
-    .reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0);
+  const validVendas = vendas.filter((v: any) => v && v.data && v.valor_total != null);
+  
+  const todaySales = validVendas
+    .filter((v: any) => {
+      try {
+        return v.data?.startsWith(today);
+      } catch (error) {
+        console.error('Erro ao processar data de venda:', v);
+        return false;
+      }
+    })
+    .reduce((sum: number, v: any) => sum + (Number(v.valor_total) || 0), 0);
 
   // Dados para gráficos
   const categoryData = useMemo(() => {
