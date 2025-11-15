@@ -425,6 +425,9 @@ export default function Reports() {
             dailyTotal={dailyTotal}
             weeklyTotal={weeklyTotal}
             monthlyTotal={monthlyTotal}
+            dailyReturns={devolucoesDiarias}
+            weeklyReturns={devolucoesSemanais}
+            monthlyReturns={devolucoeMensais}
             onFilter={handleFilter}
             onClearFilter={handleClearFilter}
           />

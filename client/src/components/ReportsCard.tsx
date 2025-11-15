@@ -9,19 +9,25 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface ReportsCardProps {
   dailyTotal?: number;
   weeklyTotal?: number;
-  monthlyTotal?: number; // Added for monthly sales
+  monthlyTotal?: number;
+  dailyReturns?: number; // Devoluções do dia
+  weeklyReturns?: number; // Devoluções da semana
+  monthlyReturns?: number; // Devoluções do mês
   onFilter?: (startDate: string, endDate: string) => void;
-  onClearFilter?: () => void; // Added for clearing filter
-  isFiltered?: boolean; // Added to indicate if a filter is active
+  onClearFilter?: () => void;
+  isFiltered?: boolean;
 }
 
 export default function ReportsCard({
   dailyTotal = 0,
   weeklyTotal = 0,
-  monthlyTotal = 0, // Added for monthly sales
+  monthlyTotal = 0,
+  dailyReturns = 0,
+  weeklyReturns = 0,
+  monthlyReturns = 0,
   onFilter,
   onClearFilter,
-  isFiltered = false // Default to false
+  isFiltered = false
 }: ReportsCardProps) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -42,11 +48,11 @@ export default function ReportsCard({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowDownCircle className="h-4 w-4" />
+              <ArrowDownCircle className="h-4 w-4 text-green-600" />
               Vendas Hoje
               <TooltipProvider>
                 <Tooltip>
@@ -61,7 +67,7 @@ export default function ReportsCard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-foreground" data-testid="text-daily-total">
+            <p className="text-3xl font-bold text-green-600" data-testid="text-daily-total">
               R$ {dailyTotal.toFixed(2)}
             </p>
           </CardContent>
@@ -70,7 +76,7 @@ export default function ReportsCard({
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowDownCircle className="h-4 w-4" />
+              <ArrowDownCircle className="h-4 w-4 text-green-600" />
               Vendas da Semana
               <TooltipProvider>
                 <Tooltip>
@@ -85,7 +91,7 @@ export default function ReportsCard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-foreground" data-testid="text-weekly-total">
+            <p className="text-3xl font-bold text-green-600" data-testid="text-weekly-total">
               R$ {weeklyTotal.toFixed(2)}
             </p>
           </CardContent>
@@ -94,7 +100,7 @@ export default function ReportsCard({
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <ArrowDownCircle className="h-4 w-4" />
+              <ArrowDownCircle className="h-4 w-4 text-green-600" />
               Vendas Mensais
               <TooltipProvider>
                 <Tooltip>
@@ -109,8 +115,50 @@ export default function ReportsCard({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-foreground" data-testid="text-monthly-total">
+            <p className="text-3xl font-bold text-green-600" data-testid="text-monthly-total">
               R$ {monthlyTotal.toFixed(2)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-red-200 bg-red-50/50 dark:bg-red-950/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownCircle className="h-4 w-4 text-red-600" />
+              Devoluções Hoje
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-red-600" data-testid="text-daily-returns">
+              R$ {dailyReturns.toFixed(2)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-red-200 bg-red-50/50 dark:bg-red-950/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownCircle className="h-4 w-4 text-red-600" />
+              Devoluções da Semana
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-red-600" data-testid="text-weekly-returns">
+              R$ {weeklyReturns.toFixed(2)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-red-200 bg-red-50/50 dark:bg-red-950/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownCircle className="h-4 w-4 text-red-600" />
+              Devoluções Mensais
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-red-600" data-testid="text-monthly-returns">
+              R$ {monthlyReturns.toFixed(2)}
             </p>
           </CardContent>
         </Card>
