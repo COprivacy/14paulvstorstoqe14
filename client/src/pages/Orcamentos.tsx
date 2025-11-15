@@ -190,12 +190,12 @@ export default function Orcamentos() {
   const converterMutation = useMutation({
     mutationFn: async ({ id, forma_pagamento }: { id: number; forma_pagamento: string }) => {
       const response = await apiRequest("POST", `/api/orcamentos/${id}/converter-venda`, { forma_pagamento });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw errorData;
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -207,7 +207,7 @@ export default function Orcamentos() {
       queryClient.invalidateQueries({ queryKey: ["/api/reports/expiring"] });
       queryClient.invalidateQueries({ queryKey: ["/api/caixas/aberto"] });
       queryClient.invalidateQueries({ queryKey: ["/api/clientes"] });
-      
+
       toast({ title: "✅ Orçamento convertido em venda com sucesso!" });
       setIsConvertDialogOpen(false);
       setFormaPagamento("dinheiro");
@@ -215,7 +215,7 @@ export default function Orcamentos() {
     },
     onError: (error: any) => {
       let errorMessage = error.error || error.message || "Tente novamente";
-      
+
       // Se houver detalhes sobre produtos com estoque insuficiente, formatá-los
       if (error.detalhes && Array.isArray(error.detalhes)) {
         errorMessage = (
@@ -232,7 +232,7 @@ export default function Orcamentos() {
           </div>
         );
       }
-      
+
       toast({ 
         title: "❌ Não é possível converter este orçamento",
         description: errorMessage,
@@ -1295,7 +1295,12 @@ export default function Orcamentos() {
                         <TableBody>
                           {(Array.isArray(selectedOrcamento.itens) ? selectedOrcamento.itens : []).map((item: any, idx: number) => (
                             <TableRow key={idx} className="hover:bg-muted/50">
-                              <TableCell className="font-medium text-foreground">{item.nome}</TableCell>
+                              <TableCell className="font-medium text-foreground flex items-center gap-2">
+                                <span>{item.nome}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  (Estoque: {item.estoque_disponivel || 0})
+                                </span>
+                              </TableCell>
                               <TableCell className="text-center text-foreground">{item.quantidade}</TableCell>
                               <TableCell className="text-right text-foreground">
                                 R$ {item.preco.toFixed(2)}
