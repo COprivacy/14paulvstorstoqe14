@@ -793,20 +793,32 @@ function SistemaTab({ users, subscriptions }: { users: User[], subscriptions: Su
               <Database className="h-5 w-5 text-blue-600" />
               Status do Sistema
             </CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={runHealthCheck}
-              disabled={isCheckingHealth}
-              data-testid="button-verify-health"
-            >
-              {isCheckingHealth ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
-              )}
-              Verificar Agora
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={runHealthCheck}
+                disabled={isCheckingHealth}
+                data-testid="button-verify-health"
+              >
+                {isCheckingHealth ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Verificar Agora
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => window.open('/test-suite', '_blank')}
+                className="bg-purple-600 hover:bg-purple-700"
+                data-testid="button-run-tests"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Executar Testes
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -1035,6 +1047,79 @@ function SistemaTab({ users, subscriptions }: { users: User[], subscriptions: Su
         </Card>
       )}
 
+      {/* Suite de Testes Automatizados */}
+      <Card className="bg-gradient-to-br from-purple-50 to-purple-100/30 dark:from-purple-950/20 dark:to-purple-900/10 border-purple-200/50 dark:border-purple-800/30">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-purple-600" />
+                Suite de Testes Automatizados
+              </CardTitle>
+              <CardDescription className="mt-2">
+                Valide funcionalidades críticas do sistema: bloqueios, pacotes de funcionários, emails e webhooks
+              </CardDescription>
+            </div>
+            <Button
+              variant="default"
+              onClick={() => window.open('/test-suite', '_blank')}
+              className="bg-purple-600 hover:bg-purple-700"
+              data-testid="button-open-test-suite"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Abrir Suite de Testes
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                  <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="font-semibold">Fluxo de Bloqueio</p>
+                  <p className="text-xs text-muted-foreground">Usuários e funcionários</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                  <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <p className="font-semibold">Pacotes de Funcionários</p>
+                  <p className="text-xs text-muted-foreground">Compra e limites</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <Mail className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <p className="font-semibold">Sistema de Emails</p>
+                  <p className="text-xs text-muted-foreground">Templates e SMTP</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 bg-white dark:bg-gray-900 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <p className="font-semibold">Webhooks Mercado Pago</p>
+                  <p className="text-xs text-muted-foreground">Integração de pagamento</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
     </div>
   );
