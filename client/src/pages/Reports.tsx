@@ -5,6 +5,7 @@ import ReportsCard from "@/components/ReportsCard";
 import SalesTable from "@/components/SalesTable";
 import ExpiringProductsReport from "@/components/ExpiringProductsReport";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, Download, Crown, Shield, Archive } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
