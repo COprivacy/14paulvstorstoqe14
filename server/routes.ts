@@ -398,7 +398,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("❌ Erro ao processar recuperação de senha:", error);
       return res.status(500).json({
         success: false,
-        error: "Erro ao processar solicitação. Tente novamente.",
+        message: "Erro ao processar solicitação. Tente novamente.",
       });
     }
   });
@@ -4496,32 +4496,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const devolucao = await storage.createDevolucao(devolucaoData);
 
-      // 🔥 NOVO: Se a devolução for aprovada, atualizar o caixa aberto E devolver estoque
-      if (devolucao.status === 'aprovada') {
-        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
+      // Se a devolução já foi criada como "aprovada", atualizar o caixa aberto E devolver estoque
+      if (devolucao.status === 'aprovada' && devolucao.produto_id) {
+        const produto = await storage.getProduto(devolucao.produto_id);
+        if (produto && produto.user_id === effectiveUserId) {
+          await storage.updateProduto(devolucao.produto_id, {
+            quantidade: produto.quantidade + devolucao.quantidade
+          });
+          console.log(`📦 Estoque restaurado: ${produto.nome} +${devolucao.quantidade} unidades`);
+        }
 
+        // Buscar caixa aberto e descontar o valor da devolução
+        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
         if (caixaAberto) {
-          // Subtrair o valor da devolução do total de vendas
           await storage.atualizarTotaisCaixa?.(
             caixaAberto.id,
             'total_vendas',
             -devolucao.valor_total // Valor negativo para subtrair
           );
-
-          console.log(`💰 Caixa atualizado - Devolução de R$ ${devolucao.valor_total.toFixed(2)} registrada`);
+          console.log(`💰 Valor descontado do caixa: R$ ${devolucao.valor_total.toFixed(2)}`);
         } else {
           console.warn(`⚠️ Devolução aprovada mas não há caixa aberto para registrar o valor`);
-        }
-
-        // Devolver estoque ao produto
-        if (devolucao.produto_id) {
-          const produto = await storage.getProduto(devolucao.produto_id);
-          if (produto) {
-            await storage.updateProduto(devolucao.produto_id, {
-              quantidade: produto.quantidade + devolucao.quantidade
-            });
-            console.log(`📦 Estoque atualizado - ${devolucao.quantidade} unidades de "${devolucao.produto_nome}" devolvidas ao estoque`);
-          }
         }
       }
 
@@ -4549,70 +4544,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const id = parseInt(req.params.id);
 
-      // Buscar devolução atual para comparar status
-      const devolucaoAtual = await storage.getDevolucao?.(id);
-      if (!devolucaoAtual) {
+      // Buscar devolução original antes de atualizar
+      const devolucaoOriginal = await storage.getDevolucao?.(id);
+      if (!devolucaoOriginal) {
         return res.status(404).json({ error: "Devolução não encontrada" });
       }
 
+      // Atualizar devolução
       const devolucao = await storage.updateDevolucao(id, req.body);
 
-      // 🔥 NOVO: Se o status mudou para 'aprovada', atualizar o caixa E devolver estoque
-      if (devolucaoAtual.status !== 'aprovada' && devolucao.status === 'aprovada') {
-        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
-
-        if (caixaAberto) {
-          // Subtrair o valor da devolução do total de vendas
-          await storage.atualizarTotaisCaixa?.(
-            caixaAberto.id,
-            'total_vendas',
-            -devolucao.valor_total // Valor negativo para subtrair
-          );
-
-          console.log(`💰 Caixa atualizado - Devolução de R$ ${devolucao.valor_total.toFixed(2)} aprovada e registrada`);
-        } else {
-          console.warn(`⚠️ Devolução aprovada mas não há caixa aberto para registrar o valor`);
-        }
-
-        // Devolver estoque ao produto
+      // Se o status mudou para "aprovada", restaurar estoque e descontar do caixa
+      if (devolucaoOriginal.status !== 'aprovada' && devolucao.status === 'aprovada') {
         if (devolucao.produto_id) {
           const produto = await storage.getProduto(devolucao.produto_id);
-          if (produto) {
+          if (produto && produto.user_id === effectiveUserId) {
             await storage.updateProduto(devolucao.produto_id, {
-              quantidade: produto.quantidade + devolucao.quantidade
+              quantidade: produto.quantidade + devolucao.quantidade,
             });
-            console.log(`📦 Estoque atualizado - ${devolucao.quantidade} unidades de "${devolucao.produto_nome}" devolvidas ao estoque`);
+            console.log(`📦 Estoque restaurado: ${produto.nome} +${devolucao.quantidade} unidades (Devolução aprovada)`);
           }
         }
-      }
-      // 🔥 Se o status mudou DE 'aprovada' para outro, reverter o ajuste no caixa E remover estoque
-      else if (devolucaoAtual.status === 'aprovada' && devolucao.status !== 'aprovada') {
-        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
 
+        // Descontar valor do caixa aberto
+        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
         if (caixaAberto) {
-          // Adicionar de volta o valor ao total de vendas
           await storage.atualizarTotaisCaixa?.(
             caixaAberto.id,
-            'total_vendas',
-            devolucao.valor_total // Valor positivo para adicionar de volta
+            "total_vendas",
+            -devolucao.valor_total
           );
-
-          console.log(`💰 Caixa atualizado - Devolução de R$ ${devolucao.valor_total.toFixed(2)} revertida`);
-        }
-
-        // Remover estoque do produto (reverter devolução)
-        if (devolucao.produto_id) {
-          const produto = await storage.getProduto(devolucao.produto_id);
-          if (produto && produto.quantidade >= devolucao.quantidade) {
-            await storage.updateProduto(devolucao.produto_id, {
-              quantidade: produto.quantidade - devolucao.quantidade
-            });
-            console.log(`📦 Estoque atualizado - ${devolucao.quantidade} unidades de "${devolucao.produto_nome}" removidas do estoque (reversão)`);
-          }
+          console.log(`💰 Valor descontado do caixa: R$ ${devolucao.valor_total.toFixed(2)}`);
         }
       }
 
-      console.log(`✅ Devolução atualizada: ID ${id}`);
+      // Se o status mudou de "aprovada" para outro, remover do estoque
+      else if (devolucaoOriginal.status === 'aprovada' && devolucao.status !== 'aprovada') {
+        if (devolucao.produto_id) {
+          const produto = await storage.getProduto(devolucao.produto_id);
+          if (produto && produto.user_id === effectiveUserId) {
+            await storage.updateProduto(devolucao.produto_id, {
+              quantidade: produto.quantidade - devolucao.quantidade,
+            });
+            console.log(`📦 Estoque removido: ${produto.nome} -${devolucao.quantidade} unidades (Devolução rejeitada/pendente)`);
+          }
+        }
+
+        // Adicionar valor de volta ao caixa
+        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
+        if (caixaAberto) {
+          await storage.atualizarTotaisCaixa?.(
+            caixaAberto.id,
+            "total_vendas",
+            devolucao.valor_total
+          );
+          console.log(`💰 Valor adicionado de volta ao caixa: R$ ${devolucao.valor_total.toFixed(2)}`);
+        }
+      }
+
+      console.log(`✅ Devolução atualizada: ID ${id}, Status: ${devolucao.status}`);
       res.json(devolucao);
     } catch (error: any) {
       console.error("❌ Erro ao atualizar devolução:", error);
@@ -4856,7 +4845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!storage.converterOrcamentoEmVenda) {
-        return res.status(501).json({ error: "Método converterOrcamentoEmVenda não implementado" });
+        return res.status(5001).json({ error: "Método converterOrcamentoEmVenda não implementado" });
       }
 
       // Buscar orçamento para validar estoque

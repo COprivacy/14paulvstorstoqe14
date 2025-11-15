@@ -1,6 +1,11 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDateTime } from "@/lib/dateUtils";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
+import { formatDateTime } from "@/lib/dateUtils";
 
 interface Sale {
   id: number;
@@ -19,98 +24,135 @@ interface SalesTableProps {
 }
 
 export default function SalesTable({ sales }: SalesTableProps) {
-  if (!sales || sales.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        Nenhuma venda encontrada
-      </div>
-    );
-  }
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  // Ordenar vendas por data decrescente (mais recentes primeiro)
-  const sortedSales = [...sales].sort((a, b) => {
-    const dateA = new Date(a.data).getTime();
-    const dateB = new Date(b.data).getTime();
-    return dateB - dateA; // Ordem decrescente
+  // Buscar devoluções para vincular às vendas
+  const { data: devolucoes = [] } = useQuery({
+    queryKey: ["/api/devolucoes"],
   });
 
+  const totalPages = Math.ceil(sales.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentSales = sales.slice(startIndex, endIndex);
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Produto</TableHead>
-            <TableHead className="text-center">Quantidade</TableHead>
-            <TableHead>Forma de Pagamento</TableHead>
-            <TableHead className="text-right">Valor Total</TableHead>
-            <TableHead>Origem/Vendedor</TableHead>
-            <TableHead className="text-right">Data</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedSales.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground">
-                Nenhuma venda registrada
-              </TableCell>
-            </TableRow>
-          ) : (
-            sortedSales.map((sale: any) => {
-              let formaPagamento = 'Dinheiro';
-              if (sale.forma_pagamento === 'cartao_credito') formaPagamento = 'Cartão Crédito';
-              else if (sale.forma_pagamento === 'cartao_debito') formaPagamento = 'Cartão Débito';
-              else if (sale.forma_pagamento === 'pix') formaPagamento = 'PIX';
-              else if (sale.forma_pagamento === 'boleto') formaPagamento = 'Boleto';
+    <Card className="border-0 bg-gradient-to-br from-card/80 to-card backdrop-blur-sm shadow-xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5 text-primary" />
+          Histórico de Vendas
+        </CardTitle>
+        <CardDescription>
+          {sales.length > 0 ? `${sales.length} venda(s) registrada(s)` : "Nenhuma venda registrada ainda"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {sales.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <ShoppingCart className="mx-auto h-12 w-12 opacity-50 mb-4" />
+            <p>Nenhuma venda registrada ainda</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Produto(s)</TableHead>
+                    <TableHead className="text-center">Quantidade</TableHead>
+                    <TableHead className="text-right">Valor Total</TableHead>
+                    <TableHead className="text-center">Forma de Pagamento</TableHead>
+                    <TableHead className="text-center">Vendedor</TableHead>
+                    <TableHead className="text-center">Orçamento</TableHead>
+                    <TableHead className="text-center">Devolução</TableHead>
+                    <TableHead className="text-right">Data</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentSales.map((sale: any) => {
+                    let formaPagamento = 'Dinheiro';
+                    if (sale.forma_pagamento === 'cartao_credito') formaPagamento = 'Cartão Crédito';
+                    else if (sale.forma_pagamento === 'cartao_debito') formaPagamento = 'Cartão Débito';
+                    else if (sale.forma_pagamento === 'pix') formaPagamento = 'PIX';
+                    else if (sale.forma_pagamento === 'boleto') formaPagamento = 'Boleto';
 
+                    // Verificar se existe devolução relacionada a esta venda
+                    const devolucaoRelacionada = devolucoes.find((d: any) => 
+                      d.venda_id === sale.id && d.status === 'aprovada'
+                    );
 
-              return (
-                <TableRow key={sale.id}>
-                  <TableCell className="font-medium">{sale.produto || 'N/A'}</TableCell>
-                  <TableCell className="text-center">{sale.quantidade_vendida || 0}</TableCell>
-                  <TableCell>
-                    {sale.forma_pagamento === "cartao_credito"
-                      ? "💳 Cartão Crédito"
-                      : sale.forma_pagamento === "cartao_debito"
-                      ? "💳 Cartão Débito"
-                      : sale.forma_pagamento === "pix"
-                      ? "📱 PIX"
-                      : sale.forma_pagamento === "boleto"
-                      ? "📄 Boleto"
-                      : "💵 Dinheiro"}
-                  </TableCell>
-                  <TableCell className="text-right font-medium" data-testid={`text-value-${sale.id}`}>
-                    R$ {(sale.valor_total || 0).toFixed(2)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      {sale.orcamento_numero ? (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 w-fit font-semibold text-xs">
-                          📋 Orçamento {sale.orcamento_numero}
-                        </Badge>
-                      ) : sale.orcamento_id ? (
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 w-fit text-xs">
-                          📋 Orçamento #{sale.orcamento_id}
-                        </Badge>
-                      ) : null}
-                      {sale.vendedor && (
-                        <span className="text-xs text-muted-foreground">
-                          👤 {sale.vendedor}
-                        </span>
-                      )}
-                      {!sale.orcamento_id && !sale.vendedor && (
-                        <span className="text-xs text-muted-foreground">Venda direta</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {sale.data ? formatDateTime(sale.data) : 'N/A'}
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
-    </div>
+                    return (
+                      <TableRow key={sale.id}>
+                        <TableCell className="max-w-[300px] truncate" title={sale.produto || 'N/A'}>
+                          {sale.produto || 'N/A'}
+                        </TableCell>
+                        <TableCell className="text-center">{sale.quantidade_vendida || 0}</TableCell>
+                        <TableCell className="text-right font-semibold text-green-600">
+                          R$ {(sale.valor_total || 0).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="whitespace-nowrap">
+                            {formaPagamento}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {sale.vendedor || 'Venda direta'}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {sale.orcamento_numero ? (
+                            <Badge variant="secondary" className="whitespace-nowrap">
+                              {sale.orcamento_numero}
+                            </Badge>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {devolucaoRelacionada ? (
+                            <Badge variant="destructive" className="whitespace-nowrap" title={`Devolvido ${devolucaoRelacionada.quantidade} un. - R$ ${devolucaoRelacionada.valor_total.toFixed(2)}`}>
+                              Devolvido
+                            </Badge>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          {sale.data ? formatDateTime(sale.data) : 'N/A'}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center mt-4 space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span>
+                  Página {currentPage} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 }
