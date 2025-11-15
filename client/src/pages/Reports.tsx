@@ -326,7 +326,7 @@ export default function Reports() {
 
   // Calcular total de devoluções por período (APENAS aprovadas)
   const devolucoesAprovadas = devolucoes.filter((d: any) => d.status === "aprovada");
-  
+
   const devolucoesDiarias = devolucoesAprovadas
     .filter((d: any) => {
       if (!d.data_devolucao) return false;

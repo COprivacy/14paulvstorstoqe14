@@ -199,9 +199,15 @@ export default function Orcamentos() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidar todas as queries relacionadas para atualizar os dados
       queryClient.invalidateQueries({ queryKey: ["/api/orcamentos"] });
       queryClient.invalidateQueries({ queryKey: ["/api/vendas"] });
       queryClient.invalidateQueries({ queryKey: ["/api/produtos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/devolucoes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/expiring"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/caixas/aberto"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/clientes"] });
+      
       toast({ title: "✅ Orçamento convertido em venda com sucesso!" });
       setIsConvertDialogOpen(false);
       setFormaPagamento("dinheiro");

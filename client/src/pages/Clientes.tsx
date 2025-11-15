@@ -23,10 +23,12 @@ export default function Clientes() {
 
   const { data: clientes = [], isLoading } = useQuery<Cliente[]>({
     queryKey: ["/api/clientes"],
+    refetchInterval: 30000, // Auto-refresh a cada 30 segundos
   });
 
   const { data: vendas = [] } = useQuery({
     queryKey: ["/api/vendas"],
+    refetchInterval: 10000, // Auto-refresh a cada 10 segundos
   });
 
   const { data: devolucoes = [] } = useQuery({

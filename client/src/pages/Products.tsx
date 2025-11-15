@@ -33,8 +33,9 @@ export default function Products() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading, isError } = useQuery({
     queryKey: ["/api/produtos"],
+    refetchInterval: 15000, // Auto-refresh a cada 15 segundos
   });
 
   const filteredProducts = useMemo(() => {
@@ -109,9 +110,9 @@ export default function Products() {
               data-testid="input-search-products"
             />
           </div>
-          <Button 
-            onClick={() => setLocation("/produtos/adicionar")} 
-            data-testid="button-add-product" 
+          <Button
+            onClick={() => setLocation("/produtos/adicionar")}
+            data-testid="button-add-product"
             className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 border-0 hover:scale-105 hover:shadow-2xl transition-all duration-300 shadow-lg animate-in zoom-in duration-700 delay-200"
           >
             <Plus className="h-4 w-4 mr-2" />

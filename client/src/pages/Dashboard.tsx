@@ -65,10 +65,12 @@ export default function Dashboard() {
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["/api/produtos"],
+    refetchInterval: 15000, // Auto-refresh a cada 15 segundos
   });
 
   const { data: vendas = [] } = useQuery({
     queryKey: ["/api/vendas"],
+    refetchInterval: 10000, // Auto-refresh a cada 10 segundos
   });
 
   const deleteMutation = useMutation({

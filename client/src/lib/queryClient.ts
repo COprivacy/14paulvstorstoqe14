@@ -105,9 +105,9 @@ export const queryClient = new QueryClient({
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: true, // Atualizar quando a janela ganhar foco
+      staleTime: 30 * 1000, // Dados considerados "velhos" após 30 segundos
+      gcTime: 5 * 60 * 1000, // Garbage collection após 5 minutos
       retry: 1,
       retryDelay: 1000,
     },

@@ -31,6 +31,7 @@ export default function SalesTable({ sales }: SalesTableProps) {
   // Buscar devoluções para vincular às vendas
   const { data: devolucoes = [] } = useQuery({
     queryKey: ["/api/devolucoes"],
+    refetchInterval: 10000, // Auto-refresh a cada 10 segundos
   });
 
   // Validar e sanitizar dados de vendas
