@@ -1,9 +1,9 @@
-
 import { storage } from './storage';
 import { EmailService } from './email-service';
 import { paymentReminderService } from './payment-reminder';
 import { logger } from './logger';
 import { MercadoPagoService } from './mercadopago';
+import { eq, sql } from 'drizzle-orm';
 
 interface TestResult {
   name: string;
@@ -25,13 +25,14 @@ export class TestSuite {
    */
   async runAllTests(): Promise<TestResult[]> {
     this.results = [];
-    
+
     console.log('\n🧪 ===== INICIANDO SUITE DE TESTES =====\n');
 
     await this.testBlockingFlow();
     await this.testEmployeePackages();
     await this.testEmailSystem();
-    await this.testMercadoPagoWebhook();
+    await this.testBudgetBlocking(); // Added new test here
+    await this.testMercadoPagoWebhook(); // Renumbered to test 5
 
     console.log('\n📊 ===== RESUMO DOS TESTES =====\n');
     this.printSummary();
@@ -131,7 +132,7 @@ export class TestSuite {
       if (storage.getEmployeePackages) {
         const packages = await storage.getEmployeePackages(testUser.id);
         console.log(`✓ Pacotes cadastrados: ${packages.length}`);
-        
+
         packages.forEach(pkg => {
           console.log(`  - ${pkg.package_type}: ${pkg.quantity} funcionários (Status: ${pkg.status})`);
         });
@@ -195,7 +196,7 @@ export class TestSuite {
     this.addResult(
       'Sistema de Emails',
       smtpConfig.hasPassword ? 'success' : 'warning',
-      smtpConfig.hasPassword 
+      smtpConfig.hasPassword
         ? `${emailTests.length} templates configurados e SMTP funcional`
         : 'Templates configurados mas SMTP sem senha',
       { templates: emailTests.length, smtpConfig }
@@ -203,10 +204,93 @@ export class TestSuite {
   }
 
   /**
-   * Teste 4: Webhooks do Mercado Pago
+   * Teste 4: Sistema de Bloqueios de Estoque (Orçamentos)
+   */
+  private async testBudgetBlocking() {
+    console.log('\n🔒 TESTE 4: Sistema de Bloqueios de Estoque (Orçamentos)\n');
+
+    try {
+      // Verificar se existem orçamentos aprovados
+      const orcamentos = await storage.db
+        .select()
+        .from(storage.orcamentosTable)
+        .where(eq(storage.orcamentosTable.status, 'aprovado'))
+        .limit(5);
+
+      // Verificar bloqueios ativos
+      const bloqueiosAtivos = await storage.db
+        .select()
+        .from(storage.bloqueiosEstoqueTable);
+
+      // Verificar métricas do logger
+      const metrics = logger.getLockingMetrics();
+
+      const detalhes = {
+        orcamentos_aprovados: orcamentos.length,
+        bloqueios_ativos: bloqueiosAtivos.length,
+        produtos_bloqueados: metrics.produtos_com_bloqueios,
+        aprovacoes_total: metrics.aprovacoes_total,
+        aprovacoes_com_erro: metrics.aprovacoes_com_erro,
+        tempo_medio_ms: metrics.tempo_medio_aprovacao_ms,
+      };
+
+      if (bloqueiosAtivos.length === 0 && orcamentos.length > 0) {
+        this.addResult(
+          "Sistema de Bloqueios",
+          "warning",
+          `${orcamentos.length} orçamento(s) aprovado(s) mas nenhum bloqueio ativo encontrado`,
+          detalhes
+        );
+      } else if (bloqueiosAtivos.length > 0) {
+        this.addResult(
+          "Sistema de Bloqueios",
+          "success",
+          `Sistema ativo: ${bloqueiosAtivos.length} bloqueio(s) para ${metrics.produtos_com_bloqueios} produto(s)`,
+          detalhes
+        );
+      } else {
+        this.addResult(
+          "Sistema de Bloqueios",
+          "success",
+          "Sistema configurado corretamente (nenhum orçamento aprovado no momento)",
+          detalhes
+        );
+      }
+
+      // Verificar integridade: bloqueios órfãos
+      const bloqueiosOrfaos = await storage.db
+        .select()
+        .from(storage.bloqueiosEstoqueTable)
+        .leftJoin(
+          storage.orcamentosTable,
+          eq(storage.bloqueiosEstoqueTable.orcamento_id, storage.orcamentosTable.id)
+        )
+        .where(sql`${storage.orcamentosTable.id} IS NULL`);
+
+      if (bloqueiosOrfaos.length > 0) {
+        this.addResult(
+          "Integridade de Bloqueios",
+          "warning",
+          `${bloqueiosOrfaos.length} bloqueio(s) órfão(s) encontrado(s) (sem orçamento associado)`,
+          { bloqueios_orfaos: bloqueiosOrfaos.length }
+        );
+      }
+
+    } catch (error: any) {
+      this.addResult(
+        "Sistema de Bloqueios",
+        "error",
+        `Erro ao verificar sistema de bloqueios: ${error.message}`,
+        { error: error.message }
+      );
+    }
+  }
+
+  /**
+   * Teste 5: Webhooks do Mercado Pago
    */
   private async testMercadoPagoWebhook() {
-    console.log('\n💳 TESTE 4: Validação de Webhooks Mercado Pago\n');
+    console.log('\n💳 TESTE 5: Validação de Webhooks Mercado Pago\n');
 
     try {
       const config = await storage.getConfigMercadoPago();
@@ -244,9 +328,9 @@ export class TestSuite {
       const baseUrl = process.env.REPLIT_DEV_DOMAIN
         ? `https://${process.env.REPLIT_DEV_DOMAIN}`
         : 'http://localhost:5000';
-      
+
       const webhookEndpoint = `${baseUrl}/api/webhook/mercadopago`;
-      
+
       console.log(`\n✓ Endpoint do Webhook: ${webhookEndpoint}`);
       console.log(`\n⚠️  IMPORTANTE: Configure esta URL no painel do Mercado Pago em:`);
       console.log(`   https://www.mercadopago.com.br/developers/panel/app`);
@@ -261,7 +345,7 @@ export class TestSuite {
    */
   private addResult(name: string, status: 'success' | 'error' | 'warning', message: string, details?: any) {
     this.results.push({ name, status, message, details });
-    
+
     const icon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⚠️';
     console.log(`${icon} ${name}: ${message}`);
   }

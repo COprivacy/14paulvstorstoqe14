@@ -217,7 +217,25 @@ export default function TestSuite() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              💳 Teste 4: Webhooks Mercado Pago
+              🔒 Teste 4: Sistema de Bloqueios
+            </CardTitle>
+            <CardDescription>
+              Valida bloqueios de estoque em orçamentos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li>✓ Bloqueios ativos em orçamentos aprovados</li>
+              <li>✓ Integridade dos bloqueios (sem órfãos)</li>
+              <li>✓ Métricas de aprovação e latência</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              💳 Teste 5: Webhooks Mercado Pago
             </CardTitle>
             <CardDescription>
               Valida integração com gateway de pagamento
