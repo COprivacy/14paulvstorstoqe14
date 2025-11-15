@@ -1047,6 +1047,18 @@ export default function Devolucoes() {
         </Card>
       </div>
 
+      {/* Alerta sobre Impacto no Caixa */}
+      <Alert className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border-amber-200 dark:border-amber-800">
+        <AlertTriangle className="h-4 w-4 text-amber-600" />
+        <AlertTitle className="text-amber-800 dark:text-amber-300">
+          ⚠️ Importante: Impacto no Caixa
+        </AlertTitle>
+        <AlertDescription className="text-amber-700 dark:text-amber-400 text-sm">
+          Devoluções <strong>aprovadas</strong> são automaticamente descontadas do total de vendas do caixa aberto. 
+          Certifique-se de que há caixa aberto ao aprovar uma devolução para manter o controle financeiro preciso.
+        </AlertDescription>
+      </Alert>
+
       {/* Alerta sobre Limpeza Automática */}
       {devolucoes.length > 50 && (
         <Alert className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800">

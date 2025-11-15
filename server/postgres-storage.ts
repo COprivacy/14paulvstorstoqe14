@@ -865,8 +865,13 @@ export class PostgresStorage implements IStorage {
   }
 
   async getDevolucao(id: number): Promise<Devolucao | undefined> {
-    const result = await this.db.select().from(devolucoes).where(eq(devolucoes.id, id));
-    return result[0];
+    try {
+      const result = await this.db.select().from(devolucoes).where(eq(devolucoes.id, id)).limit(1);
+      return result[0];
+    } catch (error) {
+      logger.error('[DB] Erro ao buscar devolução:', { id, error });
+      throw error;
+    }
   }
 
   async createDevolucao(devolucao: InsertDevolucao): Promise<Devolucao> {

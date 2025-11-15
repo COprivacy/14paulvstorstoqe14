@@ -13,6 +13,7 @@ import { FocusNFeService } from "./focusnfe";
 import { z } from "zod";
 import { logger, LogLevel } from "./logger";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 // Middleware para verificar se o usuário é admin
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -341,9 +342,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email } = req.body;
 
       if (!email) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
-          error: "Email é obrigatório" 
+          error: "Email é obrigatório",
         });
       }
 
@@ -395,9 +396,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("❌ Erro ao processar recuperação de senha:", error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         success: false,
-        error: "Erro ao processar solicitação. Tente novamente." 
+        error: "Erro ao processar solicitação. Tente novamente.",
       });
     }
   });
@@ -1226,9 +1227,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // TODO: Implementar query de logs quando disponível
       // const query = `
-      //   SELECT * FROM system_logs 
-      //   WHERE level = $1 
-      //   ORDER BY timestamp DESC 
+      //   SELECT * FROM system_logs
+      //   WHERE level = $1
+      //   ORDER BY timestamp DESC
       //   LIMIT $2
       // `;
       // const result = await storage.query(query, [level, limit]);
@@ -1317,10 +1318,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deletedCount
       });
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         deletedCount,
-        message: `${deletedCount} log(s) removido(s)` 
+        message: `${deletedCount} log(s) removido(s)`
       });
     } catch (error: any) {
       logger.error('Erro ao limpar logs:', error);
@@ -4478,9 +4479,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/devolucoes", getUserId, async (req, res) => {
     try {
-      const userId = req.headers["effective-user-id"] as string;
+      const effectiveUserId = req.headers["effective-user-id"] as string;
       const funcionarioId = req.headers["funcionario-id"] as string;
-      const userType = req.headers["x-user-type"] as string;
 
       if (!storage.createDevolucao) {
         return res
@@ -4488,103 +4488,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ error: "Método createDevolucao não implementado" });
       }
 
-      // Obter nome do operador
-      let operadorNome = "Sistema";
-      if (userType === "funcionario" && funcionarioId) {
-        const funcionario = await storage.getFuncionario(funcionarioId);
-        if (funcionario) {
-          operadorNome = funcionario.nome;
-        }
-      } else {
-        const usuario = await storage.getUserById(userId);
-        if (usuario) {
-          operadorNome = usuario.nome;
-        }
-      }
-
-      const { insertDevolucaoSchema } = await import("@shared/schema");
-      const validatedData = insertDevolucaoSchema.parse({
+      const devolucaoData = {
         ...req.body,
-        user_id: userId,
+        user_id: effectiveUserId,
         data_devolucao: new Date().toISOString(),
-        operador_nome: operadorNome,
-        operador_id: funcionarioId || userId,
-      });
+      };
 
-      const devolucao = await storage.createDevolucao(validatedData);
+      const devolucao = await storage.createDevolucao(devolucaoData);
 
-      if (devolucao.status === "aprovada" && devolucao.produto_id) {
-        const produto = await storage.getProduto(devolucao.produto_id);
-        if (produto) {
-          await storage.updateProduto(devolucao.produto_id, {
-            quantidade: produto.quantidade + devolucao.quantidade,
-          });
+      // 🔥 NOVO: Se a devolução for aprovada, atualizar o caixa aberto
+      if (devolucao.status === 'aprovada') {
+        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
+
+        if (caixaAberto) {
+          // Subtrair o valor da devolução do total de vendas
+          await storage.atualizarTotaisCaixa?.(
+            caixaAberto.id,
+            'total_vendas',
+            -devolucao.valor_total // Valor negativo para subtrair
+          );
+
+          console.log(`💰 Caixa atualizado - Devolução de R$ ${devolucao.valor_total.toFixed(2)} registrada`);
+        } else {
+          console.warn(`⚠️ Devolução aprovada mas não há caixa aberto para registrar o valor`);
         }
       }
 
       console.log(
-        `✅ Devolução criada - ID: ${devolucao.id}, Produto: ${devolucao.produto_nome}`,
+        `✅ Devolução criada: ID ${devolucao.id}, Produto: ${devolucao.produto_nome}, Valor: R$ ${devolucao.valor_total.toFixed(2)}`,
       );
+
       res.json(devolucao);
-    } catch (error) {
-      console.error("Erro ao criar devolução:", error);
-      if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({ error: "Dados inválidos", details: error.errors });
-      }
-      res.status(500).json({ error: "Erro ao criar devolução" });
+    } catch (error: any) {
+      console.error("❌ Erro ao criar devolução:", error);
+      res.status(500).json({ error: error.message });
     }
   });
 
   app.put("/api/devolucoes/:id", getUserId, async (req, res) => {
     try {
-      const userId = req.headers["effective-user-id"] as string;
-      const id = parseInt(req.params.id);
+      const effectiveUserId = req.headers["effective-user-id"] as string;
+      const funcionarioId = req.headers["funcionario-id"] as string;
 
-      if (!storage.getDevolucao || !storage.updateDevolucao) {
+      if (!storage.updateDevolucao) {
         return res
           .status(501)
-          .json({ error: "Métodos de devolução não implementados" });
+          .json({ error: "Método updateDevolucao não implementado" });
       }
 
-      const devolucaoExistente = await storage.getDevolucao(id);
+      const id = parseInt(req.params.id);
 
-      if (!devolucaoExistente || devolucaoExistente.user_id !== userId) {
+      // Buscar devolução atual para comparar status
+      const devolucaoAtual = await storage.getDevolucao?.(id);
+      if (!devolucaoAtual) {
         return res.status(404).json({ error: "Devolução não encontrada" });
       }
 
-      const { insertDevolucaoSchema } = await import("@shared/schema");
-      const updateSchema = insertDevolucaoSchema.partial();
-      const validatedData = updateSchema.parse(req.body);
+      const devolucao = await storage.updateDevolucao(id, req.body);
 
-      const devolucao = await storage.updateDevolucao(id, validatedData);
+      // 🔥 NOVO: Se o status mudou para 'aprovada', atualizar o caixa
+      if (devolucaoAtual.status !== 'aprovada' && devolucao.status === 'aprovada') {
+        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
 
-      if (
-        devolucaoExistente.status !== "aprovada" &&
-        validatedData.status === "aprovada" &&
-        devolucaoExistente.produto_id
-      ) {
-        const produto = await storage.getProduto(devolucaoExistente.produto_id);
-        if (produto) {
-          await storage.updateProduto(devolucaoExistente.produto_id, {
-            quantidade: produto.quantidade + (validatedData.quantidade || devolucaoExistente.quantidade),
-          });
+        if (caixaAberto) {
+          // Subtrair o valor da devolução do total de vendas
+          await storage.atualizarTotaisCaixa?.(
+            caixaAberto.id,
+            'total_vendas',
+            -devolucao.valor_total // Valor negativo para subtrair
+          );
+
+          console.log(`💰 Caixa atualizado - Devolução de R$ ${devolucao.valor_total.toFixed(2)} aprovada e registrada`);
+        } else {
+          console.warn(`⚠️ Devolução aprovada mas não há caixa aberto para registrar o valor`);
+        }
+      }
+      // 🔥 Se o status mudou DE 'aprovada' para outro, reverter o ajuste no caixa
+      else if (devolucaoAtual.status === 'aprovada' && devolucao.status !== 'aprovada') {
+        const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
+
+        if (caixaAberto) {
+          // Adicionar de volta o valor ao total de vendas
+          await storage.atualizarTotaisCaixa?.(
+            caixaAberto.id,
+            'total_vendas',
+            devolucao.valor_total // Valor positivo para adicionar de volta
+          );
+
+          console.log(`💰 Caixa atualizado - Devolução de R$ ${devolucao.valor_total.toFixed(2)} revertida`);
         }
       }
 
-      console.log(
-        `✅ Devolução atualizada - ID: ${id}, Status: ${validatedData.status || devolucaoExistente.status}, Quantidade: ${validatedData.quantidade || devolucaoExistente.quantidade}`,
-      );
+      console.log(`✅ Devolução atualizada: ID ${id}`);
       res.json(devolucao);
-    } catch (error) {
-      console.error("Erro ao atualizar devolução:", error);
-      if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({ error: "Dados inválidos", details: error.errors });
-      }
-      res.status(500).json({ error: "Erro ao atualizar devolução" });
+    } catch (error: any) {
+      console.error("❌ Erro ao atualizar devolução:", error);
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -4617,7 +4616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Endpoint para listar apenas devoluções arquivadas
   app.get("/api/devolucoes/arquivadas", getUserId, async (req, res) => {
     try {
-      const userId = req.headers["effective-user-id"] as string;
+      const userId = req.headers["effective-userid"] as string;
 
       if (!storage.getDevolucoes) {
         return res
@@ -4850,14 +4849,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const produto = await storage.getProduto(item.produto_id);
 
         if (!produto) {
-          return res.status(404).json({ 
-            error: `Produto ${item.nome} não encontrado no sistema` 
+          return res.status(404).json({
+            error: `Produto ${item.nome} não encontrado no sistema`
           });
         }
 
         if (produto.user_id !== userId) {
-          return res.status(403).json({ 
-            error: `Acesso negado ao produto ${item.nome}` 
+          return res.status(403).json({
+            error: `Acesso negado ao produto ${item.nome}`
           });
         }
 
@@ -4870,7 +4869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Se houver produtos com estoque insuficiente, retornar erro
       if (produtosInsuficientes.length > 0) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Estoque insuficiente para converter este orçamento em venda",
           detalhes: produtosInsuficientes
         });
@@ -5196,8 +5195,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(501).json({ error: "Métodos de devolução não implementados" });
           }
           const devolucoes = await storage.getDevolucoes();
-          const devolucoesAntigas = devolucoes.filter(d => 
-            d.user_id === effectiveUserId && 
+          const devolucoesAntigas = devolucoes.filter(d =>
+            d.user_id === effectiveUserId &&
             new Date(d.data_devolucao) < dataLimite &&
             d.status !== "pendente" // Não deletar devoluções pendentes
           );
@@ -5213,8 +5212,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(501).json({ error: "Métodos de orçamento não implementados" });
           }
           const orcamentos = await storage.getOrcamentos();
-          const orcamentosAntigos = orcamentos.filter(o => 
-            o.user_id === effectiveUserId && 
+          const orcamentosAntigos = orcamentos.filter(o =>
+            o.user_id === effectiveUserId &&
             new Date(o.data_criacao) < dataLimite &&
             (o.status === "convertido" || o.status === "rejeitado")
           );
@@ -5241,11 +5240,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Limpeza automática: ${deletedCount} registro(s) removido(s) com mais de ${diasAntigos} dias`
       );
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         deletedCount,
         tipo,
-        diasAntigos 
+        diasAntigos
       });
     } catch (error: any) {
       logger.error('Erro na limpeza automática:', error);

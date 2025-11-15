@@ -108,10 +108,19 @@ export default function Caixa() {
   };
 
   // UseQuery hooks com atualização automática
-  const { data: caixaAberto, isLoading: isLoadingCaixa } = useQuery({
+  const { data: caixaAberto, isLoading: isLoadingCaixa, error: errorCaixa } = useQuery({
     queryKey: ["/api/caixas/aberto"],
     queryFn: fetchCaixaAberto,
     refetchInterval: 3000, // Atualiza a cada 3 segundos
+    retry: 3,
+    onError: (error: any) => {
+      console.error("Erro ao buscar caixa aberto:", error);
+      toast({
+        title: "Erro ao carregar caixa",
+        description: error.message || "Tente recarregar a página",
+        variant: "destructive",
+      });
+    },
   });
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -374,6 +383,19 @@ export default function Caixa() {
 
   if (isLoadingCaixa) {
     return <div className="p-6">Carregando...</div>;
+  }
+
+  if (errorCaixa) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <p className="text-destructive mb-4">Erro ao carregar informações do caixa</p>
+          <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/caixas/aberto"] })}>
+            Tentar Novamente
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
