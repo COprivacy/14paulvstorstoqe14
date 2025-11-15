@@ -32,10 +32,17 @@ export default function SalesTable({ sales }: SalesTableProps) {
     queryKey: ["/api/devolucoes"],
   });
 
-  const totalPages = Math.ceil(sales.length / itemsPerPage);
+  // Ordenar vendas por data decrescente (mais recentes primeiro)
+  const sortedSales = [...sales].sort((a, b) => {
+    const dateA = new Date(a.data || 0).getTime();
+    const dateB = new Date(b.data || 0).getTime();
+    return dateB - dateA;
+  });
+
+  const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentSales = sales.slice(startIndex, endIndex);
+  const currentSales = sortedSales.slice(startIndex, endIndex);
 
   return (
     <Card className="border-0 bg-gradient-to-br from-card/80 to-card backdrop-blur-sm shadow-xl">
@@ -84,9 +91,16 @@ export default function SalesTable({ sales }: SalesTableProps) {
                     );
 
                     return (
-                      <TableRow key={sale.id}>
+                      <TableRow key={sale.id} className={devolucaoRelacionada ? 'bg-red-50 dark:bg-red-950/10' : ''}>
                         <TableCell className="max-w-[300px] truncate" title={sale.produto || 'N/A'}>
-                          {sale.produto || 'N/A'}
+                          <div className="flex items-center gap-2">
+                            {sale.produto || 'N/A'}
+                            {devolucaoRelacionada && (
+                              <Badge variant="destructive" className="text-xs">
+                                Devolvido
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-center">{sale.quantidade_vendida || 0}</TableCell>
                         <TableCell className="text-right font-semibold text-green-600">
