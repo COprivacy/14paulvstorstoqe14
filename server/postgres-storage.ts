@@ -940,16 +940,20 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateOrcamento(id: number, data: any): Promise<Orcamento> {
-    return await this.db.transaction(async (tx) => {
-      const [orcamentoOriginal] = await tx
-        .select()
-        .from(orcamentos)
-        .where(eq(orcamentos.id, id))
-        .for('update');
+    const startTime = Date.now();
+    let sucesso = false;
 
-      if (!orcamentoOriginal) {
-        throw new Error("Orçamento não encontrado");
-      }
+    try {
+      const resultado = await this.db.transaction(async (tx) => {
+        const [orcamentoOriginal] = await tx
+          .select()
+          .from(orcamentos)
+          .where(eq(orcamentos.id, id))
+          .for('update');
+
+        if (!orcamentoOriginal) {
+          throw new Error("Orçamento não encontrado");
+        }
 
       const statusOriginal = orcamentoOriginal.status;
       const statusFinal = data.status !== undefined ? data.status : statusOriginal;
@@ -1046,8 +1050,20 @@ export class PostgresStorage implements IStorage {
         await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
       }
 
+      sucesso = true;
       return orcamento;
     });
+
+      const latencia = Date.now() - startTime;
+      const produtosAfetados = resultado.itens ? resultado.itens.map((i: any) => i.produto_id) : [];
+      logger.trackAprovacao(latencia, sucesso, produtosAfetados);
+
+      return resultado;
+    } catch (error) {
+      const latencia = Date.now() - startTime;
+      logger.trackAprovacao(latencia, false, []);
+      throw error;
+    }
   }
 
   async deleteOrcamento(id: number): Promise<void> {
@@ -1070,13 +1086,24 @@ export class PostgresStorage implements IStorage {
           quantidade_bloqueada: item.quantidade,
           data_bloqueio: dataBloqueio,
         });
+
+      logger.trackBloqueio('criado', item.produto_id, item.quantidade);
     }
   }
 
   async removerBloqueiosOrcamento(orcamentoId: number): Promise<void> {
+    const bloqueiosRemovidos = await this.db
+      .select()
+      .from(bloqueiosEstoque)
+      .where(eq(bloqueiosEstoque.orcamento_id, orcamentoId));
+
     await this.db
       .delete(bloqueiosEstoque)
       .where(eq(bloqueiosEstoque.orcamento_id, orcamentoId));
+
+    bloqueiosRemovidos.forEach(bloqueio => {
+      logger.trackBloqueio('removido', bloqueio.produto_id, bloqueio.quantidade_bloqueada);
+    });
   }
 
   async getBloqueiosPorProduto(produtoId: number, userId: string): Promise<BloqueioEstoque[]> {

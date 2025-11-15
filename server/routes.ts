@@ -2497,6 +2497,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       res.json(conta);
     } catch (error: any) {
+
+  // Endpoint de métricas de bloqueio (apenas admin)
+  app.get("/api/metrics/locking", requireAdmin, async (req, res) => {
+    try {
+      const metrics = logger.getLockingMetrics();
+      res.json(metrics);
+    } catch (error: any) {
+      console.error("Erro ao buscar métricas:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
       console.error("❌ Erro ao criar conta a pagar:", error);
       res.status(500).json({ error: error.message });
     }

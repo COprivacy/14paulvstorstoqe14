@@ -1,4 +1,3 @@
-
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -23,6 +22,25 @@ interface LogEntry {
   userId?: string;
   requestId?: string;
 }
+
+// Métricas de telemetria para sistema de bloqueios
+interface LockingMetrics {
+  aprovacoes_total: number;
+  aprovacoes_com_erro: number;
+  tempo_medio_aprovacao_ms: number;
+  bloqueios_ativos: number;
+  produtos_com_bloqueios: Set<number>;
+  ultimas_latencias: number[];
+}
+
+const lockingMetrics: LockingMetrics = {
+  aprovacoes_total: 0,
+  aprovacoes_com_erro: 0,
+  tempo_medio_aprovacao_ms: 0,
+  bloqueios_ativos: 0,
+  produtos_com_bloqueios: new Set(),
+  ultimas_latencias: [],
+};
 
 class Logger {
   private logsDir: string;
@@ -74,7 +92,7 @@ class Logger {
 
     this.rotateLogIfNeeded();
     const logLine = JSON.stringify(entry) + '\n';
-    
+
     fs.appendFileSync(this.currentLogFile, logLine, 'utf-8');
 
     // Também exibe no console em desenvolvimento
@@ -130,7 +148,7 @@ class Logger {
 
   // Método para buscar logs (útil para admin)
   async getLogs(date?: string, level?: LogLevel, limit: number = 100): Promise<LogEntry[]> {
-    const logFile = date 
+    const logFile = date
       ? path.join(this.logsDir, `app-${date}.log`)
       : this.currentLogFile;
 
@@ -140,7 +158,7 @@ class Logger {
 
     const content = fs.readFileSync(logFile, 'utf-8');
     const lines = content.split('\n').filter(line => line.trim());
-    
+
     let logs = lines
       .map(line => {
         try {
@@ -169,12 +187,69 @@ class Logger {
 
       const filePath = path.join(this.logsDir, file);
       const stats = fs.statSync(filePath);
-      
+
       if (stats.mtime < cutoffDate) {
         fs.unlinkSync(filePath);
         this.info('Log antigo removido', 'CLEANUP', { file });
       }
     }
+  }
+
+  // Telemetria específica para sistema de bloqueios
+  trackAprovacao(latencia_ms: number, sucesso: boolean, produtosAfetados: number[]) {
+    lockingMetrics.aprovacoes_total++;
+    if (!sucesso) {
+      lockingMetrics.aprovacoes_com_erro++;
+    }
+
+    lockingMetrics.ultimas_latencias.push(latencia_ms);
+    if (lockingMetrics.ultimas_latencias.length > 100) {
+      lockingMetrics.ultimas_latencias.shift();
+    }
+
+    const soma = lockingMetrics.ultimas_latencias.reduce((a, b) => a + b, 0);
+    lockingMetrics.tempo_medio_aprovacao_ms = soma / lockingMetrics.ultimas_latencias.length;
+
+    produtosAfetados.forEach(id => lockingMetrics.produtos_com_bloqueios.add(id));
+
+    this.info(`Aprovação de orçamento ${sucesso ? 'concluída' : 'falhou'}`, 'LOCKING_TELEMETRY', {
+      latencia_ms,
+      produtos_afetados: produtosAfetados.length,
+      taxa_erro: ((lockingMetrics.aprovacoes_com_erro / lockingMetrics.aprovacoes_total) * 100).toFixed(2) + '%',
+      latencia_media_ms: lockingMetrics.tempo_medio_aprovacao_ms.toFixed(2),
+    });
+  }
+
+  trackBloqueio(acao: 'criado' | 'removido', produtoId: number, quantidade: number) {
+    if (acao === 'criado') {
+      lockingMetrics.bloqueios_ativos++;
+      lockingMetrics.produtos_com_bloqueios.add(produtoId);
+    } else {
+      lockingMetrics.bloqueios_ativos--;
+    }
+
+    this.info(`Bloqueio ${acao}`, 'LOCKING_TELEMETRY', {
+      produto_id: produtoId,
+      quantidade,
+      bloqueios_ativos_total: lockingMetrics.bloqueios_ativos,
+      produtos_unicos_bloqueados: lockingMetrics.produtos_com_bloqueios.size,
+    });
+  }
+
+  getLockingMetrics() {
+    return {
+      ...lockingMetrics,
+      produtos_com_bloqueios: lockingMetrics.produtos_com_bloqueios.size,
+    };
+  }
+
+  resetLockingMetrics() {
+    lockingMetrics.aprovacoes_total = 0;
+    lockingMetrics.aprovacoes_com_erro = 0;
+    lockingMetrics.tempo_medio_aprovacao_ms = 0;
+    lockingMetrics.bloqueios_ativos = 0;
+    lockingMetrics.produtos_com_bloqueios.clear();
+    lockingMetrics.ultimas_latencias = [];
   }
 }
 
