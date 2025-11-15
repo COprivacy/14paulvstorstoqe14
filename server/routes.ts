@@ -1888,6 +1888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let valorTotal = 0;
       const produtosVendidos = [];
 
+      // 🔒 VALIDAÇÃO CRÍTICA: Verificar bloqueios de estoque ANTES de processar venda
       for (const item of itens) {
         const produto = await storage.getProdutoByCodigoBarras(
           item.codigo_barras,
@@ -1901,9 +1902,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
         }
 
-        if (produto.quantidade < item.quantidade) {
+        // Buscar quantidade bloqueada por orçamentos aprovados
+        const quantidadeBloqueada = await storage.getQuantidadeBloqueadaPorProduto(
+          produto.id,
+          userId
+        );
+
+        // Calcular estoque realmente disponível para venda livre
+        const estoqueDisponivel = produto.quantidade - quantidadeBloqueada;
+
+        if (estoqueDisponivel < item.quantidade) {
+          logger.warn('PDV bloqueado - estoque insuficiente', 'ESTOQUE_PDV', {
+            produto: produto.nome,
+            solicitado: item.quantidade,
+            estoque_total: produto.quantidade,
+            bloqueado: quantidadeBloqueada,
+            disponivel: estoqueDisponivel
+          });
+
           return res.status(400).json({
-            error: `Estoque insuficiente para ${produto.nome}. Disponível: ${produto.quantidade}`,
+            error: `Estoque insuficiente para ${produto.nome}.\n\nEstoque total: ${produto.quantidade}\nBloqueado em orçamentos: ${quantidadeBloqueada}\nDisponível para venda: ${estoqueDisponivel}\nSolicitado: ${item.quantidade}\n\nLibere orçamentos ou ajuste a quantidade.`,
           });
         }
 

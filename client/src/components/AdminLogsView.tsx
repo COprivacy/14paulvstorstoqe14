@@ -53,16 +53,29 @@ export function AdminLogsView({ isPublicAdmin = false }: AdminLogsViewProps) {
       // Se for admin público, usa endpoint diferente sem filtro de usuário
       const endpoint = isPublicAdmin 
         ? "/api/admin/all-logs?limit=500"
-        : "/api/system-logs?level=INFO&limit=500";
+        : "/api/logs-admin?limit=500";
+      
+      const userStr = localStorage.getItem('user');
+      if (!userStr) {
+        console.warn('⚠️ Usuário não encontrado no localStorage');
+        setLogs([]);
+        setLoading(false);
+        return;
+      }
+
+      const user = JSON.parse(userStr);
       
       const response = await fetch(endpoint, {
         headers: {
-          'x-user-id': localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!).id : '',
+          'x-user-id': user.id,
           'x-is-admin': 'true',
         },
       });
 
-      if (!response.ok) throw new Error("Erro ao buscar logs");
+      if (!response.ok) {
+        console.error(`❌ Erro na API: ${response.status} ${response.statusText}`);
+        throw new Error("Erro ao buscar logs");
+      }
 
       const data = await response.json();
       
@@ -76,28 +89,34 @@ export function AdminLogsView({ isPublicAdmin = false }: AdminLogsViewProps) {
       }
 
       const processedLogs: AdminLog[] = data
-        .filter((log: any) => log && (log.timestamp || log.data)) // Filtrar logs inválidos
+        .filter((log: any) => {
+          // Filtrar apenas logs válidos com dados mínimos
+          return log && (log.data || log.timestamp) && (log.acao || log.action);
+        })
         .map((log: any, index: number) => ({
           id: log.id || index + 1,
           timestamp: log.data || log.timestamp || new Date().toISOString(),
-          admin_email: log.usuario_email || log.admin_email || log.userId || log.context || 'Sistema',
-          admin_name: log.usuario_nome || log.admin_name || log.userName || 'Sistema',
-          action: log.acao || log.action || log.message || 'Ação desconhecida',
+          admin_email: log.usuario_email || log.admin_email || 'Sistema',
+          admin_name: log.usuario_nome || log.admin_name || 'Sistema',
+          action: log.acao || log.action || 'Ação desconhecida',
           target_user: log.target_user || '',
           details: log.detalhes || log.details || '',
           ip_address: log.ip_address || '',
           user_agent: log.user_agent || '',
           session_duration: log.session_duration,
-        }));
+        }))
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
+      console.log(`✅ ${processedLogs.length} logs processados com sucesso`);
       setLogs(processedLogs);
     } catch (error) {
-      console.error("Erro ao buscar logs:", error);
+      console.error("❌ Erro ao buscar logs:", error);
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar os logs",
+        title: "Erro ao carregar logs",
+        description: "Não foi possível carregar os logs de auditoria. Tente novamente.",
         variant: "destructive",
       });
+      setLogs([]);
     } finally {
       setLoading(false);
     }
