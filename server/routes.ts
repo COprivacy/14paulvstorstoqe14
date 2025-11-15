@@ -4496,7 +4496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const devolucao = await storage.createDevolucao(devolucaoData);
 
-      // 🔥 NOVO: Se a devolução for aprovada, atualizar o caixa aberto
+      // 🔥 NOVO: Se a devolução for aprovada, atualizar o caixa aberto E devolver estoque
       if (devolucao.status === 'aprovada') {
         const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
 
@@ -4511,6 +4511,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`💰 Caixa atualizado - Devolução de R$ ${devolucao.valor_total.toFixed(2)} registrada`);
         } else {
           console.warn(`⚠️ Devolução aprovada mas não há caixa aberto para registrar o valor`);
+        }
+
+        // Devolver estoque ao produto
+        if (devolucao.produto_id) {
+          const produto = await storage.getProduto(devolucao.produto_id);
+          if (produto) {
+            await storage.updateProduto(devolucao.produto_id, {
+              quantidade: produto.quantidade + devolucao.quantidade
+            });
+            console.log(`📦 Estoque atualizado - ${devolucao.quantidade} unidades de "${devolucao.produto_nome}" devolvidas ao estoque`);
+          }
         }
       }
 
@@ -4546,7 +4557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const devolucao = await storage.updateDevolucao(id, req.body);
 
-      // 🔥 NOVO: Se o status mudou para 'aprovada', atualizar o caixa
+      // 🔥 NOVO: Se o status mudou para 'aprovada', atualizar o caixa E devolver estoque
       if (devolucaoAtual.status !== 'aprovada' && devolucao.status === 'aprovada') {
         const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
 
@@ -4562,8 +4573,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           console.warn(`⚠️ Devolução aprovada mas não há caixa aberto para registrar o valor`);
         }
+
+        // Devolver estoque ao produto
+        if (devolucao.produto_id) {
+          const produto = await storage.getProduto(devolucao.produto_id);
+          if (produto) {
+            await storage.updateProduto(devolucao.produto_id, {
+              quantidade: produto.quantidade + devolucao.quantidade
+            });
+            console.log(`📦 Estoque atualizado - ${devolucao.quantidade} unidades de "${devolucao.produto_nome}" devolvidas ao estoque`);
+          }
+        }
       }
-      // 🔥 Se o status mudou DE 'aprovada' para outro, reverter o ajuste no caixa
+      // 🔥 Se o status mudou DE 'aprovada' para outro, reverter o ajuste no caixa E remover estoque
       else if (devolucaoAtual.status === 'aprovada' && devolucao.status !== 'aprovada') {
         const caixaAberto = await storage.getCaixaAberto?.(effectiveUserId, funcionarioId || undefined);
 
@@ -4576,6 +4598,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           console.log(`💰 Caixa atualizado - Devolução de R$ ${devolucao.valor_total.toFixed(2)} revertida`);
+        }
+
+        // Remover estoque do produto (reverter devolução)
+        if (devolucao.produto_id) {
+          const produto = await storage.getProduto(devolucao.produto_id);
+          if (produto && produto.quantidade >= devolucao.quantidade) {
+            await storage.updateProduto(devolucao.produto_id, {
+              quantidade: produto.quantidade - devolucao.quantidade
+            });
+            console.log(`📦 Estoque atualizado - ${devolucao.quantidade} unidades de "${devolucao.produto_nome}" removidas do estoque (reversão)`);
+          }
         }
       }
 

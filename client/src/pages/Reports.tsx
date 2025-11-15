@@ -25,6 +25,10 @@ export default function Reports() {
   const [filterFormaPagamento, setFilterFormaPagamento] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const { data: todasDevolucoes = [] } = useQuery({
+    queryKey: ["/api/devolucoes"],
+  });
+
   const handleExportPDF = () => {
     const doc = new jsPDF();
 
@@ -95,6 +99,9 @@ export default function Reports() {
       else if (venda.forma_pagamento === 'pix') formaPagamento = 'PIX';
       else if (venda.forma_pagamento === 'boleto') formaPagamento = 'Boleto';
 
+      const devolucaoRelacionada = todasDevolucoes.find((d: any) => 
+        d.venda_id === venda.id && d.status === 'aprovada'
+      );
 
       return [
         venda.produto || 'N/A',
@@ -102,13 +109,14 @@ export default function Reports() {
         `R$ ${(venda.valor_total || 0).toFixed(2)}`,
         formaPagamento,
         venda.orcamento_numero ? `${venda.orcamento_numero}` : '-',
+        devolucaoRelacionada ? 'Sim' : 'Não',
         venda.data ? formatDateTime(venda.data) : 'N/A'
       ];
     });
 
     autoTable(doc, {
       startY: yPosition,
-      head: [['Produto', 'Quantidade', 'Valor Total', 'Pagamento', 'Orçamento', 'Data']],
+      head: [['Produto', 'Quantidade', 'Valor Total', 'Pagamento', 'Orçamento', 'Devolução', 'Data']],
       body: tableData,
       theme: 'striped',
       headStyles: {
@@ -121,12 +129,13 @@ export default function Reports() {
         cellPadding: 3
       },
       columnStyles: {
-        0: { cellWidth: 45 },
-        1: { cellWidth: 20, halign: 'center' },
-        2: { cellWidth: 30, halign: 'right' },
-        3: { cellWidth: 30, halign: 'center' },
-        4: { cellWidth: 22, halign: 'center' },
-        5: { cellWidth: 35, halign: 'right' }
+        0: { cellWidth: 40 },
+        1: { cellWidth: 18, halign: 'center' },
+        2: { cellWidth: 25, halign: 'right' },
+        3: { cellWidth: 25, halign: 'center' },
+        4: { cellWidth: 18, halign: 'center' },
+        5: { cellWidth: 18, halign: 'center' },
+        6: { cellWidth: 30, halign: 'right' }
       }
     });
 

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ShoppingCart, ChevronDown, ChevronUp, TrendingUp, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, ShoppingCart, ChevronDown, ChevronUp, TrendingUp, TrendingDown, Calendar, Undo2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -27,6 +27,10 @@ export default function Clientes() {
 
   const { data: vendas = [] } = useQuery({
     queryKey: ["/api/vendas"],
+  });
+
+  const { data: devolucoes = [] } = useQuery({
+    queryKey: ["/api/devolucoes"],
   });
 
   const createMutation = useMutation({
@@ -92,13 +96,22 @@ export default function Clientes() {
 
   const getClienteStats = (clienteId: number) => {
     const vendasCliente = getVendasPorCliente(clienteId);
+    const devolucoesCliente = devolucoes.filter((d: any) => d.cliente_nome && 
+      clientes.find((c: any) => c.id === clienteId && c.nome === d.cliente_nome));
+    
     const totalCompras = vendasCliente.length;
-    const valorTotal = vendasCliente.reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0);
+    const totalDevolucoes = devolucoesCliente.filter((d: any) => d.status === 'aprovada').length;
+    const valorTotalVendas = vendasCliente.reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0);
+    const valorTotalDevolucoes = devolucoesCliente
+      .filter((d: any) => d.status === 'aprovada')
+      .reduce((sum: number, d: any) => sum + (d.valor_total || 0), 0);
+    const valorTotal = valorTotalVendas - valorTotalDevolucoes;
+    
     const ultimaCompra = vendasCliente.length > 0
       ? vendasCliente.sort((a: any, b: any) => new Date(b.data).getTime() - new Date(a.data).getTime())[0]
       : null;
 
-    return { totalCompras, valorTotal, ultimaCompra };
+    return { totalCompras, valorTotal, ultimaCompra, totalDevolucoes, valorTotalDevolucoes, devolucoesCliente };
   };
 
   const toggleRow = (id: number) => {
@@ -227,7 +240,7 @@ export default function Clientes() {
                 </TableRow>
               ) : (
                 clientes.map((cliente) => {
-                  const { totalCompras, valorTotal, ultimaCompra } = getClienteStats(cliente.id);
+                  const { totalCompras, valorTotal, ultimaCompra, totalDevolucoes, valorTotalDevolucoes, devolucoesCliente } = getClienteStats(cliente.id);
                   const vendasCliente = getVendasPorCliente(cliente.id);
                   const isExpanded = expandedRows.has(cliente.id);
 
@@ -264,9 +277,16 @@ export default function Clientes() {
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
-                            {totalCompras}
-                          </span>
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
+                              {totalCompras}
+                            </span>
+                            {totalDevolucoes > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full text-xs font-medium">
+                                {totalDevolucoes} dev.
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <span className="font-semibold text-green-600 dark:text-green-400">
@@ -343,6 +363,33 @@ export default function Clientes() {
                                 </Card>
                               </div>
 
+                              {totalDevolucoes > 0 && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                  <Card className="border-red-200 bg-red-50/50 dark:bg-red-950/20">
+                                    <CardContent className="pt-4">
+                                      <div className="flex items-center gap-2">
+                                        <Undo2 className="h-5 w-5 text-red-600" />
+                                        <div>
+                                          <p className="text-sm text-muted-foreground">Total de Devoluções</p>
+                                          <p className="text-2xl font-bold text-red-600">{totalDevolucoes}</p>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                  <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20">
+                                    <CardContent className="pt-4">
+                                      <div className="flex items-center gap-2">
+                                        <TrendingDown className="h-5 w-5 text-orange-600" />
+                                        <div>
+                                          <p className="text-sm text-muted-foreground">Valor Devolvido</p>
+                                          <p className="text-2xl font-bold text-orange-600">R$ {valorTotalDevolucoes.toFixed(2)}</p>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                </div>
+                              )}
+
                               <div>
                                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                                   <ShoppingCart className="h-4 w-4" />
@@ -387,6 +434,71 @@ export default function Clientes() {
                                   <p className="text-sm text-muted-foreground">Nenhuma compra registrada ainda</p>
                                 )}
                               </div>
+
+                              {devolucoesCliente && devolucoesCliente.length > 0 && (
+                                <div className="mt-4">
+                                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-red-600">
+                                    <Undo2 className="h-4 w-4" />
+                                    Histórico de Devoluções ({devolucoesCliente.length})
+                                  </h4>
+                                  <div className="border rounded-lg overflow-hidden border-red-200">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Data</TableHead>
+                                          <TableHead>Produto</TableHead>
+                                          <TableHead>Motivo</TableHead>
+                                          <TableHead className="text-center">Quantidade</TableHead>
+                                          <TableHead className="text-center">Status</TableHead>
+                                          <TableHead className="text-right">Valor</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {devolucoesCliente
+                                          .sort((a: any, b: any) => new Date(b.data_devolucao).getTime() - new Date(a.data_devolucao).getTime())
+                                          .map((devolucao: any) => (
+                                          <TableRow key={devolucao.id}>
+                                            <TableCell>
+                                              {devolucao.data_devolucao ? format(new Date(devolucao.data_devolucao), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-"}
+                                            </TableCell>
+                                            <TableCell>
+                                              <div className="max-w-md">
+                                                {devolucao.produto_nome || "-"}
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>
+                                              <span className="text-xs">{devolucao.motivo}</span>
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                              {devolucao.quantidade || 0}
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                              {devolucao.status === 'aprovada' && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-xs">
+                                                  Aprovada
+                                                </span>
+                                              )}
+                                              {devolucao.status === 'rejeitada' && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-full text-xs">
+                                                  Rejeitada
+                                                </span>
+                                              )}
+                                              {devolucao.status === 'pendente' && (
+                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300 rounded-full text-xs">
+                                                  Pendente
+                                                </span>
+                                              )}
+                                            </TableCell>
+                                            <TableCell className="text-right font-semibold text-red-600">
+                                              - R$ {(devolucao.valor_total || 0).toFixed(2)}
+                                            </TableCell>
+                                          </TableRow>
+                                        ))}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
