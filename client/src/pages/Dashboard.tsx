@@ -115,16 +115,31 @@ export default function Dashboard() {
   const today = new Date().toISOString().split('T')[0];
   const validVendas = vendas.filter((v: any) => v && v.data && v.valor_total != null);
   
-  const todaySales = validVendas
-    .filter((v: any) => {
-      try {
-        return v.data?.startsWith(today);
-      } catch (error) {
-        console.error('Erro ao processar data de venda:', v);
-        return false;
-      }
-    })
-    .reduce((sum: number, v: any) => sum + (Number(v.valor_total) || 0), 0);
+  const vendasHoje = validVendas.filter((v: any) => {
+    try {
+      return v.data?.startsWith(today);
+    } catch (error) {
+      console.error('Erro ao processar data de venda:', v);
+      return false;
+    }
+  });
+  
+  const todaySales = vendasHoje.reduce((sum: number, v: any) => sum + (Number(v.valor_total) || 0), 0);
+  
+  // Debug: Mostrar vendas do dia
+  console.log('📊 VENDAS HOJE:', {
+    data: today,
+    quantidade: vendasHoje.length,
+    vendas: vendasHoje.map(v => ({
+      id: v.id,
+      produto: v.produto,
+      valor: v.valor_total,
+      data: v.data,
+      vendedor: v.vendedor,
+      orcamento: v.orcamento_numero
+    })),
+    total: todaySales
+  });
 
   // Dados para gráficos
   const categoryData = useMemo(() => {
