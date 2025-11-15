@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar } from "lucide-react";
+import { Calendar, ArrowDownCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ReportsCardProps {
   dailyTotal?: number;
@@ -44,7 +45,20 @@ export default function ReportsCard({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Vendas Hoje</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownCircle className="h-4 w-4" />
+              Vendas Hoje
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ArrowDownCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Valor já descontadas devoluções aprovadas</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground" data-testid="text-daily-total">
@@ -55,7 +69,20 @@ export default function ReportsCard({
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Vendas da Semana</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownCircle className="h-4 w-4" />
+              Vendas da Semana
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ArrowDownCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Valor já descontadas devoluções aprovadas</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground" data-testid="text-weekly-total">
@@ -66,7 +93,20 @@ export default function ReportsCard({
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Vendas Mensais</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <ArrowDownCircle className="h-4 w-4" />
+              Vendas Mensais
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ArrowDownCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Valor já descontadas devoluções aprovadas</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-bold text-foreground" data-testid="text-monthly-total">

@@ -27,6 +27,13 @@ export default function SalesTable({ sales }: SalesTableProps) {
     );
   }
 
+  // Ordenar vendas por data decrescente (mais recentes primeiro)
+  const sortedSales = [...sales].sort((a, b) => {
+    const dateA = new Date(a.data).getTime();
+    const dateB = new Date(b.data).getTime();
+    return dateB - dateA; // Ordem decrescente
+  });
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -41,14 +48,14 @@ export default function SalesTable({ sales }: SalesTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sales.length === 0 ? (
+          {sortedSales.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="text-center text-muted-foreground">
                 Nenhuma venda registrada
               </TableCell>
             </TableRow>
           ) : (
-            sales.map((sale: any) => {
+            sortedSales.map((sale: any) => {
               let formaPagamento = 'Dinheiro';
               if (sale.forma_pagamento === 'cartao_credito') formaPagamento = 'Cartão Crédito';
               else if (sale.forma_pagamento === 'cartao_debito') formaPagamento = 'Cartão Débito';
