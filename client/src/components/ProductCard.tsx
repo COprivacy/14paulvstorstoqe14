@@ -2,9 +2,15 @@ import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, AlertTriangle, Calendar, Barcode } from "lucide-react";
+import { Pencil, Trash2, AlertTriangle, Calendar, Barcode, Lock } from "lucide-react";
 import { getDaysUntilExpiry, getExpiryStatus, formatDate } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
+
+interface Bloqueio {
+  quantidade_bloqueada: number;
+  numero_orcamento: string;
+  orcamento_id: number;
+}
 
 interface ProductCardProps {
   id: number;
@@ -15,6 +21,8 @@ interface ProductCardProps {
   estoque_minimo: number;
   codigo_barras?: string | null;
   vencimento?: string | null;
+  quantidadeBloqueada?: number;
+  bloqueios?: Bloqueio[];
   onEdit?: (id: number) => void;
   onDelete?: (id: number) => void;
 }
@@ -28,12 +36,15 @@ function ProductCard({
   estoque_minimo,
   codigo_barras,
   vencimento,
+  quantidadeBloqueada = 0,
+  bloqueios = [],
   onEdit,
   onDelete 
 }: ProductCardProps) {
   const isLowStock = quantidade < estoque_minimo;
   const expiryStatus = getExpiryStatus(vencimento || null);
   const daysUntilExpiry = getDaysUntilExpiry(vencimento || null);
+  const hasBloqueios = quantidadeBloqueada > 0;
 
   return (
     <Card className={cn(
@@ -71,8 +82,24 @@ function ProductCard({
                   Vencido
                 </Badge>
               )}
+              {hasBloqueios && (
+                <Badge variant="secondary" className="flex items-center gap-1 bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30" data-testid={`badge-bloqueado-${id}`}>
+                  <Lock className="h-3 w-3" />
+                  {quantidadeBloqueada} Bloqueado{quantidadeBloqueada > 1 ? 's' : ''}
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">{categoria}</p>
+            {hasBloqueios && bloqueios.length > 0 && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p className="font-medium">Bloqueado em:</p>
+                {bloqueios.map((bloqueio, index) => (
+                  <p key={index} data-testid={`text-bloqueio-${id}-${index}`}>
+                    • Orçamento {bloqueio.numero_orcamento}: {bloqueio.quantidade_bloqueada} un.
+                  </p>
+                ))}
+              </div>
+            )}
             <div className="flex items-center gap-4 text-sm flex-wrap">
               <div>
                 <span className="text-muted-foreground">Preço: </span>

@@ -22,6 +22,7 @@ import {
   systemConfig,
   devolucoes,
   orcamentos,
+  bloqueiosEstoque,
   clientNotes,
   clientDocuments,
   clientInteractions,
@@ -31,6 +32,8 @@ import {
   type InsertUser,
   type Produto,
   type InsertProduto,
+  type BloqueioEstoque,
+  type InsertBloqueioEstoque,
   type Venda,
   type InsertVenda,
   type Fornecedor,
@@ -937,36 +940,180 @@ export class PostgresStorage implements IStorage {
   }
 
   async updateOrcamento(id: number, data: any): Promise<Orcamento> {
-    const [orcamento] = await this.db
-      .update(orcamentos)
-      .set({
-        validade: data.validade,
-        cliente_id: data.cliente_id,
-        cliente_nome: data.cliente_nome,
-        cliente_email: data.cliente_email,
-        cliente_telefone: data.cliente_telefone,
-        cliente_cpf_cnpj: data.cliente_cpf_cnpj,
-        cliente_endereco: data.cliente_endereco,
-        status: data.status,
-        itens: data.itens,
-        subtotal: data.subtotal,
-        desconto: data.desconto,
-        valor_total: data.valor_total,
-        observacoes: data.observacoes,
-        condicoes_pagamento: data.condicoes_pagamento,
-        prazo_entrega: data.prazo_entrega,
-        data_atualizacao: new Date().toISOString(),
-      })
-      .where(eq(orcamentos.id, id))
-      .returning();
+    return await this.db.transaction(async (tx) => {
+      const [orcamentoOriginal] = await tx
+        .select()
+        .from(orcamentos)
+        .where(eq(orcamentos.id, id))
+        .for('update');
 
-    return orcamento;
+      if (!orcamentoOriginal) {
+        throw new Error("Orçamento não encontrado");
+      }
+
+      const statusOriginal = orcamentoOriginal.status;
+      const statusFinal = data.status !== undefined ? data.status : statusOriginal;
+      const itensAtualizados = data.itens ? (Array.isArray(data.itens) ? data.itens : []) : (Array.isArray(orcamentoOriginal.itens) ? orcamentoOriginal.itens : []);
+
+      const itensMudaram = data.itens !== undefined && 
+        JSON.stringify(data.itens) !== JSON.stringify(orcamentoOriginal.itens);
+      const precisaRecalcularBloqueios = 
+        (statusFinal === 'aprovado' && statusOriginal !== 'aprovado') ||
+        (statusFinal === 'aprovado' && statusOriginal === 'aprovado' && itensMudaram);
+
+      if (precisaRecalcularBloqueios) {
+        const produtosParaTravar = [...new Set(itensAtualizados.map((i: any) => i.produto_id))];
+        await tx
+          .select()
+          .from(produtos)
+          .where(inArray(produtos.id, produtosParaTravar))
+          .for('update');
+
+        for (const item of itensAtualizados) {
+          const result = await tx
+            .select({
+              estoque: produtos.quantidade,
+              total_bloqueado: sql<number>`COALESCE(SUM(
+                CASE WHEN ${bloqueiosEstoque.orcamento_id} != ${id} 
+                THEN ${bloqueiosEstoque.quantidade_bloqueada} 
+                ELSE 0 END
+              ), 0)`,
+            })
+            .from(produtos)
+            .leftJoin(bloqueiosEstoque, 
+              and(
+                eq(bloqueiosEstoque.produto_id, produtos.id),
+                eq(bloqueiosEstoque.user_id, orcamentoOriginal.user_id)
+              )
+            )
+            .where(
+              and(
+                eq(produtos.id, item.produto_id),
+                eq(produtos.user_id, orcamentoOriginal.user_id)
+              )
+            )
+            .groupBy(produtos.id, produtos.quantidade);
+
+          if (!result[0]) {
+            throw new Error(`Produto ${item.produto_id} não encontrado`);
+          }
+
+          const quantidadeDisponivel = result[0].estoque - Number(result[0].total_bloqueado);
+          if (quantidadeDisponivel < item.quantidade) {
+            const [produto] = await tx.select().from(produtos).where(eq(produtos.id, item.produto_id));
+            throw new Error(`Estoque insuficiente para ${produto?.nome}. Disponível: ${quantidadeDisponivel}, Solicitado: ${item.quantidade}`);
+          }
+        }
+      }
+
+      const [orcamento] = await tx
+        .update(orcamentos)
+        .set({
+          validade: data.validade !== undefined ? data.validade : orcamentoOriginal.validade,
+          cliente_id: data.cliente_id !== undefined ? data.cliente_id : orcamentoOriginal.cliente_id,
+          cliente_nome: data.cliente_nome !== undefined ? data.cliente_nome : orcamentoOriginal.cliente_nome,
+          cliente_email: data.cliente_email !== undefined ? data.cliente_email : orcamentoOriginal.cliente_email,
+          cliente_telefone: data.cliente_telefone !== undefined ? data.cliente_telefone : orcamentoOriginal.cliente_telefone,
+          cliente_cpf_cnpj: data.cliente_cpf_cnpj !== undefined ? data.cliente_cpf_cnpj : orcamentoOriginal.cliente_cpf_cnpj,
+          cliente_endereco: data.cliente_endereco !== undefined ? data.cliente_endereco : orcamentoOriginal.cliente_endereco,
+          status: data.status !== undefined ? data.status : orcamentoOriginal.status,
+          itens: data.itens !== undefined ? data.itens : orcamentoOriginal.itens,
+          subtotal: data.subtotal !== undefined ? data.subtotal : orcamentoOriginal.subtotal,
+          desconto: data.desconto !== undefined ? data.desconto : orcamentoOriginal.desconto,
+          valor_total: data.valor_total !== undefined ? data.valor_total : orcamentoOriginal.valor_total,
+          observacoes: data.observacoes !== undefined ? data.observacoes : orcamentoOriginal.observacoes,
+          condicoes_pagamento: data.condicoes_pagamento !== undefined ? data.condicoes_pagamento : orcamentoOriginal.condicoes_pagamento,
+          prazo_entrega: data.prazo_entrega !== undefined ? data.prazo_entrega : orcamentoOriginal.prazo_entrega,
+          data_atualizacao: new Date().toISOString(),
+        })
+        .where(eq(orcamentos.id, id))
+        .returning();
+
+      if (precisaRecalcularBloqueios) {
+        await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
+        
+        const dataBloqueio = new Date().toISOString();
+        for (const item of itensAtualizados) {
+          await tx.insert(bloqueiosEstoque).values({
+            produto_id: item.produto_id,
+            orcamento_id: id,
+            user_id: orcamentoOriginal.user_id,
+            quantidade_bloqueada: item.quantidade,
+            data_bloqueio: dataBloqueio,
+          });
+        }
+      } else if (statusOriginal === 'aprovado' && statusFinal !== 'aprovado') {
+        await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
+      }
+
+      return orcamento;
+    });
   }
 
   async deleteOrcamento(id: number): Promise<void> {
+    await this.removerBloqueiosOrcamento(id);
     await this.db
       .delete(orcamentos)
       .where(eq(orcamentos.id, id));
+  }
+
+  async criarBloqueioEstoque(orcamentoId: number, userId: string, itens: any[]): Promise<void> {
+    const dataBloqueio = new Date().toISOString();
+    
+    for (const item of itens) {
+      await this.db
+        .insert(bloqueiosEstoque)
+        .values({
+          produto_id: item.produto_id,
+          orcamento_id: orcamentoId,
+          user_id: userId,
+          quantidade_bloqueada: item.quantidade,
+          data_bloqueio: dataBloqueio,
+        });
+    }
+  }
+
+  async removerBloqueiosOrcamento(orcamentoId: number): Promise<void> {
+    await this.db
+      .delete(bloqueiosEstoque)
+      .where(eq(bloqueiosEstoque.orcamento_id, orcamentoId));
+  }
+
+  async getBloqueiosPorProduto(produtoId: number, userId: string): Promise<BloqueioEstoque[]> {
+    const bloqueios = await this.db
+      .select()
+      .from(bloqueiosEstoque)
+      .where(
+        and(
+          eq(bloqueiosEstoque.produto_id, produtoId),
+          eq(bloqueiosEstoque.user_id, userId)
+        )
+      );
+    return bloqueios;
+  }
+
+  async getQuantidadeBloqueadaPorProduto(produtoId: number, userId: string): Promise<number> {
+    const result = await this.db
+      .select({
+        total: sql<number>`COALESCE(SUM(${bloqueiosEstoque.quantidade_bloqueada}), 0)`,
+      })
+      .from(bloqueiosEstoque)
+      .where(
+        and(
+          eq(bloqueiosEstoque.produto_id, produtoId),
+          eq(bloqueiosEstoque.user_id, userId)
+        )
+      );
+    
+    return Number(result[0]?.total || 0);
+  }
+
+  async getQuantidadeDisponivelProduto(produtoId: number, userId: string): Promise<number> {
+    const produto = await this.getProduto(produtoId);
+    if (!produto) return 0;
+    
+    const quantidadeBloqueada = await this.getQuantidadeBloqueadaPorProduto(produtoId, userId);
+    return Math.max(0, produto.quantidade - quantidadeBloqueada);
   }
 
   async converterOrcamentoEmVenda(id: number, userId: string, vendedorNome?: string, formaPagamento?: string): Promise<Venda> {
@@ -1043,6 +1190,8 @@ export class PostgresStorage implements IStorage {
         venda_id: venda.id,
       })
       .where(eq(orcamentos.id, id));
+
+    await this.removerBloqueiosOrcamento(id);
 
     return venda;
   }

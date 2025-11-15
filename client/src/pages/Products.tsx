@@ -10,6 +10,22 @@ import { useState, useMemo, useCallback } from "react";
 
 import { apiRequest } from "@/lib/api";
 
+function ProductCardWithBloqueios({ product, onEdit, onDelete }: { product: any; onEdit: (id: number) => void; onDelete: (id: number) => void }) {
+  const { data: bloqueiosData } = useQuery({
+    queryKey: [`/api/produtos/${product.id}/bloqueios`],
+  });
+
+  return (
+    <ProductCard
+      {...product}
+      quantidadeBloqueada={bloqueiosData?.quantidade_bloqueada || 0}
+      bloqueios={bloqueiosData?.bloqueios || []}
+      onEdit={onEdit}
+      onDelete={onDelete}
+    />
+  );
+}
+
 
 export default function Products() {
   const [, setLocation] = useLocation();
@@ -123,9 +139,9 @@ export default function Products() {
             </p>
           ) : (
             (searchTerm ? filteredProducts : products).map((product: any) => (
-              <ProductCard
+              <ProductCardWithBloqueios
                 key={product.id}
-                {...product}
+                product={product}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />

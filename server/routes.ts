@@ -1835,6 +1835,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/produtos/:id/bloqueios", getUserId, async (req, res) => {
+    try {
+      const effectiveUserId = req.headers["effective-user-id"] as string;
+      const produtoId = parseInt(req.params.id);
+
+      const bloqueios = await storage.getBloqueiosPorProduto(produtoId, effectiveUserId);
+      const quantidadeBloqueada = await storage.getQuantidadeBloqueadaPorProduto(produtoId, effectiveUserId);
+
+      const bloqueiosComOrcamento = await Promise.all(
+        bloqueios.map(async (bloqueio) => {
+          const orcamento = await storage.getOrcamento(bloqueio.orcamento_id);
+          return {
+            ...bloqueio,
+            numero_orcamento: orcamento?.numero || `#${bloqueio.orcamento_id}`,
+          };
+        })
+      );
+
+      res.json({
+        quantidade_bloqueada: quantidadeBloqueada,
+        bloqueios: bloqueiosComOrcamento,
+      });
+    } catch (error) {
+      console.error("Erro ao buscar bloqueios:", error);
+      res.status(500).json({ error: "Erro ao buscar bloqueios" });
+    }
+  });
+
   app.post("/api/vendas", getUserId, async (req, res) => {
     try {
       const userId = req.headers["effective-user-id"] as string;

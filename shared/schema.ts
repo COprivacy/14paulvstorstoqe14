@@ -39,6 +39,15 @@ export const produtos = pgTable("produtos", {
   vencimento: text("vencimento"),
 });
 
+export const bloqueiosEstoque = pgTable("bloqueios_estoque", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  produto_id: integer("produto_id").notNull(),
+  orcamento_id: integer("orcamento_id").notNull(),
+  user_id: text("user_id").notNull(),
+  quantidade_bloqueada: integer("quantidade_bloqueada").notNull(),
+  data_bloqueio: text("data_bloqueio").notNull(),
+});
+
 export const vendas = pgTable("vendas", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   user_id: text("user_id").notNull(),
@@ -151,6 +160,15 @@ export const insertVendaSchema = createInsertSchema(vendas).omit({
 }).extend({
   quantidade_vendida: z.coerce.number().int().positive(),
   valor_total: z.coerce.number().positive(),
+});
+
+export const insertBloqueioEstoqueSchema = createInsertSchema(bloqueiosEstoque).omit({
+  id: true,
+  data_bloqueio: true,
+}).extend({
+  produto_id: z.number().int().positive(),
+  orcamento_id: z.number().int().positive(),
+  quantidade_bloqueada: z.number().int().positive(),
 });
 
 export const insertFornecedorSchema = createInsertSchema(fornecedores).omit({
@@ -592,6 +610,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertProduto = z.infer<typeof insertProdutoSchema>;
 export type Produto = typeof produtos.$inferSelect;
+export type InsertBloqueioEstoque = z.infer<typeof insertBloqueioEstoqueSchema>;
+export type BloqueioEstoque = typeof bloqueiosEstoque.$inferSelect;
 export type InsertVenda = z.infer<typeof insertVendaSchema>;
 export type Venda = typeof vendas.$inferSelect;
 export type InsertFornecedor = z.infer<typeof insertFornecedorSchema>;
