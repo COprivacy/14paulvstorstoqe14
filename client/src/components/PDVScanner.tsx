@@ -55,6 +55,7 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
   const [isProcessing, setIsProcessing] = useState(false);
   const [showBalancaDialog, setShowBalancaDialog] = useState(false);
   const [pesoBalanca, setPesoBalanca] = useState("");
+  const [quantidadeMultiplicador, setQuantidadeMultiplicador] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
@@ -159,7 +160,7 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
       playBeep(true);
 
       const existingItemIndex = cart.findIndex(item => item.codigo_barras === codigoProduto);
-      const quantidadeAdicionar = isBalancaCode ? (pesoGramas / 1000) : 1;
+      const quantidadeAdicionar = isBalancaCode ? (pesoGramas / 1000) : quantidadeMultiplicador;
 
       if (existingItemIndex > -1) {
         const updatedCart = [...cart];
@@ -197,6 +198,7 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
       }
 
       setBarcode("");
+      setQuantidadeMultiplicador(1); // Resetar multiplicador
       setTimeout(() => inputRef.current?.focus(), 100);
     } catch (error) {
       console.error("Erro ao processar código de barras:", error);
@@ -310,6 +312,7 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
     setClienteId("none");
     setDescontoPercentual(0);
     setFormaPagamento("dinheiro");
+    setQuantidadeMultiplicador(1);
     setShowConfirmDialog(false);
     setIsProcessing(false);
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -344,6 +347,35 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
         <Card className="flex-1 shadow-md">
           <CardContent className="p-3">
             <div className="flex gap-2">
+              <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 border">
+                <span className="text-sm font-medium whitespace-nowrap">Qtd:</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setQuantidadeMultiplicador(Math.max(1, quantidadeMultiplicador - 1))}
+                  disabled={isProcessing || quantidadeMultiplicador <= 1}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Input
+                  type="number"
+                  min="1"
+                  value={quantidadeMultiplicador}
+                  onChange={(e) => setQuantidadeMultiplicador(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="h-8 w-16 text-center font-bold"
+                  disabled={isProcessing}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setQuantidadeMultiplicador(quantidadeMultiplicador + 1)}
+                  disabled={isProcessing}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
               <div className="flex-1">
                 <Input
                   ref={inputRef}
@@ -368,7 +400,7 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-2">
-              💡 Use um leitor de código de barras USB ou digite o código manualmente
+              💡 Use um leitor de código de barras USB ou digite manualmente. Ajuste a quantidade antes de escanear!
             </p>
           </CardContent>
         </Card>
