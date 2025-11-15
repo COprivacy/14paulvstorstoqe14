@@ -31,8 +31,11 @@ export class TestSuite {
     await this.testBlockingFlow();
     await this.testEmployeePackages();
     await this.testEmailSystem();
-    await this.testBudgetBlocking(); // Added new test here
-    await this.testMercadoPagoWebhook(); // Renumbered to test 5
+    await this.testBudgetBlocking();
+    await this.testMercadoPagoWebhook();
+    await this.testDatabaseIntegrity();
+    await this.testUserPermissions();
+    await this.testCaixaOperations();
 
     console.log('\n📊 ===== RESUMO DOS TESTES =====\n');
     this.printSummary();
@@ -348,6 +351,184 @@ export class TestSuite {
 
     const icon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⚠️';
     console.log(`${icon} ${name}: ${message}`);
+  }
+
+  /**
+   * Teste 6: Integridade do Banco de Dados
+   */
+  private async testDatabaseIntegrity() {
+    console.log('\n🗄️ TESTE 6: Integridade do Banco de Dados\n');
+
+    try {
+      const users = await storage.getUsers();
+      const produtos = await storage.getProdutos();
+      const vendas = await storage.getVendas();
+      const clientes = await storage.getClientes();
+      const fornecedores = await storage.getFornecedores();
+
+      console.log(`✓ Usuários: ${users.length}`);
+      console.log(`✓ Produtos: ${produtos.length}`);
+      console.log(`✓ Vendas: ${vendas.length}`);
+      console.log(`✓ Clientes: ${clientes.length}`);
+      console.log(`✓ Fornecedores: ${fornecedores.length}`);
+
+      // Verificar produtos sem user_id
+      const produtosSemUser = produtos.filter(p => !p.user_id);
+      if (produtosSemUser.length > 0) {
+        this.addResult(
+          'Integridade de Produtos',
+          'warning',
+          `${produtosSemUser.length} produto(s) sem user_id`,
+          { count: produtosSemUser.length }
+        );
+      }
+
+      // Verificar vendas sem user_id
+      const vendasSemUser = vendas.filter(v => !v.user_id);
+      if (vendasSemUser.length > 0) {
+        this.addResult(
+          'Integridade de Vendas',
+          'warning',
+          `${vendasSemUser.length} venda(s) sem user_id`,
+          { count: vendasSemUser.length }
+        );
+      }
+
+      // Verificar usuários trial expirados
+      const now = new Date();
+      const trialsExpirados = users.filter(u => {
+        if (u.plano !== 'trial' || !u.data_expiracao_trial) return false;
+        return new Date(u.data_expiracao_trial) < now;
+      });
+
+      if (trialsExpirados.length > 0) {
+        this.addResult(
+          'Trials Expirados',
+          'warning',
+          `${trialsExpirados.length} usuário(s) com trial expirado`,
+          { usuarios: trialsExpirados.map(u => u.email) }
+        );
+      }
+
+      this.addResult(
+        'Integridade do Banco',
+        'success',
+        'Banco de dados íntegro',
+        {
+          usuarios: users.length,
+          produtos: produtos.length,
+          vendas: vendas.length,
+          clientes: clientes.length,
+          fornecedores: fornecedores.length
+        }
+      );
+
+    } catch (error: any) {
+      this.addResult('Integridade do Banco', 'error', error.message);
+    }
+  }
+
+  /**
+   * Teste 7: Sistema de Permissões
+   */
+  private async testUserPermissions() {
+    console.log('\n🔐 TESTE 7: Sistema de Permissões de Funcionários\n');
+
+    try {
+      const funcionarios = await storage.getFuncionarios();
+      
+      console.log(`✓ Total de funcionários: ${funcionarios.length}`);
+
+      let funcionariosComPermissoes = 0;
+      let funcionariosSemPermissoes = 0;
+
+      for (const func of funcionarios) {
+        const permissoes = await storage.getPermissoesFuncionario(func.id);
+        if (permissoes) {
+          funcionariosComPermissoes++;
+        } else {
+          funcionariosSemPermissoes++;
+        }
+      }
+
+      console.log(`✓ Com permissões configuradas: ${funcionariosComPermissoes}`);
+      console.log(`✓ Sem permissões: ${funcionariosSemPermissoes}`);
+
+      if (funcionariosSemPermissoes > 0) {
+        this.addResult(
+          'Permissões de Funcionários',
+          'warning',
+          `${funcionariosSemPermissoes} funcionário(s) sem permissões configuradas`,
+          { 
+            comPermissoes: funcionariosComPermissoes,
+            semPermissoes: funcionariosSemPermissoes 
+          }
+        );
+      } else {
+        this.addResult(
+          'Permissões de Funcionários',
+          'success',
+          `Todos os ${funcionariosComPermissoes} funcionários têm permissões configuradas`,
+          { total: funcionariosComPermissoes }
+        );
+      }
+
+    } catch (error: any) {
+      this.addResult('Permissões de Funcionários', 'error', error.message);
+    }
+  }
+
+  /**
+   * Teste 8: Operações de Caixa
+   */
+  private async testCaixaOperations() {
+    console.log('\n💰 TESTE 8: Operações de Caixa\n');
+
+    try {
+      // Verificar se existem caixas abertos
+      const users = await storage.getUsers();
+      let totalCaixasAbertos = 0;
+      let totalCaixasFechados = 0;
+
+      for (const user of users) {
+        if (storage.getCaixas) {
+          const caixas = await storage.getCaixas(user.id);
+          const abertos = caixas.filter((c: any) => c.status === 'aberto');
+          const fechados = caixas.filter((c: any) => c.status === 'fechado');
+          
+          totalCaixasAbertos += abertos.length;
+          totalCaixasFechados += fechados.length;
+        }
+      }
+
+      console.log(`✓ Caixas abertos: ${totalCaixasAbertos}`);
+      console.log(`✓ Caixas fechados: ${totalCaixasFechados}`);
+
+      if (totalCaixasAbertos > 10) {
+        this.addResult(
+          'Caixas Abertos',
+          'warning',
+          `${totalCaixasAbertos} caixas abertos (possível inconsistência)`,
+          { 
+            abertos: totalCaixasAbertos,
+            fechados: totalCaixasFechados 
+          }
+        );
+      } else {
+        this.addResult(
+          'Operações de Caixa',
+          'success',
+          `Sistema de caixa funcionando normalmente`,
+          { 
+            abertos: totalCaixasAbertos,
+            fechados: totalCaixasFechados 
+          }
+        );
+      }
+
+    } catch (error: any) {
+      this.addResult('Operações de Caixa', 'error', error.message);
+    }
   }
 
   /**

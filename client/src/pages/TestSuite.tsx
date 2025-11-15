@@ -249,6 +249,61 @@ export default function TestSuite() {
             </ul>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🗄️ Teste 6: Integridade do Banco
+            </CardTitle>
+            <CardDescription>
+              Verifica consistência dos dados no banco
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li>✓ Produtos sem user_id</li>
+              <li>✓ Vendas sem user_id</li>
+              <li>✓ Trials expirados</li>
+              <li>✓ Estatísticas gerais</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🔐 Teste 7: Permissões
+            </CardTitle>
+            <CardDescription>
+              Valida permissões de funcionários
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li>✓ Funcionários com permissões</li>
+              <li>✓ Funcionários sem permissões</li>
+              <li>✓ Consistência de configuração</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              💰 Teste 8: Operações de Caixa
+            </CardTitle>
+            <CardDescription>
+              Verifica status dos caixas no sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li>✓ Caixas abertos</li>
+              <li>✓ Caixas fechados</li>
+              <li>✓ Detecção de inconsistências</li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Resultados Detalhados */}
