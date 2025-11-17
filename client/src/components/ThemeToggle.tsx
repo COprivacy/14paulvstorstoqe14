@@ -29,7 +29,7 @@ export function ThemeToggle() {
           Noturno
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("system")}>
-          Sistema
+          Sistema (Gradiente)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

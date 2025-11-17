@@ -409,6 +409,80 @@
     background: hsl(var(--primary) / 0.8);
   }
 
+  /* Tema Sistema - Gradiente Moderno (estilo Planos) */
+  .system-gradient {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    
+    --border: 217 33% 20%;
+    
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --card-border: 217 33% 17%;
+    
+    --sidebar: 222 47% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 15%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 262 83% 15%;
+    --sidebar-accent-foreground: 262 83% 68%;
+    --sidebar-ring: 262 83% 58%;
+    
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --popover-border: 217 33% 20%;
+    
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 262 83% 15%;
+    --accent-foreground: 262 83% 68%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --input: 217 33% 20%;
+    --ring: 262 83% 58%;
+    
+    --chart-1: 262 83% 58%;
+    --chart-2: 291 64% 42%;
+    --chart-3: 338 83% 58%;
+    --chart-4: 262 83% 70%;
+    --chart-5: 291 64% 55%;
+  }
+
+  /* Background gradiente para tema Sistema */
+  .system-gradient body,
+  .system-gradient {
+    background: linear-gradient(to bottom right, 
+      rgb(15, 23, 42), 
+      rgb(30, 41, 59), 
+      rgb(88, 28, 135)
+    );
+    background-attachment: fixed;
+  }
+
+  /* Cards com efeito glassmorphism no tema Sistema */
+  .system-gradient .glass-effect {
+    backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+  }
+
+  /* Ajustes para sidebar no tema Sistema */
+  .system-gradient [data-sidebar] {
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(139, 92, 246, 0.2);
+  }
+
   /* Modo Compacto */
   body.compact-mode {
     --spacing: 0.125rem;
