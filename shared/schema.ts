@@ -383,6 +383,7 @@ export const insertCaixaSchema = createInsertSchema(caixas).omit({
   id: true,
 }).extend({
   saldo_inicial: z.coerce.number().min(0),
+  status: z.enum(["aberto", "fechado", "arquivado"]).default("aberto").optional(),
 });
 
 export const insertMovimentacaoCaixaSchema = createInsertSchema(movimentacoesCaixa).omit({

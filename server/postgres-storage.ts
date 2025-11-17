@@ -1,6 +1,6 @@
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { Pool, neonConfig } from '@neondatabase/serverless';
-import { eq, and, gte, lte, desc, sql, inArray } from 'drizzle-orm';
+import { eq, and, or, gte, lte, lt, desc, sql, inArray, isNull } from 'drizzle-orm';
 import {
   users,
   produtos,
@@ -768,6 +768,44 @@ export class PostgresStorage implements IStorage {
       .where(eq(caixas.id, id))
       .returning();
     return result[0];
+  }
+
+  async updateCaixa(id: number, updates: Partial<Caixa>): Promise<Caixa | undefined> {
+    const result = await this.db.update(caixas).set(updates).where(eq(caixas.id, id)).returning();
+    return result[0];
+  }
+
+  async arquivarCaixasAntigos(dataLimite: string): Promise<number> {
+    const result = await this.db.update(caixas)
+      .set({ status: 'arquivado' })
+      .where(and(
+        eq(caixas.status, 'fechado'),
+        or(
+          lt(caixas.data_fechamento, dataLimite),
+          and(
+            isNull(caixas.data_fechamento),
+            lt(caixas.data_abertura, dataLimite)
+          )
+        )
+      ))
+      .returning();
+    
+    // Log detalhado dos caixas arquivados
+    if (result.length > 0) {
+      const userCounts = result.reduce((acc: Record<string, number>, caixa: any) => {
+        acc[caixa.user_id] = (acc[caixa.user_id] || 0) + 1;
+        return acc;
+      }, {});
+      
+      console.log('[ARQUIVAMENTO] Caixas arquivados:', {
+        total: result.length,
+        porUsuario: userCounts,
+        dataLimite,
+        ids: result.map((c: any) => c.id).slice(0, 10)
+      });
+    }
+    
+    return result.length;
   }
 
   async atualizarTotaisCaixa(id: number, campo: 'total_vendas' | 'total_suprimentos' | 'total_retiradas', valor: number): Promise<Caixa | undefined> {

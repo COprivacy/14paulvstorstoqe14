@@ -256,10 +256,8 @@ app.use((req, res, next) => {
   autoHealingService.startAutoHealing(5);
 
   // Iniciar limpeza automática agendada
-  if (process.env.NODE_ENV === 'production') {
-    autoCleanupService.startScheduledCleanup();
-    logger.info('Serviço de limpeza automática iniciado', 'STARTUP');
-  }
+  autoCleanupService.startScheduledCleanup();
+  logger.info('Serviço de limpeza automática iniciado', 'STARTUP');
 
   logger.info('Servidor iniciado', 'STARTUP', { port, env: app.get("env") });
 

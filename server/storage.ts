@@ -121,6 +121,8 @@ export interface IStorage {
   getCaixa?(id: number): Promise<any | undefined>;
   abrirCaixa?(caixa: any): Promise<any>;
   fecharCaixa?(id: number, dados: any): Promise<any | undefined>;
+  updateCaixa?(id: number, updates: any): Promise<any | undefined>;
+  arquivarCaixasAntigos?(dataLimite: string): Promise<number>;
   atualizarTotaisCaixa?(id: number, campo: 'total_vendas' | 'total_suprimentos' | 'total_retiradas', valor: number): Promise<any | undefined>;
   getMovimentacoesCaixa?(caixaId: number): Promise<any[]>;
   createMovimentacaoCaixa?(movimentacao: any): Promise<any>;

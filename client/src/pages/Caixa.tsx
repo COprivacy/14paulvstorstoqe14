@@ -113,15 +113,19 @@ export default function Caixa() {
     queryFn: fetchCaixaAberto,
     refetchInterval: 3000, // Atualiza a cada 3 segundos
     retry: 3,
-    onError: (error: any) => {
-      console.error("Erro ao buscar caixa aberto:", error);
+  });
+
+  // Tratamento de erro usando useEffect
+  useEffect(() => {
+    if (errorCaixa) {
+      console.error("Erro ao buscar caixa aberto:", errorCaixa);
       toast({
         title: "Erro ao carregar caixa",
-        description: error.message || "Tente recarregar a página",
+        description: (errorCaixa as Error).message || "Tente recarregar a página",
         variant: "destructive",
       });
-    },
-  });
+    }
+  }, [errorCaixa, toast]);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user.id || "";

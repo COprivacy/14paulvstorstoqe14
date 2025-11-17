@@ -16,10 +16,10 @@ const DEFAULT_CONFIG: CleanupConfig = {
   devolucoes_dias: 90,
   orcamentos_dias: 180,
   logs_dias: 90,
-  caixas_dias: 365,
+  caixas_dias: 365, // Arquiva caixas fechados após 365 dias
   contas_pagar_dias: 365,
   contas_receber_dias: 365,
-  relatorios_dias: 365,
+  relatorios_dias: null, // Aguardando implementação
 };
 
 export class AutoCleanupService {
@@ -188,25 +188,21 @@ export class AutoCleanupService {
 
   private async cleanupCaixas(diasAntigos: number): Promise<number> {
     try {
+      if (!storage.arquivarCaixasAntigos) {
+        logger.warn('Método de arquivamento de caixas não implementado', 'AUTO_CLEANUP');
+        return 0;
+      }
+
       const dataLimite = new Date();
       dataLimite.setDate(dataLimite.getDate() - diasAntigos);
 
-      const todosCaixas = await storage.getCaixas();
-      const caixasAntigos = todosCaixas.filter(c => 
-        new Date(c.data_fechamento || c.data_abertura) < dataLimite &&
-        c.status === "fechado"
-      );
-
-      let archivedCount = 0;
-      for (const caixa of caixasAntigos) {
-        // ARQUIVAR ao invés de deletar - mantém para relatórios
-        await storage.updateCaixa(caixa.id, { 
-          status: 'arquivado' as any // Marca como arquivado
-        });
-        archivedCount++;
+      const count = await storage.arquivarCaixasAntigos(dataLimite.toISOString());
+      
+      if (count > 0) {
+        logger.info(`${count} caixas arquivados com sucesso`, 'AUTO_CLEANUP');
       }
 
-      return archivedCount;
+      return count;
     } catch (error) {
       logger.error('Erro ao arquivar caixas', 'AUTO_CLEANUP', { error });
       return 0;
@@ -254,7 +250,7 @@ export class AutoCleanupService {
       let archivedCount = 0;
       for (const conta of contasAntigas) {
         // ARQUIVAR ao invés de deletar - mantém para relatórios
-        await storage.updateContasReceber(conta.id, { 
+        await storage.updateContaReceber(conta.id, { 
           status: 'arquivado' as any // Marca como arquivado
         });
         archivedCount++;
