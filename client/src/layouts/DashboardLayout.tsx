@@ -135,34 +135,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <main className="flex-1 overflow-auto p-6 bg-background">
             {children}
 
-            {/* Componente de Card de Upgrade (exemplo de onde os preços dinâmicos podem ser usados) */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {planosMock.map((plano, index) => (
-                <Card key={index} className={`${plano.destaque ? "border-2 border-primary" : ""}`}>
-                  <CardHeader>
-                    <CardTitle>{plano.nome}</CardTitle>
-                    <CardDescription>{plano.periodo}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center justify-center">
-                    <p className="text-4xl font-bold text-primary">
-                      {plano.preco}
-                    </p>
-                    {plano.valorTotal && (
-                      <span className="text-sm text-muted-foreground mt-1">{plano.valorTotal}</span>
-                    )}
-                    {plano.economia && (
-                      <Badge variant="outline" className="mt-4 px-3 py-1 text-green-600">
-                        {plano.economia}
-                      </Badge>
-                    )}
-                    <Button className="mt-6 w-full" onClick={() => alert(`Selecionando ${plano.nome}`)}>
-                      Selecionar Plano
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
             {/* Botão do WhatsApp - não aparece em Caixa e PDV */}
             <WhatsAppButton
               phoneNumber={localStorage.getItem('whatsapp_number') || "+5598984267488"}
