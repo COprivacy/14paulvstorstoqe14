@@ -863,25 +863,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Buscar preços dos planos
   app.get("/api/plan-prices", async (req, res) => {
     try {
-      const precosConfig = await storage.getSystemConfig?.('planos_precos');
-      
-      if (precosConfig && precosConfig.valor) {
-        try {
-          const precos = JSON.parse(precosConfig.valor);
-          return res.json(precos);
-        } catch {
-          // Se falhar ao parsear, retornar preços padrão
+      // Definir preços padrão
+      const DEFAULT_PRICES = {
+        premium_mensal: 79.99,
+        premium_anual: 767.04,
+      };
+
+      // Tentar buscar preços customizados
+      if (storage.getSystemConfig) {
+        const precosConfig = await storage.getSystemConfig('planos_precos');
+        
+        if (precosConfig && precosConfig.valor) {
+          try {
+            const precos = JSON.parse(precosConfig.valor);
+            
+            // Validar que os preços são números válidos
+            if (typeof precos.premium_mensal === 'number' && 
+                typeof precos.premium_anual === 'number' &&
+                precos.premium_mensal > 0 && 
+                precos.premium_anual > 0) {
+              return res.json(precos);
+            }
+          } catch (parseError) {
+            logger.warn('[API] Erro ao parsear preços salvos, usando padrão', 'PLAN_PRICES');
+          }
         }
       }
 
       // Retornar preços padrão
+      res.json(DEFAULT_PRICES);
+    } catch (error: any) {
+      logger.error('[API] Erro ao buscar preços:', error);
+      // Sempre retornar JSON, mesmo em caso de erro
       res.json({
         premium_mensal: 79.99,
         premium_anual: 767.04,
       });
-    } catch (error: any) {
-      logger.error('[API] Erro ao buscar preços:', error);
-      res.status(500).json({ error: error.message });
     }
   });
 
@@ -891,28 +908,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.headers["x-user-id"] as string;
       const { premium_mensal, premium_anual } = req.body;
 
+      // Validar entrada
       if (!premium_mensal || !premium_anual) {
         return res.status(400).json({ error: "Preços são obrigatórios" });
       }
 
+      const mensal = parseFloat(premium_mensal);
+      const anual = parseFloat(premium_anual);
+
+      // Validar que são números válidos e positivos
+      if (isNaN(mensal) || isNaN(anual) || mensal <= 0 || anual <= 0) {
+        return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
+      }
+
       const precos = {
-        premium_mensal: parseFloat(premium_mensal),
-        premium_anual: parseFloat(premium_anual),
+        premium_mensal: mensal,
+        premium_anual: anual,
       };
 
-      await storage.upsertSystemConfig?.('planos_precos', JSON.stringify(precos));
+      // Salvar no banco
+      if (storage.upsertSystemConfig) {
+        await storage.upsertSystemConfig('planos_precos', JSON.stringify(precos));
+      } else {
+        logger.error('[API] Método upsertSystemConfig não disponível', 'PLAN_PRICES');
+        return res.status(500).json({ error: "Erro ao salvar configuração" });
+      }
 
-      await storage.logAdminAction?.(
-        userId,
-        "PRECOS_ATUALIZADOS",
-        `Preços atualizados - Mensal: R$ ${precos.premium_mensal.toFixed(2)}, Anual: R$ ${precos.premium_anual.toFixed(2)}`,
-        req
-      );
+      // Log da ação
+      if (storage.logAdminAction) {
+        await storage.logAdminAction(
+          userId,
+          "PRECOS_ATUALIZADOS",
+          `Preços atualizados - Mensal: R$ ${precos.premium_mensal.toFixed(2)}, Anual: R$ ${precos.premium_anual.toFixed(2)}`,
+          req
+        );
+      }
+
+      logger.info('[API] Preços atualizados com sucesso', 'PLAN_PRICES', precos);
 
       res.json({ success: true, precos });
     } catch (error: any) {
       logger.error('[API] Erro ao atualizar preços:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message || "Erro ao atualizar preços" });
     }
   });
 

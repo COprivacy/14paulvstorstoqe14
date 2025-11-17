@@ -887,10 +887,22 @@ function PromocoesTab() {
         const response = await fetch('/api/plan-prices');
         if (response.ok) {
           const data = await response.json();
-          setPrecos(data);
+          // Validar que os dados são válidos
+          if (data && typeof data.premium_mensal === 'number' && typeof data.premium_anual === 'number') {
+            setPrecos(data);
+          } else {
+            console.error('Dados de preços inválidos:', data);
+            // Usar preços padrão
+            setPrecos({ premium_mensal: 79.99, premium_anual: 767.04 });
+          }
+        } else {
+          console.error('Erro ao carregar preços - Status:', response.status);
+          setPrecos({ premium_mensal: 79.99, premium_anual: 767.04 });
         }
       } catch (error) {
         console.error('Erro ao carregar preços:', error);
+        // Usar preços padrão em caso de erro
+        setPrecos({ premium_mensal: 79.99, premium_anual: 767.04 });
       }
     };
     carregarPrecos();
