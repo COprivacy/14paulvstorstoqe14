@@ -39,16 +39,22 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement;
+    const body = window.document.body;
 
+    // Remove todas as classes de tema
     root.classList.remove("light", "dark", "system-gradient");
+    body.classList.remove("light", "dark", "system-gradient");
 
     if (theme === "system") {
       // Aplica tema personalizado com gradiente moderno
       root.classList.add("system-gradient");
+      body.classList.add("system-gradient");
       return;
     }
 
+    // Aplica tema light ou dark
     root.classList.add(theme);
+    body.classList.add(theme);
   }, [theme]);
 
   const value = {
