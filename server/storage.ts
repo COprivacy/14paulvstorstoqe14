@@ -147,6 +147,17 @@ export interface IStorage {
   updateOrcamento?(id: number, updates: Partial<Orcamento>): Promise<Orcamento | undefined>;
   deleteOrcamento?(id: number): Promise<boolean>;
 
+
+  // Métodos de Cupons
+  getCupons?(): Promise<any[]>;
+  getCupom?(id: number): Promise<any | undefined>;
+  createCupom?(data: any): Promise<any>;
+  updateCupom?(id: number, updates: any): Promise<any | undefined>;
+  deleteCupom?(id: number): Promise<boolean>;
+  validarCupom?(codigo: string, plano: string, userId: string): Promise<{ valido: boolean; cupom?: any; erro?: string }>;
+  registrarUsoCupom?(data: any): Promise<void>;
+  getUsoCupons?(cupomId: number): Promise<any[]>;
+
   // ============================================
   // MÉTODOS PARA GESTÃO DE CLIENTE 360°
   // ============================================

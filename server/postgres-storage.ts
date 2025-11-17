@@ -138,7 +138,7 @@ export class PostgresStorage implements IStorage {
             codigo TEXT NOT NULL UNIQUE,
             tipo TEXT NOT NULL CHECK (tipo IN ('percentual', 'valor_fixo')),
             valor REAL NOT NULL CHECK (valor > 0),
-            planos_aplicaveis JSONB,
+            planos_aplicaveis JSONB DEFAULT '[]'::jsonb,
             data_inicio TEXT NOT NULL,
             data_expiracao TEXT NOT NULL,
             quantidade_maxima INTEGER,
@@ -192,6 +192,184 @@ export class PostgresStorage implements IStorage {
       });
       // Não lançar erro - apenas logar. O sistema pode funcionar sem cupons.
       console.warn('⚠️ Sistema iniciará sem suporte a cupons');
+    }
+  }
+
+  async getCupons(): Promise<Cupom[]> {
+    try {
+      const results = await this.db.select().from(cupons).orderBy(desc(cupons.id));
+      return results.map(cupom => ({
+        ...cupom,
+        planos_aplicaveis: Array.isArray(cupom.planos_aplicaveis) 
+          ? cupom.planos_aplicaveis 
+          : (cupom.planos_aplicaveis ? JSON.parse(cupom.planos_aplicaveis as any) : [])
+      }));
+    } catch (error: any) {
+      logger.error('[DB] Erro ao buscar cupons:', { error: error.message });
+      return [];
+    }
+  }
+
+  async getCupom(id: number): Promise<Cupom | undefined> {
+    try {
+      const [cupom] = await this.db.select().from(cupons).where(eq(cupons.id, id)).limit(1);
+      if (!cupom) return undefined;
+      
+      return {
+        ...cupom,
+        planos_aplicaveis: Array.isArray(cupom.planos_aplicaveis) 
+          ? cupom.planos_aplicaveis 
+          : (cupom.planos_aplicaveis ? JSON.parse(cupom.planos_aplicaveis as any) : [])
+      };
+    } catch (error: any) {
+      logger.error('[DB] Erro ao buscar cupom:', { error: error.message });
+      return undefined;
+    }
+  }
+
+  async createCupom(data: InsertCupom): Promise<Cupom> {
+    try {
+      const [cupom] = await this.db.insert(cupons).values({
+        ...data,
+        planos_aplicaveis: Array.isArray(data.planos_aplicaveis) 
+          ? data.planos_aplicaveis as any
+          : [],
+        data_criacao: new Date().toISOString(),
+      }).returning();
+      
+      return {
+        ...cupom,
+        planos_aplicaveis: Array.isArray(cupom.planos_aplicaveis) 
+          ? cupom.planos_aplicaveis 
+          : []
+      };
+    } catch (error: any) {
+      logger.error('[DB] Erro ao criar cupom:', { error: error.message });
+      throw error;
+    }
+  }
+
+  async updateCupom(id: number, updates: Partial<Cupom>): Promise<Cupom | undefined> {
+    try {
+      const updateData = { ...updates, data_atualizacao: new Date().toISOString() };
+      if (updateData.planos_aplicaveis) {
+        updateData.planos_aplicaveis = Array.isArray(updateData.planos_aplicaveis)
+          ? updateData.planos_aplicaveis as any
+          : [];
+      }
+      
+      const [cupom] = await this.db
+        .update(cupons)
+        .set(updateData)
+        .where(eq(cupons.id, id))
+        .returning();
+      
+      if (!cupom) return undefined;
+      
+      return {
+        ...cupom,
+        planos_aplicaveis: Array.isArray(cupom.planos_aplicaveis) 
+          ? cupom.planos_aplicaveis 
+          : []
+      };
+    } catch (error: any) {
+      logger.error('[DB] Erro ao atualizar cupom:', { error: error.message });
+      throw error;
+    }
+  }
+
+  async deleteCupom(id: number): Promise<boolean> {
+    try {
+      const result = await this.db.delete(cupons).where(eq(cupons.id, id)).returning();
+      return result.length > 0;
+    } catch (error: any) {
+      logger.error('[DB] Erro ao deletar cupom:', { error: error.message });
+      return false;
+    }
+  }
+
+  async validarCupom(codigo: string, plano: string, userId: string): Promise<{ valido: boolean; cupom?: Cupom; erro?: string }> {
+    try {
+      const [cupom] = await this.db
+        .select()
+        .from(cupons)
+        .where(eq(cupons.codigo, codigo.toUpperCase()))
+        .limit(1);
+
+      if (!cupom) {
+        return { valido: false, erro: 'Cupom não encontrado' };
+      }
+
+      if (cupom.status !== 'ativo') {
+        return { valido: false, erro: 'Cupom inativo' };
+      }
+
+      const hoje = new Date();
+      const dataInicio = new Date(cupom.data_inicio);
+      const dataExpiracao = new Date(cupom.data_expiracao);
+
+      if (hoje < dataInicio) {
+        return { valido: false, erro: 'Cupom ainda não está disponível' };
+      }
+
+      if (hoje > dataExpiracao) {
+        return { valido: false, erro: 'Cupom expirado' };
+      }
+
+      const planosAplicaveis = Array.isArray(cupom.planos_aplicaveis) 
+        ? cupom.planos_aplicaveis 
+        : [];
+      
+      if (planosAplicaveis.length > 0 && !planosAplicaveis.includes(plano)) {
+        return { valido: false, erro: 'Cupom não aplicável para este plano' };
+      }
+
+      if (cupom.quantidade_maxima && cupom.quantidade_utilizada >= cupom.quantidade_maxima) {
+        return { valido: false, erro: 'Cupom esgotado' };
+      }
+
+      return { 
+        valido: true, 
+        cupom: {
+          ...cupom,
+          planos_aplicaveis: planosAplicaveis
+        }
+      };
+    } catch (error: any) {
+      logger.error('[DB] Erro ao validar cupom:', { error: error.message });
+      return { valido: false, erro: 'Erro ao validar cupom' };
+    }
+  }
+
+  async registrarUsoCupom(data: InsertUsoCupom): Promise<void> {
+    try {
+      await this.db.insert(usoCupons).values({
+        ...data,
+        data_uso: new Date().toISOString(),
+      });
+
+      await this.db
+        .update(cupons)
+        .set({ 
+          quantidade_utilizada: sql`${cupons.quantidade_utilizada} + 1` 
+        })
+        .where(eq(cupons.id, data.cupom_id));
+    } catch (error: any) {
+      logger.error('[DB] Erro ao registrar uso de cupom:', { error: error.message });
+      throw error;
+    }
+  }
+
+  async getUsoCupons(cupomId: number): Promise<UsoCupom[]> {
+    try {
+      return await this.db
+        .select()
+        .from(usoCupons)
+        .where(eq(usoCupons.cupom_id, cupomId))
+        .orderBy(desc(usoCupons.data_uso));
+    } catch (error: any) {
+      logger.error('[DB] Erro ao buscar uso de cupons:', { error: error.message });
+      return [];
     }
   }
 
