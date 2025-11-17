@@ -7,6 +7,48 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { useLocation, Link } from "wouter";
 import { RotateCcw, Truck, FileText } from "lucide-react"; // Added FileText import
 import { SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar"; // Added SidebarMenuItem and SidebarMenuButton imports
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from "@/hooks/use-user";
+import { logger } from "@/lib/securityUtils";
+import {
+  Home,
+  Package,
+  ShoppingCart,
+  BarChart3,
+  Users,
+  DollarSign,
+  Settings,
+  Menu,
+  X,
+  LogOut,
+  CreditCard,
+  TrendingUp,
+  Calendar,
+  Wallet,
+  FileBarChart,
+  Crown,
+  UserPlus,
+  UserCog,
+  BookOpen,
+  Undo2,
+  Receipt,
+  XCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { useState, useEffect, ReactNode } from "react";
+import { usePermissions } from "@/hooks/usePermissions";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { EmployeePurchaseDialog } from "@/components/EmployeePurchaseDialog";
+import { fetchPlanPricesFromServer } from "@/lib/planPrices";
+
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -41,6 +83,48 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const isPDVPage = location === "/pdv";
 
+  // Buscar preços dinâmicos do backend no Dashboard e CheckoutForm
+  const [precos, setPrecos] = useState({
+    premium_mensal: 79.99,
+    premium_anual: 767.04,
+  });
+
+  useEffect(() => {
+    const carregarPrecos = async () => {
+      try {
+        const precosAtualizados = await fetchPlanPricesFromServer();
+        setPrecos(precosAtualizados);
+      } catch (error) {
+        console.error('❌ Erro ao carregar preços:', error);
+      }
+    };
+    carregarPrecos();
+  }, []);
+
+  const valorMensal = precos.premium_mensal;
+  const valorAnual = precos.premium_anual;
+  const valorAnualMensal = valorAnual / 12;
+  const economia = (valorMensal * 12) - valorAnual;
+
+  // Dados mockados dos planos para o Card de Upgrade (Dashboard)
+  const planosMock = [
+    {
+      nome: "Plano Mensal",
+      preco: `R$ ${valorMensal.toFixed(2).replace('.', ',')}`,
+      periodo: "/mês",
+      tipo: "premium_mensal",
+    },
+    {
+      nome: "Plano Anual",
+      preco: `R$ ${valorAnualMensal.toFixed(2).replace('.', ',')}`,
+      periodo: "/mês",
+      valorTotal: `R$ ${valorAnual.toFixed(2).replace('.', ',')}/ano`,
+      economia: `Economize R$ ${economia.toFixed(2).replace('.', ',')}`,
+      tipo: "premium_anual",
+      destaque: true,
+    },
+  ];
+
   return (
     <SidebarProvider style={style as React.CSSProperties}>
       <TrialExpiredModal />
@@ -50,6 +134,34 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {!isPDVPage && <DashboardHeader userEmail={userEmail} onLogout={handleLogout} />}
           <main className="flex-1 overflow-auto p-6 bg-background">
             {children}
+
+            {/* Componente de Card de Upgrade (exemplo de onde os preços dinâmicos podem ser usados) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {planosMock.map((plano, index) => (
+                <Card key={index} className={`${plano.destaque ? "border-2 border-primary" : ""}`}>
+                  <CardHeader>
+                    <CardTitle>{plano.nome}</CardTitle>
+                    <CardDescription>{plano.periodo}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center justify-center">
+                    <p className="text-4xl font-bold text-primary">
+                      {plano.preco}
+                    </p>
+                    {plano.valorTotal && (
+                      <span className="text-sm text-muted-foreground mt-1">{plano.valorTotal}</span>
+                    )}
+                    {plano.economia && (
+                      <Badge variant="outline" className="mt-4 px-3 py-1 text-green-600">
+                        {plano.economia}
+                      </Badge>
+                    )}
+                    <Button className="mt-6 w-full" onClick={() => alert(`Selecionando ${plano.nome}`)}>
+                      Selecionar Plano
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
             {/* Botão do WhatsApp - não aparece em Caixa e PDV */}
             <WhatsAppButton

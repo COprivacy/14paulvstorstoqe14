@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getPlanPrices, formatPrice, calculateAnnualSavings } from "@/lib/planPrices";
+import { getPlanPrices, formatPrice, calculateAnnualSavings, fetchPlanPricesFromServer } from "@/lib/planPrices";
 import {
   Form,
   FormControl,
@@ -81,28 +81,24 @@ export function CheckoutForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validandoCupom, setValidandoCupom] = useState(false);
   const [cupomValidado, setCupomValidado] = useState<any>(null);
-  const [precos, setPrecos] = useState(getPlanPrices());
+  // Buscar preços dinâmicos do backend
+  const [precos, setPrecos] = useState({
+    premium_mensal: 79.99,
+    premium_anual: 767.04,
+  });
 
-  // Atualizar preços do servidor quando o diálogo abre
   useEffect(() => {
-    if (open) {
-      const carregarPrecos = async () => {
-        try {
-          const response = await fetch('/api/plan-prices');
-          if (response.ok) {
-            const data = await response.json();
-            setPrecos(data);
-          } else {
-            setPrecos(getPlanPrices());
-          }
-        } catch (error) {
-          console.error('Erro ao carregar preços:', error);
-          setPrecos(getPlanPrices());
-        }
-      };
-      carregarPrecos();
-    }
-  }, [open]);
+    const carregarPrecos = async () => {
+      try {
+        const precosAtualizados = await fetchPlanPricesFromServer();
+        console.log('💰 [CHECKOUT] Preços carregados:', precosAtualizados);
+        setPrecos(precosAtualizados);
+      } catch (error) {
+        console.error('❌ [CHECKOUT] Erro ao carregar preços:', error);
+      }
+    };
+    carregarPrecos();
+  }, []);
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -118,6 +114,9 @@ export function CheckoutForm({
   const formaPagamento = form.watch("formaPagamento");
   const cupomCodigo = form.watch("cupom");
   const selectedPlan = plano;
+
+  const valorBase = plano === "premium_mensal" ? precos.premium_mensal : precos.premium_anual;
+  const valorMensal = plano === "premium_anual" ? (precos.premium_anual / 12) : valorBase;
 
   const validarCupom = async () => {
     if (!cupomCodigo || cupomCodigo.trim() === "") {
@@ -276,7 +275,7 @@ export function CheckoutForm({
                 </div>
                 {plano === "premium_anual" && (
                   <p className="text-sm opacity-90 mt-2">
-                    💰 Valor total: R$ 815,88/ano • Economize R$ 143,88
+                    💰 Valor total: R$ {precos.premium_anual.toFixed(2)}/ano • Economize R$ {(precos.premium_mensal * 12 - precos.premium_anual).toFixed(2)}
                   </p>
                 )}
               </div>
