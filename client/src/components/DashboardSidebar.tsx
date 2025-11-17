@@ -34,9 +34,9 @@ const financeMenuItems: MenuItem[] = [
 ];
 
 const configMenuItems: MenuItem[] = [
-  { title: "Configurações", url: "/configuracoes", icon: Settings, permission: "configuracoes", adminOnly: true },
-  { title: "Config. Fiscal", url: "/config-fiscal", icon: FileText, permission: "config_fiscal", adminOnly: true },
   { title: "Planos", url: "/planos", icon: Crown, adminOnly: true },
+  { title: "Config. Fiscal", url: "/config-fiscal", icon: FileText, permission: "config_fiscal", adminOnly: true },
+  { title: "Configurações", url: "/configuracoes", icon: Settings, permission: "configuracoes", adminOnly: true },
 ];
 
 export default function DashboardSidebar() {
@@ -137,17 +137,6 @@ export default function DashboardSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               {configMenuItems.map(renderMenuItem)}
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
-                >
-                  <Link href="/ajuda">
-                    <HelpCircle className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                    <span className="flex-1 font-medium">Ajuda e Termos</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
               {isAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -161,6 +150,17 @@ export default function DashboardSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
+                >
+                  <Link href="/ajuda">
+                    <HelpCircle className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
+                    <span className="flex-1 font-medium">Ajuda e Termos</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               {user?.email === "pavisoft.suporte@gmail.com" && user?.is_admin === "true" && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
