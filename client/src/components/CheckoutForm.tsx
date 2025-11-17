@@ -83,10 +83,24 @@ export function CheckoutForm({
   const [cupomValidado, setCupomValidado] = useState<any>(null);
   const [precos, setPrecos] = useState(getPlanPrices());
 
-  // Atualizar preços quando o diálogo abre
+  // Atualizar preços do servidor quando o diálogo abre
   useEffect(() => {
     if (open) {
-      setPrecos(getPlanPrices());
+      const carregarPrecos = async () => {
+        try {
+          const response = await fetch('/api/plan-prices');
+          if (response.ok) {
+            const data = await response.json();
+            setPrecos(data);
+          } else {
+            setPrecos(getPlanPrices());
+          }
+        } catch (error) {
+          console.error('Erro ao carregar preços:', error);
+          setPrecos(getPlanPrices());
+        }
+      };
+      carregarPrecos();
     }
   }, [open]);
 

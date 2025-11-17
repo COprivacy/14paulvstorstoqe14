@@ -208,16 +208,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Log da ação de login
-      await logAdminAction(
+      await storage.logAdminAction?.(
         user.id,
-        "login",
-        "usuario",
-        null,
-        JSON.stringify({
-          email: user.email,
+        "LOGIN",
+        `Login realizado - ${user.email}`,
+        {
           ip: req.ip,
           userAgent: req.get("user-agent"),
-        })
+        }
       );
 
       // NUNCA retornar senha para o frontend
@@ -857,6 +855,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         meta_mensal: updatedUser.meta_mensal,
       });
 
+
+  // ============================================
+  // ROTAS DE PREÇOS DOS PLANOS
+  // ============================================
+
+  // Buscar preços dos planos
+  app.get("/api/plan-prices", async (req, res) => {
+    try {
+      const precosConfig = await storage.getSystemConfig?.('planos_precos');
+      
+      if (precosConfig && precosConfig.valor) {
+        try {
+          const precos = JSON.parse(precosConfig.valor);
+          return res.json(precos);
+        } catch {
+          // Se falhar ao parsear, retornar preços padrão
+        }
+      }
+
+      // Retornar preços padrão
+      res.json({
+        premium_mensal: 79.99,
+        premium_anual: 767.04,
+      });
+    } catch (error: any) {
+      logger.error('[API] Erro ao buscar preços:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Atualizar preços dos planos (apenas admin)
+  app.post("/api/plan-prices", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const { premium_mensal, premium_anual } = req.body;
+
+      if (!premium_mensal || !premium_anual) {
+        return res.status(400).json({ error: "Preços são obrigatórios" });
+      }
+
+      const precos = {
+        premium_mensal: parseFloat(premium_mensal),
+        premium_anual: parseFloat(premium_anual),
+      };
+
+      await storage.upsertSystemConfig?.('planos_precos', JSON.stringify(precos));
+
+      await storage.logAdminAction?.(
+        userId,
+        "PRECOS_ATUALIZADOS",
+        `Preços atualizados - Mensal: R$ ${precos.premium_mensal.toFixed(2)}, Anual: R$ ${precos.premium_anual.toFixed(2)}`,
+        req
+      );
+
+      res.json({ success: true, precos });
+    } catch (error: any) {
+      logger.error('[API] Erro ao atualizar preços:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // ============================================
   // ROTAS DE CUPONS E PROMOÇÕES

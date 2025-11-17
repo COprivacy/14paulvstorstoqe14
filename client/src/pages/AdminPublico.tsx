@@ -846,17 +846,30 @@ function PromocoesTab() {
   // Mutation para salvar preços
   const salvarPrecosMutation = useMutation({
     mutationFn: async () => {
-      // Aqui você pode adicionar uma rota API para salvar no banco
-      // Por enquanto, vamos salvar no localStorage como configuração
-      localStorage.setItem('planos_precos', JSON.stringify(precos));
-      return { success: true };
+      const response = await fetch('/api/plan-prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+          'x-is-admin': 'true',
+        },
+        body: JSON.stringify(precos),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao salvar preços');
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       toast({
         title: "✅ Preços atualizados!",
-        description: "Os valores dos planos foram atualizados com sucesso",
+        description: "Os valores dos planos foram atualizados com sucesso em todo o sistema",
       });
       setEditandoPrecos(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/plan-prices'] });
     },
     onError: (error: Error) => {
       toast({
@@ -867,12 +880,20 @@ function PromocoesTab() {
     },
   });
 
-  // Carregar preços salvos ao montar o componente
+  // Carregar preços do backend ao montar o componente
   useEffect(() => {
-    const precosSalvos = localStorage.getItem('planos_precos');
-    if (precosSalvos) {
-      setPrecos(JSON.parse(precosSalvos));
-    }
+    const carregarPrecos = async () => {
+      try {
+        const response = await fetch('/api/plan-prices');
+        if (response.ok) {
+          const data = await response.json();
+          setPrecos(data);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar preços:', error);
+      }
+    };
+    carregarPrecos();
   }, []);
 
   return (
