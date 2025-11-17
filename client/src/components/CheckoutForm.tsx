@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getPlanPrices, formatPrice, calculateAnnualSavings } from "@/lib/planPrices";
 import {
   Form,
   FormControl,
@@ -80,6 +81,14 @@ export function CheckoutForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validandoCupom, setValidandoCupom] = useState(false);
   const [cupomValidado, setCupomValidado] = useState<any>(null);
+  const [precos, setPrecos] = useState(getPlanPrices());
+
+  // Atualizar preços quando o diálogo abre
+  useEffect(() => {
+    if (open) {
+      setPrecos(getPlanPrices());
+    }
+  }, [open]);
 
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
@@ -500,7 +509,7 @@ export function CheckoutForm({
               )}
 
               {/* Resumo do Valor */}
-              {cupomValidado && (
+              {cupomValidado ? (
                 <Card className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border-2 border-purple-200 dark:border-purple-800">
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -521,6 +530,20 @@ export function CheckoutForm({
                       </span>
                     </div>
                   </div>
+                </Card>
+              ) : (
+                <Card className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-2 border-blue-200 dark:border-blue-800">
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total a pagar:</span>
+                    <span className="text-blue-600 dark:text-blue-400">
+                      {formatPrice(plano === 'premium_mensal' ? precos.premium_mensal : precos.premium_anual)}
+                    </span>
+                  </div>
+                  {plano === 'premium_anual' && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                      Economize {formatPrice(calculateAnnualSavings(precos.premium_mensal, precos.premium_anual))} por ano
+                    </p>
+                  )}
                 </Card>
               )}
 

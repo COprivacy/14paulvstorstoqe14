@@ -6,6 +6,7 @@ import { CheckoutForm } from "@/components/CheckoutForm";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
+import { getPlanPrices, formatPrice, calculateAnnualSavings } from "@/lib/planPrices";
 
 export default function Planos() {
   const { user } = useUser();
@@ -17,6 +18,12 @@ export default function Planos() {
     planoPreco: string;
   } | null>(null);
   const { toast } = useToast();
+  const [precos, setPrecos] = useState(getPlanPrices());
+
+  // Atualizar preços ao montar o componente
+  useEffect(() => {
+    setPrecos(getPlanPrices());
+  }, []);
 
   // Verificar status do pagamento ao retornar do Mercado Pago
   useEffect(() => {
@@ -67,10 +74,15 @@ export default function Planos() {
     }
   };
 
+  const valorMensal = precos.premium_mensal;
+  const valorAnual = precos.premium_anual;
+  const valorAnualMensal = valorAnual / 12;
+  const economia = calculateAnnualSavings(valorMensal, valorAnual);
+
   const planos = [
     {
       nome: "Plano Mensal",
-      preco: "R$ 79,99",
+      preco: formatPrice(valorMensal),
       periodo: "/mês",
       descricao: "Ideal para começar",
       valorTotal: null,
@@ -91,10 +103,10 @@ export default function Planos() {
     },
     {
       nome: "Plano Anual",
-      preco: "R$ 67,99",
+      preco: formatPrice(valorAnualMensal),
       periodo: "/mês",
-      valorTotal: "R$ 815,88/ano",
-      descricao: "Mais Popular - Economize 15%",
+      valorTotal: `${formatPrice(valorAnual)}/ano`,
+      descricao: `Mais Popular - Economize ${formatPrice(economia)}`,
       destaque: true,
       recursos: [
         "✅ Todos os recursos do plano mensal",
@@ -106,7 +118,7 @@ export default function Planos() {
         "✅ Relatórios avançados e dashboards",
         "✅ Gestão financeira completa",
         "✅ DRE (Demonstrativo de Resultados)",
-        "💰 Economize R$ 143,88 por ano",
+        `💰 Economize ${formatPrice(economia)} por ano`,
         "⭐ Suporte prioritário",
         "⭐ Backups automáticos em tempo real",
         "⭐ Atualizações antecipadas"
@@ -120,13 +132,13 @@ export default function Planos() {
       setSelectedPlan({
         plano: "premium_mensal",
         planoNome: "Plano Mensal",
-        planoPreco: "R$ 79,99"
+        planoPreco: formatPrice(precos.premium_mensal)
       });
     } else {
       setSelectedPlan({
         plano: "premium_anual",
         planoNome: "Plano Anual",
-        planoPreco: "R$ 67,99"
+        planoPreco: formatPrice(precos.premium_anual / 12)
       });
     }
     setCheckoutOpen(true);
