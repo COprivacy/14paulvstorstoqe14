@@ -877,6 +877,14 @@ function PromocoesTab() {
   // Mutation para salvar preços
   const salvarPrecosMutation = useMutation({
     mutationFn: async () => {
+      // Validar valores antes de enviar
+      if (!precos.premium_mensal || precos.premium_mensal <= 0) {
+        throw new Error('Preço mensal inválido');
+      }
+      if (!precos.premium_anual || precos.premium_anual <= 0) {
+        throw new Error('Preço anual inválido');
+      }
+
       const response = await fetch('/api/plan-prices', {
         method: 'POST',
         headers: {
@@ -884,7 +892,10 @@ function PromocoesTab() {
           'x-user-id': user.id,
           'x-is-admin': 'true',
         },
-        body: JSON.stringify(precos),
+        body: JSON.stringify({
+          premium_mensal: Number(precos.premium_mensal),
+          premium_anual: Number(precos.premium_anual),
+        }),
       });
 
       if (!response.ok) {
@@ -914,6 +925,20 @@ function PromocoesTab() {
   // Mutation para salvar preços de pacotes de funcionários
   const salvarPacotesMutation = useMutation({
     mutationFn: async () => {
+      // Validar valores antes de enviar
+      const valores = [
+        pacotesConfig.pacote_5,
+        pacotesConfig.pacote_10,
+        pacotesConfig.pacote_20,
+        pacotesConfig.pacote_50
+      ];
+
+      for (const valor of valores) {
+        if (!valor || valor <= 0) {
+          throw new Error('Todos os preços devem ser maiores que zero');
+        }
+      }
+
       const response = await fetch('/api/employee-package-prices', {
         method: 'POST',
         headers: {
@@ -921,7 +946,12 @@ function PromocoesTab() {
           'x-user-id': user.id,
           'x-is-admin': 'true',
         },
-        body: JSON.stringify(pacotesConfig),
+        body: JSON.stringify({
+          pacote_5: Number(pacotesConfig.pacote_5),
+          pacote_10: Number(pacotesConfig.pacote_10),
+          pacote_20: Number(pacotesConfig.pacote_20),
+          pacote_50: Number(pacotesConfig.pacote_50),
+        }),
       });
 
       if (!response.ok) {
@@ -1034,7 +1064,17 @@ function PromocoesTab() {
                   Cancelar
                 </Button>
                 <Button 
-                  onClick={() => salvarPrecosMutation.mutate()}
+                  onClick={() => {
+                    if (!precos.premium_mensal || !precos.premium_anual) {
+                      toast({
+                        title: "Erro",
+                        description: "Preencha todos os campos",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    salvarPrecosMutation.mutate();
+                  }}
                   disabled={salvarPrecosMutation.isPending}
                 >
                   {salvarPrecosMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

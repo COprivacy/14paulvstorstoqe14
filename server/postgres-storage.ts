@@ -1253,19 +1253,24 @@ export class PostgresStorage implements IStorage {
   }
 
   async getQuantidadeBloqueadaPorProduto(produtoId: number, userId: string): Promise<number> {
-    const result = await this.db
-      .select({
-        total: sql<number>`COALESCE(SUM(${bloqueiosEstoque.quantidade_bloqueada}), 0)`,
-      })
-      .from(bloqueiosEstoque)
-      .where(
-        and(
-          eq(bloqueiosEstoque.produto_id, produtoId),
-          eq(bloqueiosEstoque.user_id, userId)
-        )
-      );
-    
-    return Number(result[0]?.total || 0);
+    try {
+      const result = await this.db
+        .select({
+          total: sql<number>`COALESCE(SUM(${bloqueiosEstoque.quantidade_bloqueada}), 0)`,
+        })
+        .from(bloqueiosEstoque)
+        .where(
+          and(
+            eq(bloqueiosEstoque.produto_id, produtoId),
+            eq(bloqueiosEstoque.user_id, userId)
+          )
+        );
+      
+      return Number(result[0]?.total || 0);
+    } catch (error) {
+      logger.error('[DB] Erro ao buscar quantidade bloqueada:', { error, produtoId, userId });
+      return 0;
+    }
   }
 
   async getQuantidadeDisponivelProduto(produtoId: number, userId: string): Promise<number> {
