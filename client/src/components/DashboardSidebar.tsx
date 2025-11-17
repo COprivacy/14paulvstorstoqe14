@@ -35,7 +35,13 @@ const financeMenuItems: MenuItem[] = [
 
 const configMenuItems: MenuItem[] = [
   { title: "Planos", url: "/planos", icon: Crown, adminOnly: true },
+];
+
+const configMenuItemsAfterAdmin: MenuItem[] = [
   { title: "Config. Fiscal", url: "/config-fiscal", icon: FileText, permission: "config_fiscal", adminOnly: true },
+];
+
+const configMenuItemsEnd: MenuItem[] = [
   { title: "Configurações", url: "/configuracoes", icon: Settings, permission: "configuracoes", adminOnly: true },
 ];
 
@@ -136,7 +142,10 @@ export default function DashboardSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
+              {/* 1. Planos */}
               {configMenuItems.map(renderMenuItem)}
+              
+              {/* 2. Painel Admin (somente para admins) */}
               {isAdmin && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
@@ -150,6 +159,11 @@ export default function DashboardSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              
+              {/* 3. Config. Fiscal */}
+              {configMenuItemsAfterAdmin.map(renderMenuItem)}
+              
+              {/* 4. Ajuda e Termos */}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -161,6 +175,11 @@ export default function DashboardSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
+              {/* 5. Configurações */}
+              {configMenuItemsEnd.map(renderMenuItem)}
+              
+              {/* Admin Master (em qualquer lugar no final) */}
               {user?.email === "pavisoft.suporte@gmail.com" && user?.is_admin === "true" && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
