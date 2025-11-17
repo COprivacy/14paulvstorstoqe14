@@ -1281,9 +1281,7 @@ export class PostgresStorage implements IStorage {
 
     if (!orcamento) {
       throw new Error("Orçamento não encontrado");
-
-
-  
+    }
 
     if (orcamento.user_id !== userId) {
       throw new Error("Acesso negado");
