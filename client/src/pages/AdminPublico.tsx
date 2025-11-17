@@ -49,7 +49,8 @@ import {
   LogOut,
   Database,
   Zap,
-  Check
+  Check,
+  Crown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -835,8 +836,156 @@ function PromocoesTab() {
   const cuponsAtivos = cupons.filter(c => c.status === 'ativo');
   const cuponsExpirados = cupons.filter(c => c.status === 'expirado');
 
+  // Estado para gerenciar preços dos planos
+  const [editandoPrecos, setEditandoPrecos] = useState(false);
+  const [precos, setPrecos] = useState({
+    premium_mensal: 79.99,
+    premium_anual: 767.04
+  });
+
+  // Mutation para salvar preços
+  const salvarPrecosMutation = useMutation({
+    mutationFn: async () => {
+      // Aqui você pode adicionar uma rota API para salvar no banco
+      // Por enquanto, vamos salvar no localStorage como configuração
+      localStorage.setItem('planos_precos', JSON.stringify(precos));
+      return { success: true };
+    },
+    onSuccess: () => {
+      toast({
+        title: "✅ Preços atualizados!",
+        description: "Os valores dos planos foram atualizados com sucesso",
+      });
+      setEditandoPrecos(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Carregar preços salvos ao montar o componente
+  useEffect(() => {
+    const precosSalvos = localStorage.getItem('planos_precos');
+    if (precosSalvos) {
+      setPrecos(JSON.parse(precosSalvos));
+    }
+  }, []);
+
   return (
     <div className="space-y-6">
+      {/* Gerenciamento de Preços dos Planos */}
+      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-blue-600" />
+              Preços dos Planos
+            </CardTitle>
+            {!editandoPrecos ? (
+              <Button onClick={() => setEditandoPrecos(true)} variant="outline">
+                <Edit2 className="h-4 w-4 mr-2" />
+                Editar Preços
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    setEditandoPrecos(false);
+                    const precosSalvos = localStorage.getItem('planos_precos');
+                    if (precosSalvos) {
+                      setPrecos(JSON.parse(precosSalvos));
+                    } else {
+                      setPrecos({ premium_mensal: 79.99, premium_anual: 767.04 });
+                    }
+                  }} 
+                  variant="outline"
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={() => salvarPrecosMutation.mutate()}
+                  disabled={salvarPrecosMutation.isPending}
+                >
+                  {salvarPrecosMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Salvar
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card className="bg-white dark:bg-gray-800">
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-semibold">Premium Mensal</h3>
+                  </div>
+                  {editandoPrecos ? (
+                    <div className="space-y-2">
+                      <Label>Valor Mensal (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={precos.premium_mensal}
+                        onChange={(e) => setPrecos({ ...precos, premium_mensal: parseFloat(e.target.value) })}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-3xl font-bold text-blue-600">
+                      R$ {precos.premium_mensal.toFixed(2)}<span className="text-sm text-gray-500">/mês</span>
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200">
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Crown className="h-5 w-5 text-purple-600" />
+                    <h3 className="font-semibold">Premium Anual</h3>
+                    <Badge variant="secondary" className="text-xs">Mais Popular</Badge>
+                  </div>
+                  {editandoPrecos ? (
+                    <div className="space-y-2">
+                      <Label>Valor Anual (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={precos.premium_anual}
+                        onChange={(e) => setPrecos({ ...precos, premium_anual: parseFloat(e.target.value) })}
+                      />
+                      <p className="text-xs text-gray-500">
+                        Mensal: R$ {(precos.premium_anual / 12).toFixed(2)}/mês
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-3xl font-bold text-purple-600">
+                        R$ {(precos.premium_anual / 12).toFixed(2)}<span className="text-sm text-gray-500">/mês</span>
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Total anual: R$ {precos.premium_anual.toFixed(2)}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        Economize R$ {((precos.premium_mensal * 12) - precos.premium_anual).toFixed(2)} por ano
+                      </p>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200">

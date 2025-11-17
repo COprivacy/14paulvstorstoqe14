@@ -409,11 +409,16 @@ export function CheckoutForm({
               />
 
               {/* Campo de Cupom */}
-              <div className="space-y-2">
-                <Label className="text-gray-900 dark:text-white font-semibold">
-                  Cupom de Desconto
-                </Label>
-                <div className="flex gap-2">
+              <Card className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-green-200 dark:border-green-800">
+                <div className="space-y-2">
+                  <Label className="text-gray-900 dark:text-white font-semibold flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    Cupom de Desconto
+                    <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                      Opcional
+                    </Badge>
+                  </Label>
+                  <div className="flex gap-2">
                   <FormField
                     control={form.control}
                     name="cupom"
@@ -458,7 +463,7 @@ export function CheckoutForm({
                   )}
                 </div>
                 {cupomValidado && (
-                  <Card className="p-3 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+                  <Card className="p-3 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 mt-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Check className="h-4 w-4 text-green-600" />
@@ -473,6 +478,7 @@ export function CheckoutForm({
                   </Card>
                 )}
               </div>
+            </Card>
 
               {formaPagamento && (
                 <Card className="p-3 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
