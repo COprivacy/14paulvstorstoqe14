@@ -20,7 +20,15 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const userId = req.headers["x-user-id"] as string;
   const isAdmin = req.headers["x-is-admin"] as string;
 
+  console.log('🔐 [REQUIRE_ADMIN] Verificando acesso:', {
+    path: req.path,
+    userId,
+    isAdmin,
+    headers: req.headers
+  });
+
   if (!userId || isAdmin !== "true") {
+    console.log('❌ [REQUIRE_ADMIN] Acesso negado');
     return res
       .status(403)
       .json({
@@ -29,6 +37,7 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
       });
   }
 
+  console.log('✅ [REQUIRE_ADMIN] Acesso permitido');
   next();
 }
 
@@ -916,6 +925,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Atualizar preços dos planos (apenas admin)
   app.post("/api/plan-prices", requireAdmin, async (req, res) => {
+    console.log('📍 [DEBUG] Rota POST /api/plan-prices foi chamada!');
     try {
       const userId = req.headers["x-user-id"] as string;
       const { premium_mensal, premium_anual } = req.body;
