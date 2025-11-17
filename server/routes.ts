@@ -908,16 +908,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.headers["x-user-id"] as string;
       const { premium_mensal, premium_anual } = req.body;
 
+      console.log('💰 [PLAN_PRICES] Requisição recebida:', {
+        userId,
+        body: req.body,
+        headers: {
+          'x-user-id': req.headers['x-user-id'],
+          'x-is-admin': req.headers['x-is-admin']
+        }
+      });
+
       // Validar entrada
       if (!premium_mensal || !premium_anual) {
+        console.log('❌ [PLAN_PRICES] Preços não fornecidos');
         return res.status(400).json({ error: "Preços são obrigatórios" });
       }
 
       const mensal = parseFloat(premium_mensal);
       const anual = parseFloat(premium_anual);
 
+      console.log('🔢 [PLAN_PRICES] Valores parseados:', { mensal, anual });
+
       // Validar que são números válidos e positivos
       if (isNaN(mensal) || isNaN(anual) || mensal <= 0 || anual <= 0) {
+        console.log('❌ [PLAN_PRICES] Valores inválidos');
         return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
       }
 
@@ -926,9 +939,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         premium_anual: anual,
       };
 
+      console.log('💾 [PLAN_PRICES] Salvando no banco:', precos);
+
       // Salvar no banco
       if (storage.upsertSystemConfig) {
         await storage.upsertSystemConfig('planos_precos', JSON.stringify(precos));
+        console.log('✅ [PLAN_PRICES] Salvo no banco com sucesso');
       } else {
         logger.error('[API] Método upsertSystemConfig não disponível', 'PLAN_PRICES');
         return res.status(500).json({ error: "Erro ao salvar configuração" });
@@ -946,8 +962,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       logger.info('[API] Preços atualizados com sucesso', 'PLAN_PRICES', precos);
 
+      console.log('✅ [PLAN_PRICES] Resposta enviada:', { success: true, precos });
       res.json({ success: true, precos });
     } catch (error: any) {
+      console.error('❌ [PLAN_PRICES] Erro:', error);
       logger.error('[API] Erro ao atualizar preços:', error);
       res.status(500).json({ error: error.message || "Erro ao atualizar preços" });
     }
@@ -1013,8 +1031,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.headers["x-user-id"] as string;
       const { pacote_5, pacote_10, pacote_20, pacote_50 } = req.body;
 
+      console.log('👥 [EMPLOYEE_PACKAGES] Requisição recebida:', {
+        userId,
+        body: req.body,
+        headers: {
+          'x-user-id': req.headers['x-user-id'],
+          'x-is-admin': req.headers['x-is-admin']
+        }
+      });
+
       // Validar entrada
       if (!pacote_5 || !pacote_10 || !pacote_20 || !pacote_50) {
+        console.log('❌ [EMPLOYEE_PACKAGES] Pacotes não fornecidos');
         return res.status(400).json({ error: "Todos os preços são obrigatórios" });
       }
 
@@ -1023,9 +1051,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const p20 = parseFloat(pacote_20);
       const p50 = parseFloat(pacote_50);
 
+      console.log('🔢 [EMPLOYEE_PACKAGES] Valores parseados:', { p5, p10, p20, p50 });
+
       // Validar que são números válidos e positivos
       if (isNaN(p5) || isNaN(p10) || isNaN(p20) || isNaN(p50) || 
           p5 <= 0 || p10 <= 0 || p20 <= 0 || p50 <= 0) {
+        console.log('❌ [EMPLOYEE_PACKAGES] Valores inválidos');
         return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
       }
 
@@ -1036,9 +1067,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pacote_50: p50,
       };
 
+      console.log('💾 [EMPLOYEE_PACKAGES] Salvando no banco:', precos);
+
       // Salvar no banco
       if (storage.upsertSystemConfig) {
         await storage.upsertSystemConfig('pacotes_funcionarios_precos', JSON.stringify(precos));
+        console.log('✅ [EMPLOYEE_PACKAGES] Salvo no banco com sucesso');
       } else {
         logger.error('[API] Método upsertSystemConfig não disponível', 'EMPLOYEE_PACKAGES');
         return res.status(500).json({ error: "Erro ao salvar configuração" });
@@ -1056,8 +1090,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       logger.info('[API] Preços de pacotes atualizados com sucesso', 'EMPLOYEE_PACKAGES', precos);
 
+      console.log('✅ [EMPLOYEE_PACKAGES] Resposta enviada:', { success: true, precos });
       res.json({ success: true, precos });
     } catch (error: any) {
+      console.error('❌ [EMPLOYEE_PACKAGES] Erro:', error);
       logger.error('[API] Erro ao atualizar preços de pacotes:', error);
       res.status(500).json({ error: error.message || "Erro ao atualizar preços de pacotes" });
     }

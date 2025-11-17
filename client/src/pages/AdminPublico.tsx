@@ -885,6 +885,8 @@ function PromocoesTab() {
         throw new Error('Preço anual inválido');
       }
 
+      console.log('💰 Salvando preços:', precos);
+
       const response = await fetch('/api/plan-prices', {
         method: 'POST',
         headers: {
@@ -900,12 +902,16 @@ function PromocoesTab() {
 
       if (!response.ok) {
         const error = await response.json();
+        console.error('❌ Erro ao salvar preços:', error);
         throw new Error(error.error || 'Erro ao salvar preços');
       }
 
-      return response.json();
+      const result = await response.json();
+      console.log('✅ Preços salvos:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Mutation onSuccess:', data);
       toast({
         title: "✅ Preços atualizados!",
         description: "Os valores dos planos foram atualizados com sucesso em todo o sistema",
@@ -914,8 +920,9 @@ function PromocoesTab() {
       queryClient.invalidateQueries({ queryKey: ['/api/plan-prices'] });
     },
     onError: (error: Error) => {
+      console.error('❌ Mutation onError:', error);
       toast({
-        title: "Erro",
+        title: "Erro ao salvar preços",
         description: error.message,
         variant: "destructive",
       });
@@ -939,6 +946,8 @@ function PromocoesTab() {
         }
       }
 
+      console.log('👥 Salvando pacotes:', pacotesConfig);
+
       const response = await fetch('/api/employee-package-prices', {
         method: 'POST',
         headers: {
@@ -956,12 +965,16 @@ function PromocoesTab() {
 
       if (!response.ok) {
         const error = await response.json();
+        console.error('❌ Erro ao salvar pacotes:', error);
         throw new Error(error.error || 'Erro ao salvar preços dos pacotes');
       }
 
-      return response.json();
+      const result = await response.json();
+      console.log('✅ Pacotes salvos:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('✅ Mutation onSuccess (pacotes):', data);
       toast({
         title: "✅ Preços dos pacotes atualizados!",
         description: "Os valores dos pacotes de funcionários foram atualizados com sucesso",
@@ -970,8 +983,9 @@ function PromocoesTab() {
       queryClient.invalidateQueries({ queryKey: ['/api/employee-package-prices'] });
     },
     onError: (error: Error) => {
+      console.error('❌ Mutation onError (pacotes):', error);
       toast({
-        title: "Erro",
+        title: "Erro ao salvar pacotes",
         description: error.message,
         variant: "destructive",
       });
@@ -1073,6 +1087,15 @@ function PromocoesTab() {
                       });
                       return;
                     }
+                    if (precos.premium_mensal <= 0 || precos.premium_anual <= 0) {
+                      toast({
+                        title: "Erro",
+                        description: "Os preços devem ser maiores que zero",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    console.log('🚀 Iniciando salvamento de preços...');
                     salvarPrecosMutation.mutate();
                   }}
                   disabled={salvarPrecosMutation.isPending}
