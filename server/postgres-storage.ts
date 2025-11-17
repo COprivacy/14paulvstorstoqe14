@@ -67,6 +67,89 @@ import {
   type InsertContasReceber,
   type Devolucao,
   type InsertDevolucao,
+
+
+  private async ensureCuponsTablesExist() {
+    try {
+      // Verificar se a tabela de cupons já existe
+      const checkTableQuery = sql`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'cupons'
+        );
+      `;
+      
+      const result = await this.db.execute(checkTableQuery);
+      const tableExists = result.rows[0]?.exists;
+
+      if (!tableExists) {
+        console.log('📦 Criando tabelas de cupons...');
+        
+        // Criar tabela de cupons
+        await this.db.execute(sql`
+          CREATE TABLE IF NOT EXISTS cupons (
+            id SERIAL PRIMARY KEY,
+            codigo TEXT NOT NULL UNIQUE,
+            tipo TEXT NOT NULL CHECK (tipo IN ('percentual', 'valor_fixo')),
+            valor REAL NOT NULL CHECK (valor > 0),
+            planos_aplicaveis JSONB,
+            data_inicio TEXT NOT NULL,
+            data_expiracao TEXT NOT NULL,
+            quantidade_maxima INTEGER,
+            quantidade_utilizada INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo', 'expirado')),
+            descricao TEXT,
+            criado_por TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            data_criacao TEXT NOT NULL,
+            data_atualizacao TEXT
+          );
+        `);
+
+        // Criar índices
+        await this.db.execute(sql`
+          CREATE INDEX IF NOT EXISTS cupons_codigo_idx ON cupons(codigo);
+        `);
+        
+        await this.db.execute(sql`
+          CREATE INDEX IF NOT EXISTS cupons_status_idx ON cupons(status);
+        `);
+
+        // Criar tabela de uso de cupons
+        await this.db.execute(sql`
+          CREATE TABLE IF NOT EXISTS uso_cupons (
+            id SERIAL PRIMARY KEY,
+            cupom_id INTEGER NOT NULL REFERENCES cupons(id) ON DELETE CASCADE,
+            user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            subscription_id INTEGER REFERENCES subscriptions(id) ON DELETE SET NULL,
+            valor_desconto REAL NOT NULL,
+            data_uso TEXT NOT NULL
+          );
+        `);
+
+        // Criar índices para uso_cupons
+        await this.db.execute(sql`
+          CREATE INDEX IF NOT EXISTS uso_cupons_cupom_id_idx ON uso_cupons(cupom_id);
+        `);
+        
+        await this.db.execute(sql`
+          CREATE INDEX IF NOT EXISTS uso_cupons_user_id_idx ON uso_cupons(user_id);
+        `);
+
+        console.log('✅ Tabelas de cupons criadas com sucesso');
+      } else {
+        console.log('✅ Tabelas de cupons já existem');
+      }
+    } catch (error: any) {
+      logger.error('[DB] Erro ao criar tabelas de cupons:', {
+        error: error.message,
+        stack: error.stack
+      });
+      // Não lançar erro - apenas logar. O sistema pode funcionar sem cupons.
+      console.warn('⚠️ Sistema iniciará sem suporte a cupons');
+    }
+  }
+
   type Orcamento,
   type InsertOrcamento,
   type ClientNote,
@@ -109,6 +192,7 @@ export class PostgresStorage implements IStorage {
     // Testar conexão e seed de dados
     this.testConnection();
     this.seedInitialData();
+    this.ensureCuponsTablesExist();
   }
 
   private async testConnection() {
