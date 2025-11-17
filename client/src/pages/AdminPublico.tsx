@@ -885,7 +885,7 @@ function PromocoesTab() {
         throw new Error('Preço anual inválido');
       }
 
-      console.log('💰 Salvando preços:', precos);
+      console.log('💰 [MUTATION] Salvando preços:', precos);
 
       const response = await fetch('/api/plan-prices', {
         method: 'POST',
@@ -902,25 +902,40 @@ function PromocoesTab() {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('❌ Erro ao salvar preços:', error);
+        console.error('❌ [MUTATION] Erro ao salvar preços:', error);
         throw new Error(error.error || 'Erro ao salvar preços');
       }
 
       const result = await response.json();
-      console.log('✅ Preços salvos:', result);
+      console.log('✅ [MUTATION] Preços salvos:', result);
       return result;
     },
-    onSuccess: (data) => {
-      console.log('✅ Mutation onSuccess:', data);
+    onSuccess: async (data) => {
+      console.log('✅ [MUTATION] onSuccess:', data);
+      
+      // Atualizar estado local imediatamente
+      if (data.precos) {
+        setPrecos(data.precos);
+      }
+      
       toast({
         title: "✅ Preços atualizados!",
         description: "Os valores dos planos foram atualizados com sucesso em todo o sistema",
       });
+      
       setEditandoPrecos(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/plan-prices'] });
+      
+      // Invalidar todas as queries relacionadas
+      await queryClient.invalidateQueries({ queryKey: ['/api/plan-prices'] });
+      await queryClient.refetchQueries({ queryKey: ['/api/plan-prices'] });
+      
+      // Forçar recarga da página após 500ms para garantir que tudo está atualizado
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     },
     onError: (error: Error) => {
-      console.error('❌ Mutation onError:', error);
+      console.error('❌ [MUTATION] onError:', error);
       toast({
         title: "Erro ao salvar preços",
         description: error.message,
@@ -992,36 +1007,46 @@ function PromocoesTab() {
     },
   });
 
-  // Carregar preços do backend ao montar o componente
+  // Carregar preços do backend ao montar o componente e quando a mutation for bem-sucedida
   useEffect(() => {
     const carregarPrecos = async () => {
       try {
+        console.log('🔄 [FRONTEND] Carregando preços...');
+        
         const response = await fetch('/api/plan-prices', {
           headers: {
             'Accept': 'application/json',
-          }
+          },
+          cache: 'no-store' // Forçar busca sem cache
         });
+        
+        console.log('📋 [FRONTEND] Response status:', response.status);
+        console.log('📋 [FRONTEND] Content-Type:', response.headers.get('content-type'));
         
         if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
           const data = await response.json();
+          
+          console.log('📋 [FRONTEND] Dados recebidos:', data);
+          
           // Validar que os dados são válidos
           if (data && typeof data.premium_mensal === 'number' && typeof data.premium_anual === 'number') {
+            console.log('✅ [FRONTEND] Atualizando preços no estado:', data);
             setPrecos(data);
           } else {
-            // Usar preços padrão
+            console.warn('⚠️ [FRONTEND] Dados inválidos, usando padrão');
             setPrecos({ premium_mensal: 79.99, premium_anual: 767.04 });
           }
         } else {
-          // Usar preços padrão se não for JSON válido
+          console.warn('⚠️ [FRONTEND] Response inválida, usando padrão');
           setPrecos({ premium_mensal: 79.99, premium_anual: 767.04 });
         }
       } catch (error) {
-        // Silenciar o erro e usar preços padrão
+        console.error('❌ [FRONTEND] Erro ao carregar preços:', error);
         setPrecos({ premium_mensal: 79.99, premium_anual: 767.04 });
       }
     };
     carregarPrecos();
-  }, []);
+  }, [salvarPrecosMutation.isSuccess]); // Adicionar dependência para recarregar após salvar
 
   // Carregar preços dos pacotes de funcionários
   useEffect(() => {

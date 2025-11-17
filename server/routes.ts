@@ -863,38 +863,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Buscar preços dos planos
   app.get("/api/plan-prices", async (req, res) => {
     try {
+      console.log('📋 [PLAN_PRICES] Buscando preços dos planos...');
+      
       // Definir preços padrão
       const DEFAULT_PRICES = {
         premium_mensal: 79.99,
         premium_anual: 767.04,
       };
 
-      // Tentar buscar preços customizados
-      if (storage.getSystemConfig) {
-        const precosConfig = await storage.getSystemConfig('planos_precos');
-        
-        if (precosConfig && precosConfig.valor) {
-          try {
-            const precos = JSON.parse(precosConfig.valor);
+      // Tentar buscar preços customizados do banco
+      const precosConfig = await storage.getSystemConfig('planos_precos');
+      
+      console.log('📋 [PLAN_PRICES] Configuração encontrada:', precosConfig);
+      
+      if (precosConfig && precosConfig.valor) {
+        try {
+          const precos = JSON.parse(precosConfig.valor);
+          
+          console.log('📋 [PLAN_PRICES] Preços parseados:', precos);
+          
+          // Validar que os preços são números válidos
+          if (typeof precos.premium_mensal === 'number' && 
+              typeof precos.premium_anual === 'number' &&
+              precos.premium_mensal > 0 && 
+              precos.premium_anual > 0) {
             
-            // Validar que os preços são números válidos
-            if (typeof precos.premium_mensal === 'number' && 
-                typeof precos.premium_anual === 'number' &&
-                precos.premium_mensal > 0 && 
-                precos.premium_anual > 0) {
-              return res.status(200).json(precos);
-            }
-          } catch (parseError) {
-            logger.warn('[API] Erro ao parsear preços salvos, usando padrão', 'PLAN_PRICES');
+            console.log('✅ [PLAN_PRICES] Retornando preços customizados:', precos);
+            
+            // Definir headers explicitamente
+            res.setHeader('Content-Type', 'application/json');
+            return res.status(200).json(precos);
           }
+        } catch (parseError) {
+          console.error('❌ [PLAN_PRICES] Erro ao parsear preços:', parseError);
         }
       }
 
       // Retornar preços padrão
+      console.log('📋 [PLAN_PRICES] Retornando preços padrão');
+      res.setHeader('Content-Type', 'application/json');
       return res.status(200).json(DEFAULT_PRICES);
+      
     } catch (error: any) {
-      logger.error('[API] Erro ao buscar preços:', error);
-      // Sempre retornar JSON, mesmo em caso de erro
+      console.error('❌ [PLAN_PRICES] Erro crítico:', error);
+      res.setHeader('Content-Type', 'application/json');
       return res.status(200).json({
         premium_mensal: 79.99,
         premium_anual: 767.04,
@@ -908,29 +920,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.headers["x-user-id"] as string;
       const { premium_mensal, premium_anual } = req.body;
 
-      console.log('💰 [PLAN_PRICES] Requisição recebida:', {
+      console.log('💰 [PLAN_PRICES] POST - Requisição recebida:', {
         userId,
         body: req.body,
-        headers: {
-          'x-user-id': req.headers['x-user-id'],
-          'x-is-admin': req.headers['x-is-admin']
-        }
       });
 
       // Validar entrada
       if (!premium_mensal || !premium_anual) {
-        console.log('❌ [PLAN_PRICES] Preços não fornecidos');
+        console.log('❌ [PLAN_PRICES] POST - Preços não fornecidos');
         return res.status(400).json({ error: "Preços são obrigatórios" });
       }
 
       const mensal = parseFloat(premium_mensal);
       const anual = parseFloat(premium_anual);
 
-      console.log('🔢 [PLAN_PRICES] Valores parseados:', { mensal, anual });
+      console.log('🔢 [PLAN_PRICES] POST - Valores parseados:', { mensal, anual });
 
       // Validar que são números válidos e positivos
       if (isNaN(mensal) || isNaN(anual) || mensal <= 0 || anual <= 0) {
-        console.log('❌ [PLAN_PRICES] Valores inválidos');
+        console.log('❌ [PLAN_PRICES] POST - Valores inválidos');
         return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
       }
 
@@ -939,35 +947,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         premium_anual: anual,
       };
 
-      console.log('💾 [PLAN_PRICES] Salvando no banco:', precos);
+      console.log('💾 [PLAN_PRICES] POST - Salvando no banco:', precos);
 
       // Salvar no banco
-      if (storage.upsertSystemConfig) {
-        await storage.upsertSystemConfig('planos_precos', JSON.stringify(precos));
-        console.log('✅ [PLAN_PRICES] Salvo no banco com sucesso');
-      } else {
-        logger.error('[API] Método upsertSystemConfig não disponível', 'PLAN_PRICES');
-        return res.status(500).json({ error: "Erro ao salvar configuração" });
-      }
+      await storage.upsertSystemConfig('planos_precos', JSON.stringify(precos));
+      
+      // Verificar se foi salvo corretamente
+      const verificacao = await storage.getSystemConfig('planos_precos');
+      console.log('🔍 [PLAN_PRICES] POST - Verificação após salvar:', verificacao);
 
       // Log da ação
-      if (storage.logAdminAction) {
-        await storage.logAdminAction(
-          userId,
-          "PRECOS_ATUALIZADOS",
-          `Preços atualizados - Mensal: R$ ${precos.premium_mensal.toFixed(2)}, Anual: R$ ${precos.premium_anual.toFixed(2)}`,
-          req
-        );
-      }
+      await storage.logAdminAction(
+        userId,
+        "PRECOS_ATUALIZADOS",
+        `Preços atualizados - Mensal: R$ ${precos.premium_mensal.toFixed(2)}, Anual: R$ ${precos.premium_anual.toFixed(2)}`,
+        req
+      );
 
       logger.info('[API] Preços atualizados com sucesso', 'PLAN_PRICES', precos);
 
-      console.log('✅ [PLAN_PRICES] Resposta enviada:', { success: true, precos });
-      res.json({ success: true, precos });
+      console.log('✅ [PLAN_PRICES] POST - Resposta enviada:', { success: true, precos });
+      
+      // Definir headers explicitamente
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(200).json({ success: true, precos });
+      
     } catch (error: any) {
-      console.error('❌ [PLAN_PRICES] Erro:', error);
+      console.error('❌ [PLAN_PRICES] POST - Erro:', error);
       logger.error('[API] Erro ao atualizar preços:', error);
-      res.status(500).json({ error: error.message || "Erro ao atualizar preços" });
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(500).json({ error: error.message || "Erro ao atualizar preços" });
     }
   });
 
