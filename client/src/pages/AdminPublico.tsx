@@ -715,6 +715,37 @@ function PromocoesTab() {
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
+  // Estados para gerenciamento de pacotes de funcionários
+  const [pacotesDialogOpen, setPacotesDialogOpen] = useState(false);
+  const [pacotesConfig, setPacotesConfig] = useState({
+    pacote_5: 49.99,
+    pacote_10: 89.99,
+    pacote_20: 159.99,
+    pacote_50: 349.99,
+  });
+
+  // Função helper para formatar datas
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '';
+    try {
+      return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Função helper para exibir badge de status
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
+      ativo: { variant: 'default', label: 'Ativo' },
+      inativo: { variant: 'secondary', label: 'Inativo' },
+      expirado: { variant: 'destructive', label: 'Expirado' },
+    };
+    
+    const config = statusConfig[status] || { variant: 'outline', label: status };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
   // Buscar cupons
   const { data: cupons = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/cupons"],
@@ -880,6 +911,43 @@ function PromocoesTab() {
     },
   });
 
+  // Mutation para salvar preços de pacotes de funcionários
+  const salvarPacotesMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/employee-package-prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id,
+          'x-is-admin': 'true',
+        },
+        body: JSON.stringify(pacotesConfig),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao salvar preços dos pacotes');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "✅ Preços dos pacotes atualizados!",
+        description: "Os valores dos pacotes de funcionários foram atualizados com sucesso",
+      });
+      setPacotesDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/employee-package-prices'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Carregar preços do backend ao montar o componente
   useEffect(() => {
     const carregarPrecos = async () => {
@@ -909,6 +977,29 @@ function PromocoesTab() {
       }
     };
     carregarPrecos();
+  }, []);
+
+  // Carregar preços dos pacotes de funcionários
+  useEffect(() => {
+    const carregarPacotes = async () => {
+      try {
+        const response = await fetch('/api/employee-package-prices', {
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+        
+        if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
+          const data = await response.json();
+          if (data && Object.keys(data).length > 0) {
+            setPacotesConfig(data);
+          }
+        }
+      } catch (error) {
+        // Silenciar o erro e usar preços padrão
+      }
+    };
+    carregarPacotes();
   }, []);
 
   return (
@@ -1019,6 +1110,89 @@ function PromocoesTab() {
               </CardContent>
             </Card>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Gerenciamento de Pacotes de Funcionários */}
+      <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-purple-600" />
+              Preços dos Pacotes de Funcionários
+            </CardTitle>
+            <Button onClick={() => setPacotesDialogOpen(true)} variant="outline">
+              <Edit2 className="h-4 w-4 mr-2" />
+              Editar Pacotes
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="bg-white dark:bg-gray-800">
+              <CardContent className="pt-6">
+                <div className="space-y-2 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Users className="h-4 w-4 text-blue-600" />
+                    <h3 className="font-semibold text-sm">+5 Funcionários</h3>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600">
+                    R$ {pacotesConfig.pacote_5.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-gray-500">Pagamento único</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800 border-2 border-purple-200">
+              <CardContent className="pt-6">
+                <div className="space-y-2 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Users className="h-4 w-4 text-purple-600" />
+                    <h3 className="font-semibold text-sm">+10 Funcionários</h3>
+                  </div>
+                  <Badge variant="secondary" className="text-xs mb-2">Mais Popular</Badge>
+                  <p className="text-2xl font-bold text-purple-600">
+                    R$ {pacotesConfig.pacote_10.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-gray-500">Pagamento único</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800">
+              <CardContent className="pt-6">
+                <div className="space-y-2 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Users className="h-4 w-4 text-green-600" />
+                    <h3 className="font-semibold text-sm">+20 Funcionários</h3>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600">
+                    R$ {pacotesConfig.pacote_20.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-gray-500">Pagamento único</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white dark:bg-gray-800">
+              <CardContent className="pt-6">
+                <div className="space-y-2 text-center">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Users className="h-4 w-4 text-orange-600" />
+                    <h3 className="font-semibold text-sm">+50 Funcionários</h3>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-600">
+                    R$ {pacotesConfig.pacote_50.toFixed(2)}
+                  </p>
+                  <p className="text-xs text-gray-500">Pagamento único</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <p className="text-xs text-muted-foreground mt-4 text-center">
+            ℹ️ Estes valores são exibidos para os usuários quando eles tentam adicionar mais funcionários
+          </p>
         </CardContent>
       </Card>
 
@@ -1344,6 +1518,97 @@ function PromocoesTab() {
             >
               {saveCupomMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingCupom ? 'Salvar Alterações' : 'Criar Cupom'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Editar Pacotes de Funcionários */}
+      <Dialog open={pacotesDialogOpen} onOpenChange={setPacotesDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Preços dos Pacotes de Funcionários</DialogTitle>
+            <DialogDescription>
+              Configure os valores que serão exibidos para os usuários ao comprar pacotes adicionais de funcionários
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Pacote +5 Funcionários</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">R$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={pacotesConfig.pacote_5}
+                    onChange={(e) => setPacotesConfig({ ...pacotesConfig, pacote_5: parseFloat(e.target.value) })}
+                    placeholder="49.99"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Pacote +10 Funcionários</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">R$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={pacotesConfig.pacote_10}
+                    onChange={(e) => setPacotesConfig({ ...pacotesConfig, pacote_10: parseFloat(e.target.value) })}
+                    placeholder="89.99"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Pacote +20 Funcionários</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">R$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={pacotesConfig.pacote_20}
+                    onChange={(e) => setPacotesConfig({ ...pacotesConfig, pacote_20: parseFloat(e.target.value) })}
+                    placeholder="159.99"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Pacote +50 Funcionários</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">R$</span>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={pacotesConfig.pacote_50}
+                    onChange={(e) => setPacotesConfig({ ...pacotesConfig, pacote_50: parseFloat(e.target.value) })}
+                    placeholder="349.99"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                💡 <strong>Dica:</strong> Estes valores serão exibidos imediatamente para todos os usuários no dialog de compra de funcionários.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPacotesDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => salvarPacotesMutation.mutate()}
+              disabled={salvarPacotesMutation.isPending}
+            >
+              {salvarPacotesMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar Alterações
             </Button>
           </DialogFooter>
         </DialogContent>
