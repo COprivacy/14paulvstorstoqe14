@@ -1182,7 +1182,7 @@ export default function AdminPublico() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClientFor360, setSelectedClientFor360] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'configuracoes' | 'sistema' | 'metricas' | 'logs'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes'>('dashboard');
   const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('config');
   const [userEditDialogOpen, setUserEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -1459,6 +1459,17 @@ export default function AdminPublico() {
             <FileText className="h-5 w-5 mr-3" />
             {sidebarOpen && "Logs Admin"}
           </Button>
+          <Button
+            variant="ghost"
+            className={`w-full justify-start hover:bg-slate-700 ${!selectedClientFor360 && activeTab === 'promocoes' ? 'bg-slate-700' : ''}`}
+            onClick={() => {
+              setSelectedClientFor360(null);
+              setActiveTab('promocoes');
+            }}
+          >
+            <DollarSign className="h-5 w-5 mr-3" />
+            {sidebarOpen && "Promoções"}
+          </Button>
         </nav>
 
         <div className="p-4 border-t border-slate-700">
@@ -1553,6 +1564,11 @@ export default function AdminPublico() {
                         return <p className="col-span-4 text-sm text-muted-foreground">Cliente não encontrado</p>;
                       }
 
+                      const dataExpiracao = client.data_expiracao_plano || client.data_expiracao_trial;
+                      const diasRestantes = dataExpiracao 
+                        ? Math.max(0, Math.ceil((new Date(dataExpiracao).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+                        : null;
+
                       return (
                         <>
                           <div>
@@ -1577,6 +1593,20 @@ export default function AdminPublico() {
                                 : '-'}
                             </p>
                           </div>
+                          {dataExpiracao && (
+                            <>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Expira em</p>
+                                <p className="font-semibold">{formatDate(dataExpiracao)}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Dias Restantes</p>
+                                <p className={`font-semibold ${diasRestantes && diasRestantes <= 7 ? 'text-red-600' : 'text-green-600'}`}>
+                                  {diasRestantes} dias
+                                </p>
+                              </div>
+                            </>
+                          )}
                         </>
                       );
                     })()}
@@ -1931,6 +1961,82 @@ export default function AdminPublico() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+            </div>
+          ) : activeTab === 'promocoes' ? (
+            // Aba de Promoções e Descontos
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5 text-green-600" />
+                    Gerenciamento de Promoções
+                  </CardTitle>
+                  <CardDescription>
+                    Crie cupons de desconto e promoções especiais para seus clientes
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Alert className="mb-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Funcionalidade em Desenvolvimento</AlertTitle>
+                    <AlertDescription>
+                      O sistema de promoções está sendo desenvolvido. Em breve você poderá:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Criar cupons de desconto personalizados</li>
+                        <li>Definir descontos por percentual ou valor fixo</li>
+                        <li>Configurar período de validade</li>
+                        <li>Limitar uso por cliente</li>
+                        <li>Aplicar promoções em planos específicos</li>
+                        <li>Acompanhar estatísticas de uso</li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="grid gap-4">
+                    <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Promoções Ativas</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">Nenhuma promoção ativa no momento</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Cupons de Desconto</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">Nenhum cupom criado ainda</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Personalização de Planos</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Preço Premium Mensal Atual</Label>
+                            <p className="text-2xl font-bold text-green-600">R$ 79,99</p>
+                          </div>
+                          <div>
+                            <Label>Preço Premium Anual Atual</Label>
+                            <p className="text-2xl font-bold text-green-600">R$ 767,04</p>
+                          </div>
+                          <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                              Para alterar preços dos planos ou criar promoções personalizadas, entre em contato com o suporte técnico.
+                            </AlertDescription>
+                          </Alert>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           ) : (
             // Dashboard Principal
