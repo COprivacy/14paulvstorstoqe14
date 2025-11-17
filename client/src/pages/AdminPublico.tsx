@@ -695,6 +695,372 @@ function MercadoPagoConfigTab() {
   );
 }
 
+// Componente de Promoções
+function PromocoesTab() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [cupomDialogOpen, setCupomDialogOpen] = useState(false);
+  const [editingCupom, setEditingCupom] = useState<any>(null);
+  const [cupomForm, setCupomForm] = useState({
+    codigo: "",
+    tipo: "percentual",
+    valor: 0,
+    planos_aplicaveis: ["premium_mensal", "premium_anual"],
+    data_inicio: new Date().toISOString().split('T')[0],
+    data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    quantidade_maxima: null as number | null,
+    descricao: "",
+  });
+
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  // Buscar cupons
+  const { data: cupons = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/cupons"],
+    retry: 1,
+  });
+
+  // Mutation para criar/editar cupom
+  const saveCupomMutation = useMutation({
+    mutationFn: async () => {
+      const endpoint = editingCupom ? `/api/cupons/${editingCupom.id}` : "/api/cupons";
+      const method = editingCupom ? "PUT" : "POST";
+      
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user.id,
+          "x-is-admin": "true",
+        },
+        body: JSON.stringify(cupomForm),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Erro ao salvar cupom");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: editingCupom ? "Cupom atualizado!" : "Cupom criado!",
+        description: editingCupom 
+          ? "O cupom foi atualizado com sucesso" 
+          : "O novo cupom está disponível para uso",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/cupons"] });
+      setCupomDialogOpen(false);
+      resetForm();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para deletar cupom
+  const deleteCupomMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/cupons/${id}`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": user.id,
+          "x-is-admin": "true",
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Erro ao deletar cupom");
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Cupom deletado!",
+        description: "O cupom foi removido com sucesso",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/cupons"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setEditingCupom(null);
+    setCupomForm({
+      codigo: "",
+      tipo: "percentual",
+      valor: 0,
+      planos_aplicaveis: ["premium_mensal", "premium_anual"],
+      data_inicio: new Date().toISOString().split('T')[0],
+      data_expiracao: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      quantidade_maxima: null,
+      descricao: "",
+    });
+  };
+
+  const handleEdit = (cupom: any) => {
+    setEditingCupom(cupom);
+    setCupomForm({
+      codigo: cupom.codigo,
+      tipo: cupom.tipo,
+      valor: cupom.valor,
+      planos_aplicaveis: cupom.planos_aplicaveis || ["premium_mensal", "premium_anual"],
+      data_inicio: cupom.data_inicio?.split('T')[0] || new Date().toISOString().split('T')[0],
+      data_expiracao: cupom.data_expiracao?.split('T')[0] || new Date().toISOString().split('T')[0],
+      quantidade_maxima: cupom.quantidade_maxima,
+      descricao: cupom.descricao || "",
+    });
+    setCupomDialogOpen(true);
+  };
+
+  const cuponsAtivos = cupons.filter(c => c.status === 'ativo');
+  const cuponsExpirados = cupons.filter(c => c.status === 'expirado');
+
+  return (
+    <div className="space-y-6">
+      {/* Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-green-600">{cuponsAtivos.length}</p>
+              <p className="text-sm text-muted-foreground">Cupons Ativos</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-blue-600">
+                {cupons.reduce((sum, c) => sum + (c.quantidade_utilizada || 0), 0)}
+              </p>
+              <p className="text-sm text-muted-foreground">Total de Usos</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-purple-600">{cupons.length}</p>
+              <p className="text-sm text-muted-foreground">Total de Cupons</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Lista de Cupons */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              Gerenciar Cupons de Desconto
+            </CardTitle>
+            <Button onClick={() => {
+              resetForm();
+              setCupomDialogOpen(true);
+            }}>
+              <DollarSign className="h-4 w-4 mr-2" />
+              Novo Cupom
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+            </div>
+          ) : cupons.length === 0 ? (
+            <div className="text-center py-8">
+              <DollarSign className="h-12 w-12 mx-auto text-gray-400 mb-3" />
+              <p className="text-gray-500">Nenhum cupom criado ainda</p>
+              <Button variant="outline" className="mt-4" onClick={() => setCupomDialogOpen(true)}>
+                Criar primeiro cupom
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Código</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Planos</TableHead>
+                  <TableHead>Validade</TableHead>
+                  <TableHead>Usos</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {cupons.map((cupom) => (
+                  <TableRow key={cupom.id}>
+                    <TableCell className="font-mono font-bold">{cupom.codigo}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {cupom.tipo === 'percentual' ? 'Percentual' : 'Valor Fixo'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {cupom.tipo === 'percentual' ? `${cupom.valor}%` : `R$ ${cupom.valor.toFixed(2)}`}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {(cupom.planos_aplicaveis || ['todos']).map((plano: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs">
+                            {plano === 'premium_mensal' ? 'Mensal' : plano === 'premium_anual' ? 'Anual' : plano}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {formatDate(cupom.data_inicio)} até {formatDate(cupom.data_expiracao)}
+                    </TableCell>
+                    <TableCell>
+                      {cupom.quantidade_utilizada || 0}
+                      {cupom.quantidade_maxima ? ` / ${cupom.quantidade_maxima}` : ' / ∞'}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(cupom.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(cupom)}>
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            if (confirm(`Deletar cupom ${cupom.codigo}?`)) {
+                              deleteCupomMutation.mutate(cupom.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Dialog de Criar/Editar Cupom */}
+      <Dialog open={cupomDialogOpen} onOpenChange={setCupomDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingCupom ? 'Editar Cupom' : 'Criar Novo Cupom'}</DialogTitle>
+            <DialogDescription>
+              Configure os detalhes do cupom de desconto
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Código do Cupom *</Label>
+                <Input
+                  value={cupomForm.codigo}
+                  onChange={(e) => setCupomForm({ ...cupomForm, codigo: e.target.value.toUpperCase() })}
+                  placeholder="BLACKFRIDAY2025"
+                  className="font-mono"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Desconto</Label>
+                <Select value={cupomForm.tipo} onValueChange={(value) => setCupomForm({ ...cupomForm, tipo: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentual">Percentual (%)</SelectItem>
+                    <SelectItem value="valor_fixo">Valor Fixo (R$)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Valor do Desconto *</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={cupomForm.valor}
+                onChange={(e) => setCupomForm({ ...cupomForm, valor: parseFloat(e.target.value) })}
+                placeholder={cupomForm.tipo === 'percentual' ? '10 (para 10%)' : '50 (para R$ 50,00)'}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea
+                value={cupomForm.descricao}
+                onChange={(e) => setCupomForm({ ...cupomForm, descricao: e.target.value })}
+                placeholder="Black Friday - 20% de desconto em todos os planos"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data Início</Label>
+                <Input
+                  type="date"
+                  value={cupomForm.data_inicio}
+                  onChange={(e) => setCupomForm({ ...cupomForm, data_inicio: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Data Expiração</Label>
+                <Input
+                  type="date"
+                  value={cupomForm.data_expiracao}
+                  onChange={(e) => setCupomForm({ ...cupomForm, data_expiracao: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Quantidade Máxima de Usos</Label>
+              <Input
+                type="number"
+                value={cupomForm.quantidade_maxima || ""}
+                onChange={(e) => setCupomForm({ 
+                  ...cupomForm, 
+                  quantidade_maxima: e.target.value ? parseInt(e.target.value) : null 
+                })}
+                placeholder="Deixe vazio para ilimitado"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCupomDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => saveCupomMutation.mutate()} disabled={saveCupomMutation.isPending}>
+              {saveCupomMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {editingCupom ? 'Salvar Alterações' : 'Criar Cupom'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // Componente de Sistema
 function SistemaTab({ users, subscriptions }: { users: User[], subscriptions: Subscription[] }) {
   const { toast } = useToast();
@@ -1963,81 +2329,8 @@ export default function AdminPublico() {
               </Dialog>
             </div>
           ) : activeTab === 'promocoes' ? (
-            // Aba de Promoções e Descontos
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    Gerenciamento de Promoções
-                  </CardTitle>
-                  <CardDescription>
-                    Crie cupons de desconto e promoções especiais para seus clientes
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Alert className="mb-6">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Funcionalidade em Desenvolvimento</AlertTitle>
-                    <AlertDescription>
-                      O sistema de promoções está sendo desenvolvido. Em breve você poderá:
-                      <ul className="list-disc list-inside mt-2 space-y-1">
-                        <li>Criar cupons de desconto personalizados</li>
-                        <li>Definir descontos por percentual ou valor fixo</li>
-                        <li>Configurar período de validade</li>
-                        <li>Limitar uso por cliente</li>
-                        <li>Aplicar promoções em planos específicos</li>
-                        <li>Acompanhar estatísticas de uso</li>
-                      </ul>
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="grid gap-4">
-                    <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Promoções Ativas</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">Nenhuma promoção ativa no momento</p>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Cupons de Desconto</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-muted-foreground">Nenhum cupom criado ainda</p>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-purple-200">
-                      <CardHeader>
-                        <CardTitle className="text-lg">Personalização de Planos</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div>
-                            <Label>Preço Premium Mensal Atual</Label>
-                            <p className="text-2xl font-bold text-green-600">R$ 79,99</p>
-                          </div>
-                          <div>
-                            <Label>Preço Premium Anual Atual</Label>
-                            <p className="text-2xl font-bold text-green-600">R$ 767,04</p>
-                          </div>
-                          <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>
-                              Para alterar preços dos planos ou criar promoções personalizadas, entre em contato com o suporte técnico.
-                            </AlertDescription>
-                          </Alert>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            // Aba de Promoções e Descontos - SISTEMA ATIVO
+            <PromocoesTab />
           ) : (
             // Dashboard Principal
             <>
