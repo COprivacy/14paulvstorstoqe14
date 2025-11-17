@@ -27,12 +27,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, Check, CreditCard, Building2, QrCode, Shield, Zap } from "lucide-react";
+import { Loader2, Check, CreditCard, Building2, QrCode, Shield, Zap, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { validateCpfOrCnpj } from "@/lib/validators";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 const checkoutSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
@@ -79,7 +80,7 @@ export function CheckoutForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validandoCupom, setValidandoCupom] = useState(false);
   const [cupomValidado, setCupomValidado] = useState<any>(null);
-  
+
   const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
