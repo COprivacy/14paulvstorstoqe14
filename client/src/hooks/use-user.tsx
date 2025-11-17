@@ -19,10 +19,25 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// Função para sanitizar dados do usuário (remover senha)
+const sanitizeUserData = (user: User): User => {
+  const { senha, ...sanitizedUser } = user as any;
+  return sanitizedUser as User;
+};
+
 export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem("user");
-    return savedUser ? JSON.parse(savedUser) : null;
+    if (!savedUser) return null;
+    
+    try {
+      const parsed = JSON.parse(savedUser);
+      // Garantir que senha nunca seja carregada do localStorage
+      const { senha, ...sanitized } = parsed;
+      return sanitized as User;
+    } catch {
+      return null;
+    }
   });
 
   const isAdmin = user?.is_admin === "true" || user?.is_admin === true;
@@ -34,8 +49,9 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`/api/users/${user.id}`);
       if (response.ok) {
         const updatedUser = await response.json();
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        const sanitized = sanitizeUserData(updatedUser);
+        setUser(sanitized);
+        localStorage.setItem("user", JSON.stringify(sanitized));
       }
     } catch (error) {
       console.error("Erro ao atualizar dados do usuário:", error);
@@ -43,9 +59,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Atualizar localStorage quando o usuário mudar
+    // Atualizar localStorage quando o usuário mudar (SEM senha)
     if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
+      const sanitized = sanitizeUserData(user);
+      localStorage.setItem("user", JSON.stringify(sanitized));
     } else {
       localStorage.removeItem("user");
     }
@@ -100,8 +117,11 @@ export function useUser() {
   }, [user?.id]);
 
   const login = (userData: User) => {
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
+    // NUNCA armazenar senha no localStorage
+    const { senha, ...sanitizedData } = userData as any;
+    const sanitized = sanitizedData as User;
+    localStorage.setItem("user", JSON.stringify(sanitized));
+    setUser(sanitized);
   };
 
   const logout = () => {

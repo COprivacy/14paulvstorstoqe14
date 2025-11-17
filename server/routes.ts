@@ -207,13 +207,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`✅ Login bem-sucedido para usuário: ${email}`);
       }
 
-      // Login bem-sucedido
-      const userResponse = {
-        ...user,
-        tipo: "usuario",
-      };
+      // Log da ação de login
+      await logAdminAction(
+        user.id,
+        "login",
+        "usuario",
+        null,
+        JSON.stringify({
+          email: user.email,
+          ip: req.ip,
+          userAgent: req.get("user-agent"),
+        })
+      );
 
-      res.json(userResponse);
+      // NUNCA retornar senha para o frontend
+      const { senha: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
     } catch (error: any) {
       console.error("Erro no login:", error);
       res.status(500).json({ error: "Erro ao fazer login" });
@@ -869,11 +878,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const cupom = await storage.getCupom?.(id);
-      
+
       if (!cupom) {
         return res.status(404).json({ error: "Cupom não encontrado" });
       }
-      
+
       res.json(cupom);
     } catch (error: any) {
       logger.error('[API] Erro ao buscar cupom:', error);
@@ -885,14 +894,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cupons", requireAdmin, async (req, res) => {
     try {
       const userId = req.headers["x-user-id"] as string;
-      
+
       const cupomData = {
         ...req.body,
         criado_por: userId,
       };
 
       const cupom = await storage.createCupom?.(cupomData);
-      
+
       await storage.logAdminAction?.(
         userId,
         "CUPOM_CRIADO",
@@ -912,9 +921,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.headers["x-user-id"] as string;
       const id = parseInt(req.params.id);
-      
+
       const cupom = await storage.updateCupom?.(id, req.body);
-      
+
       if (!cupom) {
         return res.status(404).json({ error: "Cupom não encontrado" });
       }
@@ -925,7 +934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Cupom atualizado: ${cupom.codigo}`,
         req
       );
-      
+
       res.json(cupom);
     } catch (error: any) {
       logger.error('[API] Erro ao atualizar cupom:', error);
@@ -938,10 +947,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.headers["x-user-id"] as string;
       const id = parseInt(req.params.id);
-      
+
       const cupom = await storage.getCupom?.(id);
       const deleted = await storage.deleteCupom?.(id);
-      
+
       if (!deleted) {
         return res.status(404).json({ error: "Cupom não encontrado" });
       }
@@ -952,7 +961,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Cupom deletado: ${cupom?.codigo}`,
         req
       );
-      
+
       res.json({ success: true });
     } catch (error: any) {
       logger.error('[API] Erro ao deletar cupom:', error);
@@ -970,7 +979,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const resultado = await storage.validarCupom?.(codigo, plano, userId || 'temp');
-      
+
       if (!resultado?.valido) {
         return res.status(400).json({ 
           valido: false, 
@@ -983,7 +992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calcular valor do desconto baseado no plano
       const valorPlano = plano === 'premium_mensal' ? 79.99 : 767.04;
-      
+
       if (cupom.tipo === 'percentual') {
         valorDesconto = (valorPlano * cupom.valor) / 100;
       } else {
@@ -4684,7 +4693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (caixaAberto) {
           await storage.atualizarTotaisCaixa?.(
             caixaAberto.id,
-            'total_vendas',
+            "total_vendas",
             -devolucao.valor_total // Valor negativo para subtrair
           );
           console.log(`💰 Valor descontado do caixa: R$ ${devolucao.valor_total.toFixed(2)}`);
