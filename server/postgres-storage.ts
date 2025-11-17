@@ -69,6 +69,51 @@ import {
   type InsertDevolucao,
 
 
+  type Orcamento,
+  type InsertOrcamento,
+  type ClientNote,
+  type InsertClientNote,
+  type ClientDocument,
+  type InsertClientDocument,
+  type ClientInteraction,
+  type InsertClientInteraction,
+  type PlanChangeHistory,
+  type InsertPlanChangeHistory,
+  type ClientCommunication,
+  type InsertClientCommunication,
+  type Cupom,
+  type InsertCupom,
+  type UsoCupom,
+  type InsertUsoCupom,
+} from '@shared/schema';
+import type { IStorage } from './storage';
+import { randomUUID } from 'crypto';
+import ws from 'ws';
+import { logger } from './logger';
+
+
+neonConfig.webSocketConstructor = ws;
+
+// Log de debug (sem expor a senha)
+const dbUrl = process.env.DATABASE_URL!;
+const maskedUrl = dbUrl.replace(/:([^@]+)@/, ':****@');
+console.log(`🔌 Conectando ao PostgreSQL: ${maskedUrl}`);
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+
+export class PostgresStorage implements IStorage {
+  private db;
+
+  constructor() {
+    this.db = drizzle(pool);
+    console.log('✅ PostgreSQL conectado com sucesso');
+
+    // Testar conexão e seed de dados
+    this.testConnection();
+    this.seedInitialData();
+    this.ensureCuponsTablesExist();
+  }
+
   private async ensureCuponsTablesExist() {
     try {
       // Verificar se a tabela de cupons já existe
@@ -148,51 +193,6 @@ import {
       // Não lançar erro - apenas logar. O sistema pode funcionar sem cupons.
       console.warn('⚠️ Sistema iniciará sem suporte a cupons');
     }
-  }
-
-  type Orcamento,
-  type InsertOrcamento,
-  type ClientNote,
-  type InsertClientNote,
-  type ClientDocument,
-  type InsertClientDocument,
-  type ClientInteraction,
-  type InsertClientInteraction,
-  type PlanChangeHistory,
-  type InsertPlanChangeHistory,
-  type ClientCommunication,
-  type InsertClientCommunication,
-  type Cupom,
-  type InsertCupom,
-  type UsoCupom,
-  type InsertUsoCupom,
-} from '@shared/schema';
-import type { IStorage } from './storage';
-import { randomUUID } from 'crypto';
-import ws from 'ws';
-import { logger } from './logger';
-
-
-neonConfig.webSocketConstructor = ws;
-
-// Log de debug (sem expor a senha)
-const dbUrl = process.env.DATABASE_URL!;
-const maskedUrl = dbUrl.replace(/:([^@]+)@/, ':****@');
-console.log(`🔌 Conectando ao PostgreSQL: ${maskedUrl}`);
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
-
-export class PostgresStorage implements IStorage {
-  private db;
-
-  constructor() {
-    this.db = drizzle(pool);
-    console.log('✅ PostgreSQL conectado com sucesso');
-
-    // Testar conexão e seed de dados
-    this.testConnection();
-    this.seedInitialData();
-    this.ensureCuponsTablesExist();
   }
 
   private async testConnection() {
