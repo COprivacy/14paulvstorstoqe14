@@ -6,7 +6,7 @@ import { CheckoutForm } from "@/components/CheckoutForm";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
-import { getPlanPrices, formatPrice, calculateAnnualSavings } from "@/lib/planPrices";
+import { getPlanPrices, fetchPlanPricesFromServer, formatPrice, calculateAnnualSavings } from "@/lib/planPrices";
 
 export default function Planos() {
   const { user } = useUser();
@@ -19,10 +19,25 @@ export default function Planos() {
   } | null>(null);
   const { toast } = useToast();
   const [precos, setPrecos] = useState(getPlanPrices());
+  const [loading, setLoading] = useState(true);
 
   // Atualizar preços ao montar o componente
   useEffect(() => {
-    setPrecos(getPlanPrices());
+    const carregarPrecos = async () => {
+      setLoading(true);
+      try {
+        const precosAtualizados = await fetchPlanPricesFromServer();
+        console.log('📋 [PLANOS] Preços carregados:', precosAtualizados);
+        setPrecos(precosAtualizados);
+      } catch (error) {
+        console.error('❌ [PLANOS] Erro ao carregar preços:', error);
+        setPrecos(getPlanPrices());
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    carregarPrecos();
   }, []);
 
   // Verificar status do pagamento ao retornar do Mercado Pago

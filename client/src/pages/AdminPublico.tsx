@@ -65,6 +65,7 @@ import {
 import { Cliente360Timeline } from "@/components/Cliente360Timeline";
 import { Cliente360Notes } from "@/components/Cliente360Notes";
 import { AdminLogsView } from "@/components/AdminLogsView";
+import { updatePlanPricesCache, clearPlanPricesCache, fetchPlanPricesFromServer } from "@/lib/planPrices";
 
 // Tipos e Interfaces
 type MercadoPagoConfig = {
@@ -736,12 +737,12 @@ function PromocoesTab() {
 
   // Função helper para exibir badge de status
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
+    const statusConfig: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', label: string }> = {
       ativo: { variant: 'default', label: 'Ativo' },
       inativo: { variant: 'secondary', label: 'Inativo' },
       expirado: { variant: 'destructive', label: 'Expirado' },
     };
-    
+
     const config = statusConfig[status] || { variant: 'outline', label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
@@ -757,13 +758,13 @@ function PromocoesTab() {
     mutationFn: async () => {
       const endpoint = editingCupom ? `/api/cupons/${editingCupom.id}` : "/api/cupons";
       const method = editingCupom ? "PUT" : "POST";
-      
+
       // Adicionar criado_por ao criar novo cupom
       const payload = {
         ...cupomForm,
         criado_por: user.id,
       };
-      
+
       const response = await fetch(endpoint, {
         method,
         headers: {
@@ -784,8 +785,8 @@ function PromocoesTab() {
     onSuccess: () => {
       toast({
         title: editingCupom ? "Cupom atualizado!" : "Cupom criado!",
-        description: editingCupom 
-          ? "O cupom foi atualizado com sucesso" 
+        description: editingCupom
+          ? "O cupom foi atualizado com sucesso"
           : "O novo cupom está disponível para uso",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/cupons"] });
@@ -887,12 +888,16 @@ function PromocoesTab() {
 
       console.log('💰 [MUTATION] Salvando preços:', precos);
 
+      // Limpar cache antes de salvar
+      clearPlanPricesCache();
+
       const response = await fetch('/api/plan-prices', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-user-id': user.id,
           'x-is-admin': 'true',
+          'Cache-Control': 'no-cache',
         },
         body: JSON.stringify({
           premium_mensal: Number(precos.premium_mensal),
@@ -902,33 +907,44 @@ function PromocoesTab() {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('❌ [MUTATION] Erro ao salvar preços:', error);
+        console.error('❌ [MUTATION] Erro ao salvar:', error);
         throw new Error(error.error || 'Erro ao salvar preços');
       }
 
-      const result = await response.json();
-      console.log('✅ [MUTATION] Preços salvos:', result);
-      return result;
+      const data = await response.json();
+      console.log('✅ [MUTATION] Resposta do servidor:', data);
+
+      if (data.success && data.precos) {
+        // Forçar atualização do cache
+        updatePlanPricesCache(data.precos);
+
+        // Buscar novamente do servidor para garantir sincronia
+        await fetchPlanPricesFromServer();
+
+        return data.precos;
+      }
+
+      throw new Error('Resposta inválida do servidor');
     },
     onSuccess: async (data) => {
       console.log('✅ [MUTATION] onSuccess:', data);
-      
+
       // Atualizar estado local imediatamente
       if (data.precos) {
         setPrecos(data.precos);
       }
-      
+
       toast({
         title: "✅ Preços atualizados!",
         description: "Os valores dos planos foram atualizados com sucesso em todo o sistema",
       });
-      
+
       setEditandoPrecos(false);
-      
+
       // Invalidar todas as queries relacionadas
       await queryClient.invalidateQueries({ queryKey: ['/api/plan-prices'] });
       await queryClient.refetchQueries({ queryKey: ['/api/plan-prices'] });
-      
+
       // Forçar recarga da página após 500ms para garantir que tudo está atualizado
       setTimeout(() => {
         window.location.reload();
@@ -1012,22 +1028,22 @@ function PromocoesTab() {
     const carregarPrecos = async () => {
       try {
         console.log('🔄 [FRONTEND] Carregando preços...');
-        
+
         const response = await fetch('/api/plan-prices', {
           headers: {
             'Accept': 'application/json',
           },
           cache: 'no-store' // Forçar busca sem cache
         });
-        
+
         console.log('📋 [FRONTEND] Response status:', response.status);
         console.log('📋 [FRONTEND] Content-Type:', response.headers.get('content-type'));
-        
+
         if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
           const data = await response.json();
-          
+
           console.log('📋 [FRONTEND] Dados recebidos:', data);
-          
+
           // Validar que os dados são válidos
           if (data && typeof data.premium_mensal === 'number' && typeof data.premium_anual === 'number') {
             console.log('✅ [FRONTEND] Atualizando preços no estado:', data);
@@ -1057,7 +1073,7 @@ function PromocoesTab() {
             'Accept': 'application/json',
           }
         });
-        
+
         if (response.ok && response.headers.get('content-type')?.includes('application/json')) {
           const data = await response.json();
           if (data && Object.keys(data).length > 0) {
@@ -1088,7 +1104,7 @@ function PromocoesTab() {
               </Button>
             ) : (
               <div className="flex gap-2">
-                <Button 
+                <Button
                   onClick={() => {
                     setEditandoPrecos(false);
                     const precosSalvos = localStorage.getItem('planos_precos');
@@ -1097,12 +1113,12 @@ function PromocoesTab() {
                     } else {
                       setPrecos({ premium_mensal: 79.99, premium_anual: 767.04 });
                     }
-                  }} 
+                  }}
                   variant="outline"
                 >
                   Cancelar
                 </Button>
-                <Button 
+                <Button
                   onClick={() => {
                     if (!precos.premium_mensal || !precos.premium_anual) {
                       toast({
@@ -1389,17 +1405,17 @@ function PromocoesTab() {
                     <TableCell>{getStatusBadge(cupom.status)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleEdit(cupom)}
                           title="Editar cupom"
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={async () => {
                             const novoStatus = cupom.status === 'ativo' ? 'inativo' : 'ativo';
                             try {
@@ -1412,7 +1428,7 @@ function PromocoesTab() {
                                 },
                                 body: JSON.stringify({ status: novoStatus }),
                               });
-                              
+
                               if (response.ok) {
                                 toast({
                                   title: `Cupom ${novoStatus === 'ativo' ? 'ativado' : 'desativado'}`,
@@ -1436,9 +1452,9 @@ function PromocoesTab() {
                             <CheckCircle className="h-4 w-4 text-green-500" />
                           )}
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => {
                             if (confirm(`Deletar cupom ${cupom.codigo}?`)) {
                               deleteCupomMutation.mutate(cupom.id);
@@ -1570,9 +1586,9 @@ function PromocoesTab() {
               <Input
                 type="number"
                 value={cupomForm.quantidade_maxima || ""}
-                onChange={(e) => setCupomForm({ 
-                  ...cupomForm, 
-                  quantidade_maxima: e.target.value ? parseInt(e.target.value) : null 
+                onChange={(e) => setCupomForm({
+                  ...cupomForm,
+                  quantidade_maxima: e.target.value ? parseInt(e.target.value) : null
                 })}
                 placeholder="Deixe vazio para ilimitado"
               />
@@ -1582,7 +1598,7 @@ function PromocoesTab() {
             <Button variant="outline" onClick={() => setCupomDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={() => {
                 if (!cupomForm.codigo || !cupomForm.valor) {
                   toast({
@@ -1601,7 +1617,7 @@ function PromocoesTab() {
                   return;
                 }
                 saveCupomMutation.mutate();
-              }} 
+              }}
               disabled={saveCupomMutation.isPending}
             >
               {saveCupomMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -1691,7 +1707,7 @@ function PromocoesTab() {
             <Button variant="outline" onClick={() => setPacotesDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={() => salvarPacotesMutation.mutate()}
               disabled={salvarPacotesMutation.isPending}
             >
@@ -2575,7 +2591,7 @@ export default function AdminPublico() {
                       }
 
                       const dataExpiracao = client.data_expiracao_plano || client.data_expiracao_trial;
-                      const diasRestantes = dataExpiracao 
+                      const diasRestantes = dataExpiracao
                         ? Math.max(0, Math.ceil((new Date(dataExpiracao).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
                         : null;
 
