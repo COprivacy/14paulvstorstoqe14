@@ -863,7 +863,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         max_funcionarios: updatedUser.max_funcionarios,
         meta_mensal: updatedUser.meta_mensal,
       });
-
+    } catch (error: any) {
+      logger.error('[API] Erro ao atualizar usuário:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // ============================================
   // ROTAS DE PREÇOS DOS PLANOS
@@ -1286,12 +1290,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       logger.error('[API] Erro ao buscar uso de cupons:', error);
       res.status(500).json({ error: error.message });
-    }
-  });
-
-    } catch (error) {
-      console.error(`❌ [UPDATE USER] Erro ao atualizar usuário:`, error);
-      res.status(500).json({ error: "Erro ao atualizar usuário" });
     }
   });
 
