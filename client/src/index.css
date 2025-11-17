@@ -409,8 +409,8 @@
     background: hsl(var(--primary) / 0.8);
   }
 
-  /* Tema Sistema - Gradiente Moderno (estilo Planos) */
-  .system-gradient {
+  /* Tema Sistema - Gradiente Moderno - Versão Escura */
+  .dark.system-gradient {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     
@@ -458,9 +458,58 @@
     --chart-5: 291 64% 55%;
   }
 
-  /* Background gradiente para tema Sistema */
-  :root.system-gradient,
-  :root.system-gradient body {
+  /* Tema Sistema - Gradiente Moderno - Versão Clara */
+  .system-gradient {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    
+    --border: 214 32% 91%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --card-border: 214 32% 91%;
+    
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 262 83% 95%;
+    --sidebar-accent-foreground: 262 83% 38%;
+    --sidebar-ring: 262 83% 58%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --popover-border: 214 32% 91%;
+    
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    --accent: 262 83% 95%;
+    --accent-foreground: 262 83% 38%;
+    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --input: 214 32% 91%;
+    --ring: 262 83% 58%;
+    
+    --chart-1: 262 83% 58%;
+    --chart-2: 291 64% 42%;
+    --chart-3: 338 83% 58%;
+    --chart-4: 262 83% 70%;
+    --chart-5: 291 64% 55%;
+  }
+
+  /* Background gradiente para tema Sistema - Modo Escuro */
+  :root.dark.system-gradient,
+  :root.dark.system-gradient body {
     background: linear-gradient(135deg, 
       rgb(15, 23, 42) 0%, 
       rgb(30, 41, 59) 50%, 
@@ -470,19 +519,46 @@
     min-height: 100vh;
   }
 
-  /* Cards com efeito glassmorphism no tema Sistema */
-  .system-gradient .glass-effect,
-  .system-gradient .card {
+  /* Background gradiente para tema Sistema - Modo Claro */
+  :root.system-gradient:not(.dark),
+  :root.system-gradient:not(.dark) body {
+    background: linear-gradient(135deg, 
+      rgb(249, 250, 251) 0%, 
+      rgb(224, 231, 255) 50%, 
+      rgb(243, 232, 255) 100%
+    ) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh;
+  }
+
+  /* Cards com efeito glassmorphism no tema Sistema - Modo Escuro */
+  .dark.system-gradient .glass-effect,
+  .dark.system-gradient .card {
     backdrop-filter: blur(16px) saturate(180%);
     background: rgba(15, 23, 42, 0.6) !important;
     border: 1px solid rgba(139, 92, 246, 0.2);
   }
 
-  /* Ajustes para sidebar no tema Sistema */
-  .system-gradient [data-sidebar] {
+  /* Cards com efeito glassmorphism no tema Sistema - Modo Claro */
+  .system-gradient:not(.dark) .glass-effect,
+  .system-gradient:not(.dark) .card {
+    backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(139, 92, 246, 0.15);
+  }
+
+  /* Ajustes para sidebar no tema Sistema - Modo Escuro */
+  .dark.system-gradient [data-sidebar] {
     background: rgba(15, 23, 42, 0.8) !important;
     backdrop-filter: blur(16px);
     border-right: 1px solid rgba(139, 92, 246, 0.2) !important;
+  }
+
+  /* Ajustes para sidebar no tema Sistema - Modo Claro */
+  .system-gradient:not(.dark) [data-sidebar] {
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(139, 92, 246, 0.15) !important;
   }
 
   /* Modo Compacto */

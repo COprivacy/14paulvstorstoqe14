@@ -32,7 +32,6 @@ export function ThemeProvider({
     if (savedTheme) {
       return savedTheme;
     }
-    // Usa o defaultTheme da prop
     localStorage.setItem(storageKey, defaultTheme);
     return defaultTheme;
   });
@@ -46,10 +45,33 @@ export function ThemeProvider({
     body.classList.remove("light", "dark", "system-gradient");
 
     if (theme === "system") {
+      // Detecta se o sistema está em modo escuro ou claro
+      const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      
       // Aplica tema personalizado com gradiente moderno
       root.classList.add("system-gradient");
       body.classList.add("system-gradient");
-      return;
+      
+      // Adiciona classe dark se o sistema preferir modo escuro
+      if (systemPrefersDark) {
+        root.classList.add("dark");
+        body.classList.add("dark");
+      }
+
+      // Listener para mudanças no tema do sistema
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = (e: MediaQueryListEvent) => {
+        if (e.matches) {
+          root.classList.add("dark");
+          body.classList.add("dark");
+        } else {
+          root.classList.remove("dark");
+          body.classList.remove("dark");
+        }
+      };
+
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
     }
 
     // Aplica tema light ou dark
