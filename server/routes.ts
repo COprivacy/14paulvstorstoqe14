@@ -954,6 +954,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============================================
+  // ROTAS DE PREÇOS DOS PACOTES DE FUNCIONÁRIOS
+  // ============================================
+
+  // Buscar preços dos pacotes de funcionários
+  app.get("/api/employee-package-prices", async (req, res) => {
+    try {
+      // Definir preços padrão
+      const DEFAULT_PRICES = {
+        pacote_5: 49.99,
+        pacote_10: 89.99,
+        pacote_20: 159.99,
+        pacote_50: 349.99,
+      };
+
+      // Tentar buscar preços customizados
+      if (storage.getSystemConfig) {
+        const precosConfig = await storage.getSystemConfig('pacotes_funcionarios_precos');
+        
+        if (precosConfig && precosConfig.valor) {
+          try {
+            const precos = JSON.parse(precosConfig.valor);
+            
+            // Validar que os preços são números válidos
+            if (typeof precos.pacote_5 === 'number' && 
+                typeof precos.pacote_10 === 'number' &&
+                typeof precos.pacote_20 === 'number' &&
+                typeof precos.pacote_50 === 'number' &&
+                precos.pacote_5 > 0 && 
+                precos.pacote_10 > 0 &&
+                precos.pacote_20 > 0 &&
+                precos.pacote_50 > 0) {
+              return res.status(200).json(precos);
+            }
+          } catch (parseError) {
+            logger.warn('[API] Erro ao parsear preços de pacotes salvos, usando padrão', 'EMPLOYEE_PACKAGES');
+          }
+        }
+      }
+
+      // Retornar preços padrão
+      return res.status(200).json(DEFAULT_PRICES);
+    } catch (error: any) {
+      logger.error('[API] Erro ao buscar preços de pacotes:', error);
+      // Sempre retornar JSON, mesmo em caso de erro
+      return res.status(200).json({
+        pacote_5: 49.99,
+        pacote_10: 89.99,
+        pacote_20: 159.99,
+        pacote_50: 349.99,
+      });
+    }
+  });
+
+  // Atualizar preços dos pacotes de funcionários (apenas admin)
+  app.post("/api/employee-package-prices", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const { pacote_5, pacote_10, pacote_20, pacote_50 } = req.body;
+
+      // Validar entrada
+      if (!pacote_5 || !pacote_10 || !pacote_20 || !pacote_50) {
+        return res.status(400).json({ error: "Todos os preços são obrigatórios" });
+      }
+
+      const p5 = parseFloat(pacote_5);
+      const p10 = parseFloat(pacote_10);
+      const p20 = parseFloat(pacote_20);
+      const p50 = parseFloat(pacote_50);
+
+      // Validar que são números válidos e positivos
+      if (isNaN(p5) || isNaN(p10) || isNaN(p20) || isNaN(p50) || 
+          p5 <= 0 || p10 <= 0 || p20 <= 0 || p50 <= 0) {
+        return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
+      }
+
+      const precos = {
+        pacote_5: p5,
+        pacote_10: p10,
+        pacote_20: p20,
+        pacote_50: p50,
+      };
+
+      // Salvar no banco
+      if (storage.upsertSystemConfig) {
+        await storage.upsertSystemConfig('pacotes_funcionarios_precos', JSON.stringify(precos));
+      } else {
+        logger.error('[API] Método upsertSystemConfig não disponível', 'EMPLOYEE_PACKAGES');
+        return res.status(500).json({ error: "Erro ao salvar configuração" });
+      }
+
+      // Log da ação
+      if (storage.logAdminAction) {
+        await storage.logAdminAction(
+          userId,
+          "PACOTES_PRECOS_ATUALIZADOS",
+          `Preços de pacotes atualizados - +5: R$ ${p5.toFixed(2)}, +10: R$ ${p10.toFixed(2)}, +20: R$ ${p20.toFixed(2)}, +50: R$ ${p50.toFixed(2)}`,
+          req
+        );
+      }
+
+      logger.info('[API] Preços de pacotes atualizados com sucesso', 'EMPLOYEE_PACKAGES', precos);
+
+      res.json({ success: true, precos });
+    } catch (error: any) {
+      logger.error('[API] Erro ao atualizar preços de pacotes:', error);
+      res.status(500).json({ error: error.message || "Erro ao atualizar preços de pacotes" });
+    }
+  });
+
+  // ============================================
   // ROTAS DE CUPONS E PROMOÇÕES
   // ============================================
 
