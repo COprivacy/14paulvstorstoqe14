@@ -882,7 +882,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 typeof precos.premium_anual === 'number' &&
                 precos.premium_mensal > 0 && 
                 precos.premium_anual > 0) {
-              return res.json(precos);
+              return res.status(200).json(precos);
             }
           } catch (parseError) {
             logger.warn('[API] Erro ao parsear preços salvos, usando padrão', 'PLAN_PRICES');
@@ -891,11 +891,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Retornar preços padrão
-      res.json(DEFAULT_PRICES);
+      return res.status(200).json(DEFAULT_PRICES);
     } catch (error: any) {
       logger.error('[API] Erro ao buscar preços:', error);
       // Sempre retornar JSON, mesmo em caso de erro
-      res.json({
+      return res.status(200).json({
         premium_mensal: 79.99,
         premium_anual: 767.04,
       });
