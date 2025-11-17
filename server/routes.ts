@@ -847,6 +847,179 @@ export async function registerRoutes(app: Express): Promise<Server> {
         max_funcionarios: updatedUser.max_funcionarios,
         meta_mensal: updatedUser.meta_mensal,
       });
+
+
+  // ============================================
+  // ROTAS DE CUPONS E PROMOÇÕES
+  // ============================================
+
+  // Listar todos os cupons (apenas admin)
+  app.get("/api/cupons", requireAdmin, async (req, res) => {
+    try {
+      const cupons = await storage.getCupons?.();
+      res.json(cupons || []);
+    } catch (error: any) {
+      logger.error('[API] Erro ao buscar cupons:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Buscar cupom específico (apenas admin)
+  app.get("/api/cupons/:id", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const cupom = await storage.getCupom?.(id);
+      
+      if (!cupom) {
+        return res.status(404).json({ error: "Cupom não encontrado" });
+      }
+      
+      res.json(cupom);
+    } catch (error: any) {
+      logger.error('[API] Erro ao buscar cupom:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Criar cupom (apenas admin)
+  app.post("/api/cupons", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      
+      const cupomData = {
+        ...req.body,
+        criado_por: userId,
+      };
+
+      const cupom = await storage.createCupom?.(cupomData);
+      
+      await storage.logAdminAction?.(
+        userId,
+        "CUPOM_CRIADO",
+        `Cupom criado: ${cupom.codigo} - Tipo: ${cupom.tipo}, Valor: ${cupom.valor}`,
+        req
+      );
+
+      res.json(cupom);
+    } catch (error: any) {
+      logger.error('[API] Erro ao criar cupom:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Atualizar cupom (apenas admin)
+  app.put("/api/cupons/:id", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const id = parseInt(req.params.id);
+      
+      const cupom = await storage.updateCupom?.(id, req.body);
+      
+      if (!cupom) {
+        return res.status(404).json({ error: "Cupom não encontrado" });
+      }
+
+      await storage.logAdminAction?.(
+        userId,
+        "CUPOM_ATUALIZADO",
+        `Cupom atualizado: ${cupom.codigo}`,
+        req
+      );
+      
+      res.json(cupom);
+    } catch (error: any) {
+      logger.error('[API] Erro ao atualizar cupom:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Deletar cupom (apenas admin)
+  app.delete("/api/cupons/:id", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const id = parseInt(req.params.id);
+      
+      const cupom = await storage.getCupom?.(id);
+      const deleted = await storage.deleteCupom?.(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Cupom não encontrado" });
+      }
+
+      await storage.logAdminAction?.(
+        userId,
+        "CUPOM_DELETADO",
+        `Cupom deletado: ${cupom?.codigo}`,
+        req
+      );
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      logger.error('[API] Erro ao deletar cupom:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Validar cupom (público - usado no checkout)
+  app.post("/api/cupons/validar", async (req, res) => {
+    try {
+      const { codigo, plano, userId } = req.body;
+
+      if (!codigo || !plano) {
+        return res.status(400).json({ error: "Código e plano são obrigatórios" });
+      }
+
+      const resultado = await storage.validarCupom?.(codigo, plano, userId || 'temp');
+      
+      if (!resultado?.valido) {
+        return res.status(400).json({ 
+          valido: false, 
+          erro: resultado?.erro || 'Cupom inválido' 
+        });
+      }
+
+      const cupom = resultado.cupom!;
+      let valorDesconto = 0;
+
+      // Calcular valor do desconto baseado no plano
+      const valorPlano = plano === 'premium_mensal' ? 79.99 : 767.04;
+      
+      if (cupom.tipo === 'percentual') {
+        valorDesconto = (valorPlano * cupom.valor) / 100;
+      } else {
+        valorDesconto = Math.min(cupom.valor, valorPlano);
+      }
+
+      res.json({
+        valido: true,
+        cupom: {
+          id: cupom.id,
+          codigo: cupom.codigo,
+          tipo: cupom.tipo,
+          valor: cupom.valor,
+          descricao: cupom.descricao,
+        },
+        valorDesconto: parseFloat(valorDesconto.toFixed(2)),
+        valorFinal: parseFloat((valorPlano - valorDesconto).toFixed(2)),
+      });
+    } catch (error: any) {
+      logger.error('[API] Erro ao validar cupom:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Histórico de uso de cupons (apenas admin)
+  app.get("/api/cupons/:id/uso", requireAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const usos = await storage.getUsoCupons?.(id);
+      res.json(usos || []);
+    } catch (error: any) {
+      logger.error('[API] Erro ao buscar uso de cupons:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
     } catch (error) {
       console.error(`❌ [UPDATE USER] Erro ao atualizar usuário:`, error);
       res.status(500).json({ error: "Erro ao atualizar usuário" });

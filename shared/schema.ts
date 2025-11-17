@@ -542,6 +542,40 @@ export const employeePackages = pgTable("employee_packages", {
   statusIdx: index("employee_packages_status_idx").on(table.status),
 }));
 
+// Tabela de Cupons/Promoções
+export const cupons = pgTable("cupons", {
+  id: serial("id").primaryKey(),
+  codigo: text("codigo").notNull().unique(),
+  tipo: text("tipo").notNull(), // percentual, valor_fixo
+  valor: real("valor").notNull(), // valor do desconto (ex: 10 para 10% ou R$ 10)
+  planos_aplicaveis: jsonb("planos_aplicaveis"), // ['premium_mensal', 'premium_anual'] ou null para todos
+  data_inicio: text("data_inicio").notNull(),
+  data_expiracao: text("data_expiracao").notNull(),
+  quantidade_maxima: integer("quantidade_maxima"), // null = ilimitado
+  quantidade_utilizada: integer("quantidade_utilizada").notNull().default(0),
+  status: text("status").notNull().default("ativo"), // ativo, inativo, expirado
+  descricao: text("descricao"),
+  criado_por: text("criado_por").notNull().references(() => users.id),
+  data_criacao: text("data_criacao").notNull(),
+  data_atualizacao: text("data_atualizacao"),
+}, (table) => ({
+  codigoIdx: index("cupons_codigo_idx").on(table.codigo),
+  statusIdx: index("cupons_status_idx").on(table.status),
+}));
+
+// Tabela de Uso de Cupons
+export const usoCupons = pgTable("uso_cupons", {
+  id: serial("id").primaryKey(),
+  cupom_id: integer("cupom_id").notNull().references(() => cupons.id),
+  user_id: text("user_id").notNull().references(() => users.id),
+  subscription_id: integer("subscription_id").references(() => subscriptions.id),
+  valor_desconto: real("valor_desconto").notNull(),
+  data_uso: text("data_uso").notNull(),
+}, (table) => ({
+  cupomIdIdx: index("uso_cupons_cupom_id_idx").on(table.cupom_id),
+  userIdIdx: index("uso_cupons_user_id_idx").on(table.user_id),
+}));
+
 export const insertEmployeePackageSchema = createInsertSchema(employeePackages).omit({
   id: true,
   data_compra: true,
@@ -549,6 +583,28 @@ export const insertEmployeePackageSchema = createInsertSchema(employeePackages).
 
 export type EmployeePackage = typeof employeePackages.$inferSelect;
 export type InsertEmployeePackage = z.infer<typeof insertEmployeePackageSchema>;
+
+export const insertCupomSchema = createInsertSchema(cupons).omit({
+  id: true,
+  data_criacao: true,
+  data_atualizacao: true,
+  quantidade_utilizada: true,
+}).extend({
+  codigo: z.string().min(3, "Código deve ter pelo menos 3 caracteres").max(50),
+  tipo: z.enum(["percentual", "valor_fixo"]),
+  valor: z.number().positive("Valor deve ser positivo"),
+  status: z.enum(["ativo", "inativo", "expirado"]).default("ativo"),
+});
+
+export const insertUsoCupomSchema = createInsertSchema(usoCupons).omit({
+  id: true,
+  data_uso: true,
+});
+
+export type Cupom = typeof cupons.$inferSelect;
+export type InsertCupom = z.infer<typeof insertCupomSchema>;
+export type UsoCupom = typeof usoCupons.$inferSelect;
+export type InsertUsoCupom = z.infer<typeof insertUsoCupomSchema>;
 
 // Comunicações enviadas ao cliente
 export const clientCommunications = pgTable("client_communications", {

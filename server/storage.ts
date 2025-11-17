@@ -180,6 +180,17 @@ export interface IStorage {
   // Employee Packages - Pacotes de funcionários
   createEmployeePackage?(data: any): Promise<any>;
   getEmployeePackages?(userId: string): Promise<any[]>;
+
+  // Cupons e Promoções
+  getCupons?(): Promise<any[]>;
+  getCupom?(id: number): Promise<any | undefined>;
+  getCupomByCodigo?(codigo: string): Promise<any | undefined>;
+  createCupom?(cupom: any): Promise<any>;
+  updateCupom?(id: number, updates: any): Promise<any | undefined>;
+  deleteCupom?(id: number): Promise<boolean>;
+  validarCupom?(codigo: string, plano: string, userId: string): Promise<{ valido: boolean; cupom?: any; erro?: string }>;
+  usarCupom?(cupomId: number, userId: string, subscriptionId: number, valorDesconto: number): Promise<any>;
+  getUsoCupons?(cupomId?: number): Promise<any[]>;
 }
 
 export abstract class Storage {

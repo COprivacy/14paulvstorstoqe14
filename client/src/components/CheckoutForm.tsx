@@ -43,6 +43,7 @@ const checkoutSchema = z.object({
   formaPagamento: z.enum(["BOLETO", "CREDIT_CARD", "PIX"], {
     errorMap: () => ({ message: "Selecione uma forma de pagamento" }),
   }),
+  cupom: z.string().optional(),
 });
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
@@ -75,22 +76,75 @@ export function CheckoutForm({
   // NOTA: Este formulário deve funcionar mesmo para usuários bloqueados
   // Isso permite que eles façam upgrade e reativem suas contas
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false); // Changed from isLoading to isSubmitting
-  const form = useForm<CheckoutFormData>({ // Changed from useState to useForm hook
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validandoCupom, setValidandoCupom] = useState(false);
+  const [cupomValidado, setCupomValidado] = useState<any>(null);
+  
+  const form = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       nome: "",
       email: "",
       cpfCnpj: "",
       formaPagamento: "PIX",
+      cupom: "",
     },
   });
 
   const formaPagamento = form.watch("formaPagamento");
-  // Assume selectedPlan is available and holds the current plan value, e.g., 'premium_mensal' or 'premium_anual'
-  // If it's not directly available, it should be passed as a prop or derived from the context.
-  // For this example, we'll use the 'plano' prop.
+  const cupomCodigo = form.watch("cupom");
   const selectedPlan = plano;
+
+  const validarCupom = async () => {
+    if (!cupomCodigo || cupomCodigo.trim() === "") {
+      toast({
+        title: "Digite um código",
+        description: "Por favor, digite um código de cupom",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setValidandoCupom(true);
+    try {
+      const userStr = localStorage.getItem("user");
+      const userId = userStr ? JSON.parse(userStr).id : null;
+
+      const res = await apiRequest("POST", "/api/cupons/validar", {
+        codigo: cupomCodigo.trim(),
+        plano: selectedPlan,
+        userId,
+      });
+
+      const resultado = await res.json();
+
+      if (resultado.valido) {
+        setCupomValidado(resultado);
+        toast({
+          title: "✅ Cupom aplicado!",
+          description: `Desconto de ${resultado.cupom.tipo === 'percentual' ? resultado.cupom.valor + '%' : 'R$ ' + resultado.cupom.valor.toFixed(2)} aplicado`,
+        });
+      }
+    } catch (error: any) {
+      setCupomValidado(null);
+      toast({
+        title: "Cupom inválido",
+        description: error.message || "Este cupom não pode ser aplicado",
+        variant: "destructive",
+      });
+    } finally {
+      setValidandoCupom(false);
+    }
+  };
+
+  const removerCupom = () => {
+    setCupomValidado(null);
+    form.setValue("cupom", "");
+    toast({
+      title: "Cupom removido",
+      description: "O desconto foi removido do pedido",
+    });
+  };
 
   const onSubmit = async (data: CheckoutFormData) => {
     setIsSubmitting(true);
@@ -98,6 +152,7 @@ export function CheckoutForm({
       const res = await apiRequest("POST", "/api/checkout", {
         ...data,
         plano,
+        cupom: cupomValidado ? cupomValidado.cupom.codigo : null,
       });
 
       const result = await res.json(); // Renamed from response to result for clarity
@@ -353,6 +408,72 @@ export function CheckoutForm({
                 )}
               />
 
+              {/* Campo de Cupom */}
+              <div className="space-y-2">
+                <Label className="text-gray-900 dark:text-white font-semibold">
+                  Cupom de Desconto
+                </Label>
+                <div className="flex gap-2">
+                  <FormField
+                    control={form.control}
+                    name="cupom"
+                    render={({ field }) => (
+                      <FormItem className="flex-1">
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Digite o código"
+                            className="bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-500 uppercase"
+                            disabled={!!cupomValidado}
+                            data-testid="input-cupom"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  {!cupomValidado ? (
+                    <Button
+                      type="button"
+                      onClick={validarCupom}
+                      disabled={validandoCupom || !cupomCodigo}
+                      variant="outline"
+                      data-testid="button-validar-cupom"
+                    >
+                      {validandoCupom ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Aplicar"
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={removerCupom}
+                      variant="outline"
+                      className="text-red-600"
+                      data-testid="button-remover-cupom"
+                    >
+                      Remover
+                    </Button>
+                  )}
+                </div>
+                {cupomValidado && (
+                  <Card className="p-3 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-semibold text-green-900 dark:text-green-100">
+                          {cupomValidado.cupom.descricao || cupomValidado.cupom.codigo}
+                        </span>
+                      </div>
+                      <span className="text-sm font-bold text-green-600">
+                        -R$ {cupomValidado.valorDesconto.toFixed(2)}
+                      </span>
+                    </div>
+                  </Card>
+                )}
+              </div>
+
               {formaPagamento && (
                 <Card className="p-3 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
                   <div className="flex items-start gap-3">
@@ -366,6 +487,31 @@ export function CheckoutForm({
                       <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                         {getPaymentDescription(formaPagamento)}
                       </p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* Resumo do Valor */}
+              {cupomValidado && (
+                <Card className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border-2 border-purple-200 dark:border-purple-800">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Valor original:</span>
+                      <span className="line-through">
+                        R$ {(cupomValidado.valorFinal + cupomValidado.valorDesconto).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                      <span>Desconto:</span>
+                      <span>-R$ {cupomValidado.valorDesconto.toFixed(2)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Total:</span>
+                      <span className="text-purple-600 dark:text-purple-400">
+                        R$ {cupomValidado.valorFinal.toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </Card>
