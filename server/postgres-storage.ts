@@ -1573,7 +1573,7 @@ export class PostgresStorage implements IStorage {
   }
 
   // ============================================
-  // IMPLEMENTAÇÃO DOS MÉTODOS DE GESTÃO DE CLIENTE 360°
+  // CUPONS E PROMOÇÕES
   // ============================================
 
   async getClientNotes(userId: string, limit = 50, offset = 0): Promise<ClientNote[]> {
