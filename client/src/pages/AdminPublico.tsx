@@ -726,6 +726,12 @@ function PromocoesTab() {
       const endpoint = editingCupom ? `/api/cupons/${editingCupom.id}` : "/api/cupons";
       const method = editingCupom ? "PUT" : "POST";
       
+      // Adicionar criado_por ao criar novo cupom
+      const payload = {
+        ...cupomForm,
+        criado_por: user.id,
+      };
+      
       const response = await fetch(endpoint, {
         method,
         headers: {
@@ -733,7 +739,7 @@ function PromocoesTab() {
           "x-user-id": user.id,
           "x-is-admin": "true",
         },
-        body: JSON.stringify(cupomForm),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -936,8 +942,52 @@ function PromocoesTab() {
                     <TableCell>{getStatusBadge(cupom.status)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(cupom)}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleEdit(cupom)}
+                          title="Editar cupom"
+                        >
                           <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={async () => {
+                            const novoStatus = cupom.status === 'ativo' ? 'inativo' : 'ativo';
+                            try {
+                              const response = await fetch(`/api/cupons/${cupom.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'x-user-id': user.id,
+                                  'x-is-admin': 'true',
+                                },
+                                body: JSON.stringify({ status: novoStatus }),
+                              });
+                              
+                              if (response.ok) {
+                                toast({
+                                  title: `Cupom ${novoStatus === 'ativo' ? 'ativado' : 'desativado'}`,
+                                  description: `O cupom ${cupom.codigo} foi ${novoStatus === 'ativo' ? 'ativado' : 'desativado'}`,
+                                });
+                                queryClient.invalidateQueries({ queryKey: ["/api/cupons"] });
+                              }
+                            } catch (error) {
+                              toast({
+                                title: "Erro",
+                                description: "Erro ao alterar status do cupom",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          title={cupom.status === 'ativo' ? 'Desativar cupom' : 'Ativar cupom'}
+                        >
+                          {cupom.status === 'ativo' ? (
+                            <Ban className="h-4 w-4 text-orange-500" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          )}
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -947,6 +997,7 @@ function PromocoesTab() {
                               deleteCupomMutation.mutate(cupom.id);
                             }
                           }}
+                          title="Deletar cupom"
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
@@ -1006,6 +1057,40 @@ function PromocoesTab() {
             </div>
 
             <div className="space-y-2">
+              <Label>Planos Aplicáveis</Label>
+              <div className="flex gap-2 flex-wrap">
+                {['premium_mensal', 'premium_anual'].map(plano => (
+                  <label key={plano} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={cupomForm.planos_aplicaveis.includes(plano)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setCupomForm({
+                            ...cupomForm,
+                            planos_aplicaveis: [...cupomForm.planos_aplicaveis, plano]
+                          });
+                        } else {
+                          setCupomForm({
+                            ...cupomForm,
+                            planos_aplicaveis: cupomForm.planos_aplicaveis.filter(p => p !== plano)
+                          });
+                        }
+                      }}
+                      className="rounded border-gray-300"
+                    />
+                    <span className="text-sm">
+                      {plano === 'premium_mensal' ? 'Premium Mensal' : 'Premium Anual'}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Selecione os planos onde o cupom pode ser usado
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label>Descrição</Label>
               <Textarea
                 value={cupomForm.descricao}
@@ -1050,7 +1135,28 @@ function PromocoesTab() {
             <Button variant="outline" onClick={() => setCupomDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => saveCupomMutation.mutate()} disabled={saveCupomMutation.isPending}>
+            <Button 
+              onClick={() => {
+                if (!cupomForm.codigo || !cupomForm.valor) {
+                  toast({
+                    title: "Campos obrigatórios",
+                    description: "Código e valor são obrigatórios",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                if (cupomForm.planos_aplicaveis.length === 0) {
+                  toast({
+                    title: "Planos obrigatórios",
+                    description: "Selecione pelo menos um plano aplicável",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                saveCupomMutation.mutate();
+              }} 
+              disabled={saveCupomMutation.isPending}
+            >
               {saveCupomMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingCupom ? 'Salvar Alterações' : 'Criar Cupom'}
             </Button>
