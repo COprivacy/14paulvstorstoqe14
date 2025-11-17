@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { Check, Shield, Lock, CheckCircle, Mail, Package, CreditCard, ArrowLeft } from "lucide-react";
+import { Check, Shield, Lock, CheckCircle, Mail, Package, CreditCard, ArrowLeft, Sparkles, Zap, TrendingUp, Users, BarChart3, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckoutForm } from "@/components/CheckoutForm";
@@ -21,13 +22,11 @@ export default function Planos() {
   const [precos, setPrecos] = useState(getPlanPrices());
   const [loading, setLoading] = useState(true);
 
-  // Atualizar preços ao montar o componente
   useEffect(() => {
     const carregarPrecos = async () => {
       setLoading(true);
       try {
         const precosAtualizados = await fetchPlanPricesFromServer();
-        console.log('📋 [PLANOS] Preços carregados:', precosAtualizados);
         setPrecos(precosAtualizados);
       } catch (error) {
         console.error('❌ [PLANOS] Erro ao carregar preços:', error);
@@ -40,14 +39,11 @@ export default function Planos() {
     carregarPrecos();
   }, []);
 
-  // Verificar status do pagamento ao retornar do Mercado Pago
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const status = params.get('status');
 
     if (status) {
-      const pendingSubscription = localStorage.getItem('pending_subscription');
-
       if (status === 'success' || status === 'approved') {
         toast({
           title: "🎉 Pagamento Confirmado!",
@@ -66,25 +62,16 @@ export default function Planos() {
         });
       }
 
-      // Limpar dados salvos
       localStorage.removeItem('pending_subscription');
-
-      // Limpar URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-
-    // NOTA: Página de planos é acessível mesmo para usuários bloqueados
-    // Isso permite que eles façam upgrade e reativem a conta
   }, [toast]);
 
   const handleBackToSystem = () => {
-    // Verifica se há um usuário autenticado
     const userStr = localStorage.getItem("user");
     if (userStr) {
-      // Se estiver autenticado, vai para o dashboard
       setLocation("/dashboard");
     } else {
-      // Se não estiver autenticado, vai para a página de login
       setLocation("/login");
     }
   };
@@ -93,54 +80,6 @@ export default function Planos() {
   const valorAnual = precos.premium_anual;
   const valorAnualMensal = valorAnual / 12;
   const economia = calculateAnnualSavings(valorMensal, valorAnual);
-
-  const planos = [
-    {
-      nome: "Plano Mensal",
-      preco: formatPrice(valorMensal),
-      periodo: "/mês",
-      descricao: "Ideal para começar",
-      valorTotal: null,
-      recursos: [
-        "✅ Acesso completo ao sistema",
-        "👥 1 funcionário incluso (adicione mais conforme necessário)",
-        "✅ PDV e controle de caixa",
-        "✅ Gestão de produtos e estoque ilimitados",
-        "✅ Emissão de NFC-e",
-        "✅ Relatórios e dashboards em tempo real",
-        "✅ Gestão financeira completa (Contas a Pagar/Receber)",
-        "✅ DRE (Demonstrativo de Resultados)",
-        "✅ Controle de fornecedores e clientes",
-        "✅ Suporte por email",
-        "✅ Backup automático diário"
-      ],
-      tipo: "mensal"
-    },
-    {
-      nome: "Plano Anual",
-      preco: formatPrice(valorAnualMensal),
-      periodo: "/mês",
-      valorTotal: `${formatPrice(valorAnual)}/ano`,
-      descricao: `Mais Popular - Economize ${formatPrice(economia)}`,
-      destaque: true,
-      recursos: [
-        "✅ Todos os recursos do plano mensal",
-        "👥 1 funcionário incluso (adicione mais conforme necessário)",
-        "✅ Acesso completo ao sistema",
-        "✅ PDV e controle de caixa",
-        "✅ Gestão de produtos e estoque ilimitados",
-        "✅ Emissão de NFC-e",
-        "✅ Relatórios avançados e dashboards",
-        "✅ Gestão financeira completa",
-        "✅ DRE (Demonstrativo de Resultados)",
-        `💰 Economize ${formatPrice(economia)} por ano`,
-        "⭐ Suporte prioritário",
-        "⭐ Backups automáticos em tempo real",
-        "⭐ Atualizações antecipadas"
-      ],
-      tipo: "anual"
-    }
-  ];
 
   const handleSelectPlan = (tipo: string) => {
     if (tipo === "mensal") {
@@ -159,191 +98,269 @@ export default function Planos() {
     setCheckoutOpen(true);
   };
 
+  const recursos = [
+    { icon: BarChart3, titulo: "PDV Completo", desc: "Sistema de ponto de venda moderno e intuitivo" },
+    { icon: Package, titulo: "Gestão de Estoque", desc: "Controle total de produtos e inventário" },
+    { icon: FileText, titulo: "NFC-e", desc: "Emissão de notas fiscais eletrônicas" },
+    { icon: TrendingUp, titulo: "Relatórios Avançados", desc: "Dashboards e análises em tempo real" },
+    { icon: Users, titulo: "Multi-usuário", desc: "Gerencie funcionários e permissões" },
+    { icon: Shield, titulo: "Backup Automático", desc: "Seus dados sempre seguros" },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 md:p-8" data-testid="page-planos">
-      <nav className="bg-gray-900 text-white p-4 shadow-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Link href="/">
-            <div className="flex items-center space-x-3 cursor-pointer">
-              <Package className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Pavisoft Sistemas
-              </span>
-            </div>
-          </Link>
-          <Button
-                variant="outline"
-                className="gap-2"
-                onClick={handleBackToSystem}
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Voltar ao Sistema
-              </Button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950" data-testid="page-planos">
+      {/* Header */}
+      <nav className="bg-black/30 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/">
+              <div className="flex items-center space-x-3 cursor-pointer group">
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl group-hover:scale-110 transition-transform">
+                  <Package className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  Pavisoft Sistemas
+                </span>
+              </div>
+            </Link>
+            <Button
+              variant="outline"
+              className="gap-2 border-white/20 hover:bg-white/10 text-white"
+              onClick={handleBackToSystem}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Voltar ao Sistema
+            </Button>
+          </div>
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12 pt-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4" data-testid="text-title">
-            Escolha seu Plano
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-full mb-6">
+            <Sparkles className="h-4 w-4 text-purple-400" />
+            <span className="text-sm text-purple-300 font-medium">Transforme seu negócio hoje</span>
+          </div>
+          
+          <h1 className="text-5xl md:text-6xl font-bold mb-6" data-testid="text-title">
+            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Escolha o Plano Ideal
+            </span>
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300" data-testid="text-subtitle">
-            Para continuar utilizando nossos serviços, contrate um plano
+          
+          <p className="text-xl text-gray-300 max-w-2xl mx-auto" data-testid="text-subtitle">
+            Sistema completo de gestão para sua empresa crescer com segurança e eficiência
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {planos.map((plano) => (
-            <Card 
-              key={plano.tipo}
-              className={`relative ${plano.destaque ? 'border-primary border-2 shadow-2xl scale-105' : 'border-gray-200 dark:border-gray-700'}`}
-              data-testid={`card-plano-${plano.tipo}`}
-            >
-              {plano.destaque && (
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <span className="bg-primary text-white px-6 py-2 rounded-full text-sm font-semibold" data-testid="badge-destaque">
-                    Mais Popular
-                  </span>
-                </div>
-              )}
-
-              <CardHeader className="text-center pb-8 pt-10">
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white" data-testid={`text-nome-${plano.tipo}`}>
-                  {plano.nome}
-                </CardTitle>
-                <CardDescription className="text-gray-600 dark:text-gray-400" data-testid={`text-descricao-${plano.tipo}`}>
-                  {plano.descricao}
-                </CardDescription>
-                <div className="mt-4">
-                  <span className="text-5xl font-bold text-primary" data-testid={`text-preco-${plano.tipo}`}>
-                    {plano.preco}
-                  </span>
-                  <span className="text-gray-600 dark:text-gray-400 text-lg" data-testid={`text-periodo-${plano.tipo}`}>
-                    {plano.periodo}
-                  </span>
-                  {plano.valorTotal && (
-                    <div className="mt-2">
-                      <span className="text-lg font-semibold text-green-600 dark:text-green-400">
-                        {plano.valorTotal}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-
-              <CardContent className="space-y-6">
-                <ul className="space-y-3">
-                  {plano.recursos.map((recurso, index) => (
-                    <li 
-                      key={index} 
-                      className="flex items-start gap-3"
-                      data-testid={`item-recurso-${plano.tipo}-${index}`}
-                    >
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" data-testid={`icon-check-${plano.tipo}-${index}`} />
-                      <span className="text-gray-700 dark:text-gray-300">{recurso}</span>
-                    </li>
-                  ))}
-                </ul>
-
-                <Button 
-                  className="w-full text-lg py-6"
-                  variant={plano.destaque ? "default" : "outline"}
-                  onClick={() => handleSelectPlan(plano.tipo)}
-                  data-testid={`button-contratar-${plano.tipo}`}
-                >
-                  Contratar Agora
-                </Button>
+        {/* Recursos em Destaque */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-16">
+          {recursos.map((recurso, index) => (
+            <Card key={index} className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all">
+              <CardContent className="p-4 text-center">
+                <recurso.icon className="h-8 w-8 mx-auto mb-2 text-purple-400" />
+                <h3 className="text-sm font-semibold text-white mb-1">{recurso.titulo}</h3>
+                <p className="text-xs text-gray-400">{recurso.desc}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="container mx-auto px-6 py-12 mt-20">
-          <Card className="bg-slate-900/50 border-blue-500/20 max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-2xl text-white text-center flex items-center justify-center gap-2">
-                <Shield className="h-6 w-6 text-green-400" />
-                Segurança no Pagamento
+        {/* Planos */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
+          {/* Plano Mensal */}
+          <Card 
+            className="bg-white/5 border-white/10 backdrop-blur-xl hover:border-blue-500/50 transition-all group"
+            data-testid="card-plano-mensal"
+          >
+            <CardHeader className="text-center pb-8 pt-10">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 mx-auto group-hover:scale-110 transition-transform">
+                <Zap className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle className="text-3xl font-bold text-white mb-2" data-testid="text-nome-mensal">
+                Plano Mensal
               </CardTitle>
-              <p className="text-center text-gray-400 mt-2">
-                Sua compra é 100% segura e protegida
-              </p>
+              <CardDescription className="text-gray-400" data-testid="text-descricao-mensal">
+                Flexibilidade total
+              </CardDescription>
+              <div className="mt-6">
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent" data-testid="text-preco-mensal">
+                    {formatPrice(valorMensal)}
+                  </span>
+                  <span className="text-gray-400 text-xl" data-testid="text-periodo-mensal">/mês</span>
+                </div>
+              </div>
             </CardHeader>
+
             <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-blue-500/10">
-                  <Lock className="h-5 w-5 text-blue-400 mt-1" />
-                  <div>
-                    <h3 className="text-white font-semibold mb-1">Criptografia SSL/TLS</h3>
-                    <p className="text-gray-400 text-sm">Todos os dados do pagamento são criptografados e transmitidos com segurança de ponta a ponta</p>
-                  </div>
-                </div>
+              <ul className="space-y-3">
+                {[
+                  "Acesso completo ao sistema",
+                  "1 funcionário incluso",
+                  "PDV e controle de caixa",
+                  "Gestão de estoque ilimitada",
+                  "Emissão de NFC-e",
+                  "Relatórios em tempo real",
+                  "Gestão financeira completa",
+                  "Suporte por email",
+                  "Backup automático diário"
+                ].map((recurso, index) => (
+                  <li key={index} className="flex items-start gap-3" data-testid={`item-recurso-mensal-${index}`}>
+                    <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">{recurso}</span>
+                  </li>
+                ))}
+              </ul>
 
-                <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-blue-500/10">
-                  <Shield className="h-5 w-5 text-green-400 mt-1" />
-                  <div>
-                    <h3 className="text-white font-semibold mb-1">Dados Protegidos</h3>
-                    <p className="text-gray-400 text-sm">Suas informações pessoais e financeiras nunca são armazenadas em nossos servidores</p>
-                  </div>
-                </div>
+              <Button 
+                className="w-full text-lg py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/50"
+                onClick={() => handleSelectPlan('mensal')}
+                data-testid="button-contratar-mensal"
+              >
+                Contratar Agora
+              </Button>
+            </CardContent>
+          </Card>
 
-                <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-blue-500/10">
-                  <CreditCard className="h-5 w-5 text-purple-400 mt-1" />
-                  <div>
-                    <h3 className="text-white font-semibold mb-1">Gateway Seguro Mercado Pago</h3>
-                    <p className="text-gray-400 text-sm">Pagamentos processados via Mercado Pago, certificado PCI-DSS Nível 1 (máxima segurança)</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3 p-4 bg-slate-800/50 rounded-lg border border-blue-500/10">
-                  <CheckCircle className="h-5 w-5 text-green-400 mt-1" />
-                  <div>
-                    <h3 className="text-white font-semibold mb-1">Conformidade LGPD</h3>
-                    <p className="text-gray-400 text-sm">Totalmente em conformidade com a Lei Geral de Proteção de Dados Pessoais</p>
-                  </div>
-                </div>
+          {/* Plano Anual */}
+          <Card 
+            className="relative bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/50 backdrop-blur-xl shadow-2xl shadow-purple-500/20 group overflow-hidden"
+            data-testid="card-plano-anual"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-bl-full opacity-20"></div>
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full shadow-lg" data-testid="badge-destaque">
+                <span className="font-bold">🔥 Mais Popular - Economize {formatPrice(economia)}</span>
               </div>
+            </div>
 
-              <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
-                <div className="flex items-start gap-3">
-                  <Shield className="h-5 w-5 text-green-400 mt-1 flex-shrink-0" />
-                  <div>
-                    <h3 className="text-green-300 font-semibold mb-2">Garantia de Segurança</h3>
-                    <ul className="text-gray-300 text-sm space-y-1">
-                      <li>✓ Ambiente 100% seguro para transações financeiras</li>
-                      <li>✓ Não compartilhamos seus dados com terceiros</li>
-                      <li>✓ Você pode cancelar sua assinatura a qualquer momento</li>
-                      <li>✓ Suporte disponível para qualquer dúvida sobre pagamento</li>
-                    </ul>
-                  </div>
-                </div>
+            <CardHeader className="text-center pb-8 pt-14 relative">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl mb-4 mx-auto group-hover:scale-110 transition-transform">
+                <Sparkles className="h-8 w-8 text-white" />
               </div>
-
-              <div className="text-center mt-6 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                <p className="text-gray-300 mb-2">
-                  Tem dúvidas sobre segurança ou pagamento?
+              <CardTitle className="text-3xl font-bold text-white mb-2" data-testid="text-nome-anual">
+                Plano Anual
+              </CardTitle>
+              <CardDescription className="text-gray-300" data-testid="text-descricao-anual">
+                Melhor custo-benefício
+              </CardDescription>
+              <div className="mt-6">
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent" data-testid="text-preco-anual">
+                    {formatPrice(valorAnualMensal)}
+                  </span>
+                  <span className="text-gray-300 text-xl" data-testid="text-periodo-anual">/mês</span>
+                </div>
+                <p className="text-sm text-purple-300 mt-2">
+                  {formatPrice(valorAnual)}/ano • 12x sem juros
                 </p>
-                <Button
-                  variant="default"
-                  className="inline-flex items-center gap-2"
-                  onClick={() => window.location.href = 'mailto:pavisoft.suporte@gmail.com'}
-                  data-testid="button-email-suporte"
-                >
-                  <Mail className="h-4 w-4" />
-                  Clique aqui
-                </Button>
               </div>
+            </CardHeader>
+
+            <CardContent className="space-y-6">
+              <ul className="space-y-3">
+                {[
+                  "Todos os recursos do plano mensal",
+                  "1 funcionário incluso",
+                  `Economize ${formatPrice(economia)} por ano`,
+                  "Suporte prioritário",
+                  "Backups em tempo real",
+                  "Atualizações antecipadas",
+                  "Acesso completo ao sistema",
+                  "PDV e controle de caixa",
+                  "Gestão financeira completa"
+                ].map((recurso, index) => (
+                  <li key={index} className="flex items-start gap-3" data-testid={`item-recurso-anual-${index}`}>
+                    <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-white font-medium">{recurso}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button 
+                className="w-full text-lg py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/50"
+                onClick={() => handleSelectPlan('anual')}
+                data-testid="button-contratar-anual"
+              >
+                Contratar Agora
+              </Button>
             </CardContent>
           </Card>
         </div>
 
-        <footer className="bg-gray-900 text-gray-400 py-8 mt-12">
-          <div className="container mx-auto px-6 text-center">
+        {/* Segurança */}
+        <Card className="bg-white/5 border-white/10 backdrop-blur-xl max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl text-white text-center flex items-center justify-center gap-2">
+              <Shield className="h-6 w-6 text-green-400" />
+              Segurança no Pagamento
+            </CardTitle>
+            <p className="text-center text-gray-400 mt-2">
+              Sua compra é 100% segura e protegida
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
+                <Lock className="h-5 w-5 text-blue-400 mt-1" />
+                <div>
+                  <h3 className="text-white font-semibold mb-1">Criptografia SSL/TLS</h3>
+                  <p className="text-gray-400 text-sm">Todos os dados do pagamento são criptografados</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
+                <Shield className="h-5 w-5 text-green-400 mt-1" />
+                <div>
+                  <h3 className="text-white font-semibold mb-1">Dados Protegidos</h3>
+                  <p className="text-gray-400 text-sm">Informações nunca armazenadas em nossos servidores</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CreditCard className="h-5 w-5 text-purple-400 mt-1" />
+                <div>
+                  <h3 className="text-white font-semibold mb-1">Gateway Seguro Mercado Pago</h3>
+                  <p className="text-gray-400 text-sm">Certificado PCI-DSS Nível 1</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
+                <CheckCircle className="h-5 w-5 text-green-400 mt-1" />
+                <div>
+                  <h3 className="text-white font-semibold mb-1">Conformidade LGPD</h3>
+                  <p className="text-gray-400 text-sm">Totalmente em conformidade com a LGPD</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-center p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/20">
+              <p className="text-gray-300 mb-2">
+                Tem dúvidas sobre segurança ou pagamento?
+              </p>
+              <Button
+                variant="default"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600"
+                onClick={() => window.location.href = 'mailto:pavisoft.suporte@gmail.com'}
+                data-testid="button-email-suporte"
+              >
+                <Mail className="h-4 w-4" />
+                Entre em Contato
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <footer className="mt-16 pt-8 border-t border-white/10">
+          <div className="text-center">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <Package className="h-6 w-6 text-blue-400" />
+              <Package className="h-6 w-6 text-purple-400" />
               <span className="text-white font-bold">Pavisoft Sistemas</span>
             </div>
-            <p className="text-sm">© 2025 Pavisoft Sistemas. Todos os direitos reservados.</p>
+            <p className="text-sm text-gray-400">© 2025 Pavisoft Sistemas. Todos os direitos reservados.</p>
           </div>
         </footer>
       </div>

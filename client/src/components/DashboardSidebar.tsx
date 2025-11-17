@@ -36,6 +36,7 @@ const financeMenuItems: MenuItem[] = [
 const configMenuItems: MenuItem[] = [
   { title: "Configurações", url: "/configuracoes", icon: Settings, permission: "configuracoes", adminOnly: true },
   { title: "Config. Fiscal", url: "/config-fiscal", icon: FileText, permission: "config_fiscal", adminOnly: true },
+  { title: "Planos", url: "/planos", icon: Crown, adminOnly: true },
 ];
 
 export default function DashboardSidebar() {
