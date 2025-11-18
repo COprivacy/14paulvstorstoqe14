@@ -130,19 +130,28 @@ app.use(compression({
 app.set('trust proxy', 1);
 
 // Segurança: Helmet para headers HTTP seguros
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // unsafe-eval necessário para Vite dev
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "ws:", "wss:"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
     },
-  },
-  crossOriginEmbedderPolicy: false,
-}));
+    hsts: {
+      maxAge: 31536000, // 1 ano
+      includeSubDomains: true,
+      preload: true
+    },
+    frameguard: {
+      action: 'deny' // Previne clickjacking
+    },
+    noSniff: true, // Previne MIME sniffing
+    xssFilter: true // Ativa filtro XSS do navegador
+  })
+);
 
 // Rate limiting para prevenir ataques de força bruta
 const limiter = rateLimit({
@@ -278,4 +287,14 @@ app.use((req, res, next) => {
     }
     process.exit(0);
   });
+
+  // Forçar HTTPS em produção
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+      if (req.headers['x-forwarded-proto'] !== 'https') {
+        return res.redirect(301, `https://${req.headers.host}${req.url}`);
+      }
+      next();
+    });
+  }
 })();

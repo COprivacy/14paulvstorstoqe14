@@ -154,12 +154,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email já cadastrado" });
       }
 
+      // Hash da senha ANTES de armazenar
+      const hashedPassword = await bcrypt.hash(userData.senha, 10);
+
       const dataCriacao = new Date().toISOString();
       const dataExpiracao = new Date();
       dataExpiracao.setDate(dataExpiracao.getDate() + 7);
 
       const userWithTrial = {
         ...userData,
+        senha: hashedPassword, // Senha com hash
         plano: "trial",
         is_admin: "true",
         data_criacao: dataCriacao,
@@ -195,7 +199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`🔐 Tentativa de login - Email: ${email}`);
       }
 
-      // Busca o usuário pelo email (sem validação de senha ainda)
+      // Busca o usuário pelo email
       const user = await storage.getUserByEmail(email);
 
       if (!user) {
@@ -205,8 +209,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Email ou senha inválidos" });
       }
 
-      // Comparação direta de senha (sem hash)
-      if (user.senha !== senha) {
+      // Verificar se senha está em hash ou texto puro (migração gradual)
+      let senhaValida = false;
+      
+      if (user.senha.startsWith('$2a$') || user.senha.startsWith('$2b$')) {
+        // Senha já está em hash - usar bcrypt
+        senhaValida = await bcrypt.compare(senha, user.senha);
+      } else {
+        // Senha ainda em texto puro - comparar diretamente e fazer hash
+        senhaValida = user.senha === senha;
+        
+        if (senhaValida) {
+          // Atualizar para hash na próxima vez
+          const hashedPassword = await bcrypt.hash(senha, 10);
+          await storage.updateUser(user.id, { senha: hashedPassword });
+          logger.info('[SECURITY] Senha migrada para hash', 'AUTH', { userId: user.id });
+        }
+      }
+
+      if (!senhaValida) {
         if (process.env.NODE_ENV === "development") {
           console.log(`❌ Falha de login - Senha incorreta`);
         }
@@ -379,8 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           success: true,
           message: "Código enviado com sucesso",
-          // SECURITY: Código NÃO é retornado - apenas enviado por email
-          ...(process.env.NODE_ENV === "development" && { code }), // Apenas em dev para testes
+          // SECURITY: Código NUNCA é retornado - apenas enviado por email
         });
       } catch (emailError) {
         console.error("❌ Erro ao enviar email:", emailError);
@@ -448,8 +468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({
         success: true,
         message: "Código de recuperação enviado para seu email",
-        // SECURITY: Código NÃO é retornado - apenas enviado por email
-        ...(process.env.NODE_ENV === "development" && { code }), // Apenas em dev para testes
+        // SECURITY: Código NUNCA é retornado - apenas enviado por email
       });
 
     } catch (error) {
