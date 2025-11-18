@@ -606,6 +606,70 @@ export type InsertCupom = z.infer<typeof insertCupomSchema>;
 export type UsoCupom = typeof usoCupons.$inferSelect;
 export type InsertUsoCupom = z.infer<typeof insertUsoCupomSchema>;
 
+// Tabela de Customização do Usuário (multi-tenant)
+export const userCustomization = pgTable("user_customization", {
+  id: serial("id").primaryKey(),
+  user_id: text("user_id").notNull().unique().references(() => users.id),
+  logo_url: text("logo_url"),
+  pdv_background_url: text("pdv_background_url"),
+  primary_color: text("primary_color").default("#3B82F6"),
+  secondary_color: text("secondary_color").default("#10B981"),
+  accent_color: text("accent_color").default("#F59E0B"),
+  background_color: text("background_color").default("#000000"),
+  store_name: text("store_name").default("Pavisoft Sistemas"),
+  font_size: text("font_size").default("medium"),
+  border_radius: text("border_radius").default("medium"),
+  language: text("language").default("pt-BR"),
+  currency: text("currency").default("BRL"),
+  date_format: text("date_format").default("DD/MM/YYYY"),
+  enable_animations: text("enable_animations").default("true"),
+  enable_sounds: text("enable_sounds").default("false"),
+  compact_mode: text("compact_mode").default("false"),
+  show_welcome_message: text("show_welcome_message").default("true"),
+  auto_save_interval: integer("auto_save_interval").default(30),
+  low_stock_threshold: integer("low_stock_threshold").default(10),
+  items_per_page: integer("items_per_page").default(10),
+  enable_notifications: text("enable_notifications").default("true"),
+  enable_email_alerts: text("enable_email_alerts").default("false"),
+  email_for_alerts: text("email_for_alerts"),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index("user_customization_user_id_idx").on(table.user_id),
+}));
+
+export const insertUserCustomizationSchema = createInsertSchema(userCustomization).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).extend({
+  logo_url: z.string().optional().nullable(),
+  pdv_background_url: z.string().optional().nullable(),
+  primary_color: z.string().optional(),
+  secondary_color: z.string().optional(),
+  accent_color: z.string().optional(),
+  background_color: z.string().optional(),
+  store_name: z.string().optional(),
+  font_size: z.enum(["small", "medium", "large", "xlarge"]).optional(),
+  border_radius: z.enum(["none", "small", "medium", "large", "xlarge"]).optional(),
+  language: z.string().optional(),
+  currency: z.string().optional(),
+  date_format: z.string().optional(),
+  enable_animations: z.string().optional(),
+  enable_sounds: z.string().optional(),
+  compact_mode: z.string().optional(),
+  show_welcome_message: z.string().optional(),
+  auto_save_interval: z.number().optional(),
+  low_stock_threshold: z.number().optional(),
+  items_per_page: z.number().optional(),
+  enable_notifications: z.string().optional(),
+  enable_email_alerts: z.string().optional(),
+  email_for_alerts: z.string().optional().nullable(),
+});
+
+export type UserCustomization = typeof userCustomization.$inferSelect;
+export type InsertUserCustomization = z.infer<typeof insertUserCustomizationSchema>;
+
 // Comunicações enviadas ao cliente
 export const clientCommunications = pgTable("client_communications", {
   id: serial("id").primaryKey(),

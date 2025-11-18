@@ -6,7 +6,8 @@ import {
   insertProdutoSchema,
   insertVendaSchema,
   insertConfigFiscalSchema,
-  insertOrcamentoSchema, // Importar schema de orçamento
+  insertOrcamentoSchema,
+  insertUserCustomizationSchema,
 } from "@shared/schema";
 import { nfceSchema } from "@shared/nfce-schema";
 import { FocusNFeService } from "./focusnfe";
@@ -5790,6 +5791,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Erro ao salvar configuração:", error);
       res.status(500).json({ error: "Erro ao salvar configuração" });
+    }
+  });
+
+  // ============================================
+  // ROTAS DE CUSTOMIZAÇÃO DO USUÁRIO
+  // ============================================
+  
+  // Obter configurações de customização do usuário
+  app.get("/api/user-customization", requireAuth, async (req, res) => {
+    try {
+      const effectiveUserId = getEffectiveUserId(req);
+      
+      if (!effectiveUserId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      if (!storage.getUserCustomization) {
+        return res.status(501).json({ error: "Método getUserCustomization não implementado" });
+      }
+
+      const customization = await storage.getUserCustomization(effectiveUserId);
+      res.json(customization);
+    } catch (error) {
+      console.error("Erro ao buscar customização:", error);
+      res.status(500).json({ error: "Erro ao buscar customização do usuário" });
+    }
+  });
+
+  // Salvar/atualizar configurações de customização do usuário
+  app.post("/api/user-customization", requireAuth, async (req, res) => {
+    try {
+      const effectiveUserId = getEffectiveUserId(req);
+      
+      if (!effectiveUserId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      if (!storage.upsertUserCustomization) {
+        return res.status(501).json({ error: "Método upsertUserCustomization não implementado" });
+      }
+
+      // Validar dados com Zod
+      const validatedData = insertUserCustomizationSchema.omit({ user_id: true }).parse(req.body);
+
+      const customization = await storage.upsertUserCustomization(effectiveUserId, validatedData);
+      console.log(`✅ Customização salva para usuário: ${effectiveUserId}`);
+      res.json(customization);
+    } catch (error) {
+      console.error("Erro ao salvar customização:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Dados inválidos", details: error.errors });
+      }
+      res.status(500).json({ error: "Erro ao salvar customização do usuário" });
+    }
+  });
+
+  // Resetar configurações do usuário para os valores padrão
+  app.delete("/api/user-customization", requireAuth, async (req, res) => {
+    try {
+      const effectiveUserId = getEffectiveUserId(req);
+      
+      if (!effectiveUserId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      if (!storage.deleteUserCustomization) {
+        return res.status(501).json({ error: "Método deleteUserCustomization não implementado" });
+      }
+
+      await storage.deleteUserCustomization(effectiveUserId);
+      console.log(`✅ Customização resetada para usuário: ${effectiveUserId}`);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Erro ao resetar customização:", error);
+      res.status(500).json({ error: "Erro ao resetar customização do usuário" });
     }
   });
 

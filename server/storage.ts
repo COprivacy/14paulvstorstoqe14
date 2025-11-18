@@ -41,7 +41,9 @@ import {
   type PlanChangeHistory,
   type InsertPlanChangeHistory,
   type ClientCommunication,
-  type InsertClientCommunication
+  type InsertClientCommunication,
+  type UserCustomization,
+  type InsertUserCustomization
 } from "@shared/schema";
 
 export interface IStorage {
@@ -132,6 +134,11 @@ export interface IStorage {
   getSystemConfig?(chave: string): Promise<{ chave: string; valor: string; updated_at: string } | undefined>;
   setSystemConfig?(chave: string, valor: string): Promise<void>;
   upsertSystemConfig?(chave: string, valor: string): Promise<{ chave: string; valor: string; updated_at: string }>;
+
+  // Métodos para Customização do Usuário
+  getUserCustomization?(userId: string): Promise<UserCustomization | null>;
+  upsertUserCustomization?(userId: string, data: Partial<InsertUserCustomization>): Promise<UserCustomization>;
+  deleteUserCustomization?(userId: string): Promise<void>;
 
   // Métodos para Devoluções
   getDevolucoes?(): Promise<Devolucao[]>;

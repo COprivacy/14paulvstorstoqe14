@@ -30,6 +30,7 @@ import {
   clientCommunications,
   cupons,
   usoCupons,
+  userCustomization,
   type User,
   type InsertUser,
   type Produto,
@@ -85,6 +86,8 @@ import {
   type InsertCupom,
   type UsoCupom,
   type InsertUsoCupom,
+  type UserCustomization,
+  type InsertUserCustomization,
 } from '@shared/schema';
 import type { IStorage } from './storage';
 import { randomUUID } from 'crypto';
@@ -1168,6 +1171,69 @@ export class PostgresStorage implements IStorage {
       throw new Error('Erro ao salvar configuração');
     }
     return result;
+  }
+
+  // Métodos para Customização do Usuário
+  async getUserCustomization(userId: string): Promise<UserCustomization | null> {
+    try {
+      const result = await this.db
+        .select()
+        .from(userCustomization)
+        .where(eq(userCustomization.user_id, userId))
+        .limit(1);
+      
+      return result[0] || null;
+    } catch (error) {
+      logger.error('[DB] Erro ao buscar customização do usuário:', { userId, error });
+      throw error;
+    }
+  }
+
+  async upsertUserCustomization(userId: string, data: Partial<InsertUserCustomization>): Promise<UserCustomization> {
+    try {
+      const existing = await this.getUserCustomization(userId);
+
+      if (existing) {
+        // Atualizar customização existente
+        const result = await this.db
+          .update(userCustomization)
+          .set({
+            ...data,
+            updated_at: sql`NOW()`,
+          })
+          .where(eq(userCustomization.user_id, userId))
+          .returning();
+        
+        return result[0];
+      } else {
+        // Criar nova customização
+        const result = await this.db
+          .insert(userCustomization)
+          .values({
+            user_id: userId,
+            ...data,
+          })
+          .returning();
+        
+        return result[0];
+      }
+    } catch (error) {
+      logger.error('[DB] Erro ao salvar customização do usuário:', { userId, error });
+      throw error;
+    }
+  }
+
+  async deleteUserCustomization(userId: string): Promise<void> {
+    try {
+      await this.db
+        .delete(userCustomization)
+        .where(eq(userCustomization.user_id, userId));
+      
+      logger.info('[DB] Customização resetada com sucesso:', { userId });
+    } catch (error) {
+      logger.error('[DB] Erro ao resetar customização do usuário:', { userId, error });
+      throw error;
+    }
   }
 
   async getDevolucoes(): Promise<Devolucao[]> {
