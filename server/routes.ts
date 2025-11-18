@@ -4036,6 +4036,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Obter todos os pacotes de funcionários do sistema (Admin Master)
+  app.get("/api/admin/employee-packages", requireAdmin, async (req, res) => {
+    try {
+      const packages = await storage.db.execute(sql`
+        SELECT 
+          ep.*,
+          u.nome as user_name,
+          u.email as user_email,
+          u.plano as user_plan
+        FROM employee_packages ep
+        LEFT JOIN users u ON ep.user_id = u.id
+        ORDER BY ep.data_compra DESC
+      `);
+      
+      res.json(packages.rows || []);
+    } catch (error) {
+      logger.error("Erro ao buscar pacotes de funcionários", "ADMIN", { error });
+      res.status(500).json({ error: "Erro ao buscar pacotes de funcionários" });
+    }
+  });
+
   // Mercado Pago Webhook
   app.post("/api/webhook/mercadopago", async (req, res) => {
     try {
