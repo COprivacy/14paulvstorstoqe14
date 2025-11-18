@@ -212,15 +212,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Email ou senha inválidos" });
       }
 
+      // VALIDAR E ATUALIZAR STATUS DE EXPIRAÇÃO ANTES DE RETORNAR
+      const now = new Date();
+      let userAtualizado = user;
+      
+      // Verificar se é trial ou free e se está expirado
+      if ((user.plano === 'trial' || user.plano === 'free') && !user.is_admin) {
+        const dataExpiracao = user.data_expiracao_plano || user.data_expiracao_trial;
+        
+        if (dataExpiracao) {
+          const expirationDate = new Date(dataExpiracao);
+          
+          if (now >= expirationDate && user.status !== 'bloqueado') {
+            // Trial/Free expirado - bloquear usuário
+            await storage.updateUser(user.id, {
+              status: 'bloqueado',
+              plano: 'free'
+            });
+            
+            // Bloquear funcionários também
+            if (storage.getFuncionarios) {
+              const funcionarios = await storage.getFuncionarios();
+              const funcionariosDaConta = funcionarios.filter(f => f.conta_id === user.id);
+              
+              for (const func of funcionariosDaConta) {
+                await storage.updateFuncionario(func.id, { status: 'bloqueado' });
+              }
+            }
+            
+            logger.warn('Usuário bloqueado no login por expiração', 'AUTH', {
+              userId: user.id,
+              email: user.email,
+              plano: user.plano,
+              dataExpiracao
+            });
+            
+            // Buscar dados atualizados
+            userAtualizado = await storage.getUserByEmail(email) || user;
+          }
+        }
+      }
+
       if (process.env.NODE_ENV === "development") {
         console.log(`✅ Login bem-sucedido para usuário: ${email}`);
       }
 
       // Log da ação de login
       await storage.logAdminAction?.(
-        user.id,
+        userAtualizado.id,
         "LOGIN",
-        `Login realizado - ${user.email}`,
+        `Login realizado - ${userAtualizado.email}`,
         {
           ip: req.ip,
           userAgent: req.get("user-agent"),
@@ -228,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // NUNCA retornar senha para o frontend
-      const { senha: _, ...userWithoutPassword } = user;
+      const { senha: _, ...userWithoutPassword } = userAtualizado;
       res.json(userWithoutPassword);
     } catch (error: any) {
       console.error("Erro no login:", error);
@@ -1456,6 +1497,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: error.message });
     }
   });
+
+
+  // Endpoint para verificar e atualizar status de expiração
+  app.post("/api/auth/check-expiration", async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+
+      if (!userId) {
+        return res.status(401).json({ error: "Não autorizado" });
+      }
+
+      const user = await storage.getUserById(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+
+      const now = new Date();
+      let statusAtualizado = false;
+      
+      // Verificar expiração de plano
+      if ((user.plano === 'trial' || user.plano === 'free') && user.is_admin !== 'true') {
+        const dataExpiracao = user.data_expiracao_plano || user.data_expiracao_trial;
+        
+        if (dataExpiracao) {
+          const expirationDate = new Date(dataExpiracao);
+          
+          if (now >= expirationDate && user.status !== 'bloqueado') {
+            await storage.updateUser(user.id, {
+              status: 'bloqueado',
+              plano: 'free'
+            });
+            
+            // Bloquear funcionários
+            if (storage.getFuncionarios) {
+              const funcionarios = await storage.getFuncionarios();
+              const funcionariosDaConta = funcionarios.filter(f => f.conta_id === user.id);
+              
+              for (const func of funcionariosDaConta) {
+                await storage.updateFuncionario(func.id, { status: 'bloqueado' });
+              }
+            }
+            
+            statusAtualizado = true;
+            logger.info('Status atualizado - plano expirado', 'EXPIRATION_CHECK', {
+              userId: user.id,
+              plano: user.plano
+            });
+          }
+        }
+      }
+
+      // Verificar expiração de pacote de funcionários
+      if (user.data_expiracao_pacote_funcionarios) {
+        const packageExpiration = new Date(user.data_expiracao_pacote_funcionarios);
+        
+        if (now >= packageExpiration && user.max_funcionarios > (user.max_funcionarios_base || 1)) {
+          await storage.updateUser(user.id, {
+            max_funcionarios: user.max_funcionarios_base || 1,
+            data_expiracao_pacote_funcionarios: null
+          });
+          
+          statusAtualizado = true;
+          logger.info('Pacote de funcionários expirado - limite revertido', 'EXPIRATION_CHECK', {
+            userId: user.id,
+            novoLimite: user.max_funcionarios_base || 1
+          });
+        }
+      }
+
+      // Buscar dados atualizados
+      const userAtualizado = await storage.getUserById(userId);
+      
+      if (!userAtualizado) {
+        return res.status(404).json({ error: "Erro ao buscar dados atualizados" });
+      }
+
+      const { senha: _, ...userSemSenha } = userAtualizado;
+      
+      res.json({
+        user: userSemSenha,
+        statusAtualizado
+      });
+
+    } catch (error: any) {
+      logger.error('Erro ao verificar expiração', 'EXPIRATION_CHECK', { error: error.message });
+      res.status(500).json({ error: "Erro ao verificar expiração" });
+    }
+  });
+
 
   // Endpoint para testar configuração do Mercado Pago
   app.post("/api/config-mercadopago/test", async (req, res) => {

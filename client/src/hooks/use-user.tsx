@@ -1,14 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-interface User {
-  id: string;
-  email: string;
-  nome: string;
-  plano: string;
-  is_admin: string;
-  data_expiracao_plano?: string;
-  status?: string;
-}
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
+import { useLocation } from "wouter";
+import type { User } from "@shared/schema";
 
 interface UserContextType {
   user: User | null;
@@ -29,7 +23,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem("user");
     if (!savedUser) return null;
-    
+
     try {
       const parsed = JSON.parse(savedUser);
       // Garantir que senha nunca seja carregada do localStorage
@@ -76,64 +70,60 @@ export function UserProvider({ children }: { children: ReactNode }) {
 }
 
 export function useUser() {
-  const [user, setUser] = useState<User | null>(() => {
-    const userStr = localStorage.getItem("user");
-    return userStr ? JSON.parse(userStr) : null;
-  });
+  const [, setLocation] = useLocation();
 
-  // Verificar bloqueio periodicamente (a cada 5 minutos)
-  useEffect(() => {
-    if (!user) return;
+  const { data: user, isLoading, error, refetch } = useQuery<User>({
+    queryKey: ["user"],
+    queryFn: async () => {
+      const userStr = localStorage.getItem("user");
+      if (!userStr) {
+        throw new Error("No user found");
+      }
+      const user = JSON.parse(userStr) as User;
 
-    const checkBlocked = async () => {
+      // Verificar expiração no servidor
       try {
-        const response = await fetch("/api/user/check-blocked", {
-          headers: {
-            "x-user-id": user.id,
-          },
-        });
-
+        const response = await apiRequest("POST", "/api/auth/check-expiration");
         if (response.ok) {
           const data = await response.json();
-          if (data.isBlocked && user.status !== "bloqueado") {
-            // Atualizar status do usuário para bloqueado
-            const updatedUser = { ...user, status: "bloqueado" };
-            localStorage.setItem("user", JSON.stringify(updatedUser));
-            setUser(updatedUser);
+          if (data.user) {
+            // Atualizar localStorage com dados atualizados
+            localStorage.setItem("user", JSON.stringify(data.user));
+            return data.user;
           }
         }
-      } catch (error) {
-        console.error("Erro ao verificar bloqueio:", error);
+      } catch (checkError) {
+        console.warn("Erro ao verificar expiração, usando dados locais:", checkError);
       }
-    };
 
-    // Verificar imediatamente
-    checkBlocked();
+      return user;
+    },
+    retry: false,
+    staleTime: 0,
+    refetchInterval: 60000, // Revalidar a cada 1 minuto
+  });
 
-    // Verificar a cada 5 minutos
-    const interval = setInterval(checkBlocked, 5 * 60 * 1000);
-
-    return () => clearInterval(interval);
-  }, [user?.id]);
-
-  const login = (userData: User) => {
-    // NUNCA armazenar senha no localStorage
-    const { senha, ...sanitizedData } = userData as any;
-    const sanitized = sanitizedData as User;
-    localStorage.setItem("user", JSON.stringify(sanitized));
-    setUser(sanitized);
-  };
-
-  const logout = () => {
+  const logout = async () => {
     localStorage.removeItem("user");
-    setUser(null);
+    setLocation("/login");
   };
 
-  const updateUser = (userData: Partial<User>) => {
-    const updatedUser = { ...user, ...userData } as User;
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
+  const checkExpiration = async () => {
+    try {
+      const response = await apiRequest("POST", "/api/auth/check-expiration");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          localStorage.setItem("user", JSON.stringify(data.user));
+          await refetch();
+          return data;
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao verificar expiração:", error);
+    }
+    return null;
   };
 
-  return { user, login, logout, updateUser };
+  return { user, isLoading, error, logout, refetch, checkExpiration };
 }

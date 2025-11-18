@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { Users, UserPlus, Trash2, Shield, Building2, CreditCard, Edit, Power, Check, Crown, Zap, FileText, Clock, Download, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
@@ -496,6 +496,30 @@ export default function Admin() {
     }
   }, []);
 
+  // Mock function for checkExpiration - Replace with actual API call
+  const checkExpiration = async () => {
+    try {
+      const response = await fetch('/api/check-expiration', { method: 'POST' });
+      if (!response.ok) {
+        console.error('Failed to check expiration');
+        // Optionally show a toast or handle error
+        return;
+      }
+      const result = await response.json();
+      if (result.expired) {
+        toast({
+          title: "Seu plano expirou",
+          description: "Seu período de trial ou plano premium terminou. Por favor, renove seu plano para continuar usando o sistema.",
+          variant: "destructive",
+        });
+        // Potentially redirect or update UI to reflect expired status
+      }
+    } catch (error) {
+      console.error('Error checking expiration:', error);
+      // Optionally show a toast for network errors
+    }
+  };
+
   // Query to refresh current user data periodically
   useQuery({
     queryKey: ["/api/user-refresh", currentUser?.id],
@@ -601,7 +625,7 @@ export default function Admin() {
       // Sempre resetar o formulário e fechar o diálogo em caso de erro
       setNewEmployee({ nome: "", email: "", senha: "", cargo: "" });
       setCreateUserOpen(false);
-      
+
       if (error.limite_atingido) {
         // Se for limite atingido, mostrar o diálogo de upgrade
         setShowPricingDialog(true);
@@ -936,7 +960,7 @@ export default function Admin() {
             </Card>
           </div>
 
-          
+
 
           <Card className="bg-gradient-to-br from-white to-green-50/30 dark:from-gray-900 dark:to-green-950/20 border-green-200/50 dark:border-green-800/30 shadow-lg">
             <CardHeader className="pb-4">

@@ -3,11 +3,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useEffect } from "react";
 
 export function TrialExpiredModal() {
   const [, setLocation] = useLocation();
-  const { user } = useUser();
+  const { user, checkExpiration } = useUser();
   const { isPremium } = usePermissions();
+
+  // Verificar expiração quando o componente montar
+  useEffect(() => {
+    if (user && checkExpiration) {
+      checkExpiration();
+    }
+  }, [user?.id]);
 
   const isTrialExpired = (): boolean => {
     if (!user) return false;
