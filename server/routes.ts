@@ -15,6 +15,7 @@ import { z } from "zod";
 import { logger, LogLevel } from "./logger";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { sql } from "drizzle-orm";
 
 // Middleware para verificar se o usuário é admin
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
