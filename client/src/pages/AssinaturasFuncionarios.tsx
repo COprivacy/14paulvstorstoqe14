@@ -74,93 +74,97 @@ export default function AssinaturasFuncionarios() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Cards de Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pacotes Ativos</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalAtivos}</div>
-            <p className="text-xs text-muted-foreground">Pacotes em uso</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalPendentes}</div>
-            <p className="text-xs text-muted-foreground">Aguardando pagamento</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Receita Mensal</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(receitaMensal)}</div>
-            <p className="text-xs text-muted-foreground">De pacotes ativos</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Tabela de Pacotes */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Histórico de Compras
-          </CardTitle>
+          <CardTitle>Histórico de Compras</CardTitle>
           <CardDescription>
-            Todas as compras de pacotes de funcionários
+            Todas as compras de pacotes de funcionários realizadas no sistema
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Pacote</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Data Compra</TableHead>
-                <TableHead>Vencimento</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {employeePackages.length === 0 ? (
+          {employeePackages.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Nenhum pacote de funcionários foi comprado ainda
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    Nenhuma compra de pacote registrada
-                  </TableCell>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Pacote</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Data Compra</TableHead>
+                  <TableHead>Vencimento</TableHead>
                 </TableRow>
-              ) : (
-                employeePackages.map((pkg: any) => {
+              </TableHeader>
+              <TableBody>
+                {employeePackages.map((pkg) => {
                   const user = users.find(u => u.id === pkg.user_id);
                   return (
                     <TableRow key={pkg.id}>
-                      <TableCell className="font-medium">
-                        {user?.nome || user?.email || '-'}
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{user?.nome || 'Usuário Desconhecido'}</p>
+                          <p className="text-sm text-muted-foreground">{user?.email || '-'}</p>
+                        </div>
                       </TableCell>
                       <TableCell>{getPackageName(pkg.package_type)}</TableCell>
-                      <TableCell>{formatCurrency(pkg.price)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          <Users className="h-3 w-3 mr-1" />
+                          {pkg.quantity}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(pkg.price)}</TableCell>
                       <TableCell>{getStatusBadge(pkg.status)}</TableCell>
                       <TableCell>
-                        {pkg.data_compra ? format(new Date(pkg.data_compra), "dd/MM/yyyy", { locale: ptBR }) : '-'}
+                        {pkg.data_compra ? format(new Date(pkg.data_compra), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
                       </TableCell>
                       <TableCell>
-                        {pkg.data_vencimento ? format(new Date(pkg.data_vencimento), "dd/MM/yyyy", { locale: ptBR }) : '-'}
+                        {pkg.data_vencimento ? format(new Date(pkg.data_vencimento), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
                       </TableCell>
                     </TableRow>
                   );
-                })
-              )}
-            </TableBody>
-          </Table>
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
