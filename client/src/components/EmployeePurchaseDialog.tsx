@@ -46,10 +46,10 @@ export function EmployeePurchaseDialog({
 
   // Usar preços do backend ou valores padrão
   const precosReais = precos || {
-    pacote_5: 49.99,
-    pacote_10: 89.99,
-    pacote_20: 159.99,
-    pacote_50: 349.99,
+    pacote_5: 49.90,
+    pacote_10: 89.90,
+    pacote_20: 159.90,
+    pacote_50: 349.90,
   };
 
   const pacotes = [

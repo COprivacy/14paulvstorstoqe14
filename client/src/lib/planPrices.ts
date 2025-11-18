@@ -1,7 +1,7 @@
 // Gerenciador centralizado de preços dos planos
 export const DEFAULT_PLAN_PRICES = {
-  premium_mensal: 79.99,
-  premium_anual: 767.04,
+  premium_mensal: 97.90,
+  premium_anual: 1175.00,
 };
 
 // Cache dos preços (em memória)
