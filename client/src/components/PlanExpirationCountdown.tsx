@@ -104,11 +104,18 @@ export function PlanExpirationCountdown({ expirationDate, planName, status }: Pl
           </div>
 
           {!isExpired && (
-            <div className="grid grid-cols-4 gap-2">
-              <div className="text-center p-2 bg-background rounded border">
-                <div className="text-2xl font-bold">{timeLeft.days}</div>
-                <div className="text-xs text-muted-foreground">Dias</div>
+            <>
+              <div className="text-center mb-2">
+                <p className="text-sm text-muted-foreground">
+                  Vence em {timeLeft.days} dia{timeLeft.days !== 1 ? 's' : ''}
+                  {timeLeft.hours > 0 && ` e ${timeLeft.hours}h`}
+                </p>
               </div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="text-center p-2 bg-background rounded border">
+                  <div className="text-2xl font-bold">{timeLeft.days}</div>
+                  <div className="text-xs text-muted-foreground">Dias</div>
+                </div>
               <div className="text-center p-2 bg-background rounded border">
                 <div className="text-2xl font-bold">{timeLeft.hours}</div>
                 <div className="text-xs text-muted-foreground">Horas</div>
@@ -122,6 +129,7 @@ export function PlanExpirationCountdown({ expirationDate, planName, status }: Pl
                 <div className="text-xs text-muted-foreground">Seg</div>
               </div>
             </div>
+            </>
           )}
 
           {isExpired && (

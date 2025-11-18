@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +15,8 @@ export default function AssinaturasFuncionarios() {
   const { data: employeePackages = [], isLoading: loadingPackages } = useQuery<any[]>({
     queryKey: ["/api/admin/employee-packages"],
   });
+
+  const packagesFiltrados = employeePackages.filter(p => p.status === 'ativo' || p.status === 'pendente');
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { variant: any; icon: any; label: string }> = {
@@ -57,9 +58,9 @@ export default function AssinaturasFuncionarios() {
     return <div className="p-6">Carregando...</div>;
   }
 
-  const totalAtivos = employeePackages.filter(p => p.status === 'ativo').length;
-  const totalPendentes = employeePackages.filter(p => p.status === 'pendente').length;
-  const receitaMensal = employeePackages
+  const totalAtivos = packagesFiltrados.filter(p => p.status === 'ativo').length;
+  const totalPendentes = packagesFiltrados.filter(p => p.status === 'pendente').length;
+  const receitaMensal = packagesFiltrados
     .filter(p => p.status === 'ativo')
     .reduce((sum, p) => sum + (p.price || 0), 0);
 
