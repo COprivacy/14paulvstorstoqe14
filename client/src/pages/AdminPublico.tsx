@@ -65,6 +65,7 @@ import {
 import { Cliente360Timeline } from "@/components/Cliente360Timeline";
 import { Cliente360Notes } from "@/components/Cliente360Notes";
 import { AdminLogsView } from "@/components/AdminLogsView";
+import { PlanExpirationCountdown } from "@/components/PlanExpirationCountdown";
 import { updatePlanPricesCache, clearPlanPricesCache, fetchPlanPricesFromServer } from "@/lib/planPrices";
 
 // Tipos e Interfaces
@@ -2575,6 +2576,26 @@ export default function AdminPublico() {
                   </CardContent>
                 </Card>
               </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Contagem Regressiva do Plano</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const cliente = users.find(u => u.id === selectedClientFor360);
+                    if (!cliente) return <p>Cliente não encontrado</p>;
+                    
+                    return (
+                      <PlanExpirationCountdown
+                        expirationDate={cliente.data_expiracao_plano || cliente.data_expiracao_trial}
+                        planName={cliente.plano === "trial" ? "Trial" : cliente.plano === "premium_mensal" ? "Premium Mensal" : cliente.plano === "premium_anual" ? "Premium Anual" : "Free"}
+                        status={cliente.status || "ativo"}
+                      />
+                    );
+                  })()}
+                </CardContent>
+              </Card>
 
               <Card>
                 <CardHeader>

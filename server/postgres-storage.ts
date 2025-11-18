@@ -91,6 +91,10 @@ import { randomUUID } from 'crypto';
 import ws from 'ws';
 import { logger } from './logger';
 
+// Helper para obter data UTC atual no formato ISO
+function getUTCNow(): string {
+  return new Date().toISOString();
+}
 
 neonConfig.webSocketConstructor = ws;
 

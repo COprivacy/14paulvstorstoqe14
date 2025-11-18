@@ -12,6 +12,8 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Admin from "@/pages/Admin";
+import AdminPublico from "@/pages/AdminPublico";
+import AssinaturasFuncionarios from "@/pages/AssinaturasFuncionarios";
 import Dashboard from "@/pages/Dashboard";
 import Products from "@/pages/Products";
 import AddProduct from "@/pages/AddProduct";
@@ -28,7 +30,6 @@ import FluxoPDV from "@/pages/FluxoPDV";
 import DRE from "@/pages/DRE";
 import Caixa from "@/pages/Caixa";
 import DashboardLayout from "@/layouts/DashboardLayout";
-import AdminPublico from "@/pages/AdminPublico";
 import Planos from "@/pages/Planos";
 import Devolucoes from "@/pages/Devolucoes";
 import Orcamentos from "@/pages/Orcamentos";
@@ -213,13 +214,21 @@ function Router() {
           </DashboardLayout>
         )}
       </Route>
-      <Route path="/admin-publico">
-        {() => (
-          <AdminMasterRoute>
-            <AdminPublico />
-          </AdminMasterRoute>
-        )}
-      </Route>
+      <Route path="/admin-publico" component={() => (
+            <AdminMasterRoute>
+              <DashboardLayout>
+                <AdminPublico />
+              </DashboardLayout>
+            </AdminMasterRoute>
+          )} />
+
+          <Route path="/assinaturas-funcionarios" component={() => (
+            <AdminRoute>
+              <DashboardLayout>
+                <AssinaturasFuncionarios />
+              </DashboardLayout>
+            </AdminRoute>
+          )} />
       <Route path="/test-suite">
         {() => (
           <AdminMasterRoute>
