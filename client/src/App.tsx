@@ -221,14 +221,6 @@ function Router() {
               </DashboardLayout>
             </AdminMasterRoute>
           )} />
-
-          <Route path="/assinaturas-funcionarios" component={() => (
-            <AdminRoute>
-              <DashboardLayout>
-                <AssinaturasFuncionarios />
-              </DashboardLayout>
-            </AdminRoute>
-          )} />
       <Route path="/test-suite">
         {() => (
           <AdminMasterRoute>

@@ -160,21 +160,6 @@ export default function DashboardSidebar() {
                 </SidebarMenuItem>
               )}
               
-              {/* Assinaturas de Funcionários (somente para admins) */}
-              {isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
-                  >
-                    <Link href="/assinaturas-funcionarios">
-                      <Users className="h-4 w-4 text-blue-500 transition-transform duration-300 group-hover:scale-110" />
-                      <span className="flex-1 font-medium">Assinaturas</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-              
               {/* 3. Config. Fiscal */}
               {configMenuItemsAfterAdmin.map(renderMenuItem)}
               
