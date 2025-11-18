@@ -915,6 +915,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ROTAS DE PREÇOS DOS PLANOS
   // ============================================
 
+  // Buscar número do WhatsApp Support
+  app.get("/api/whatsapp-support", async (req, res) => {
+    try {
+      const whatsappConfig = await storage.getSystemConfig('whatsapp_support_number');
+      
+      if (whatsappConfig && whatsappConfig.valor) {
+        return res.json({ number: whatsappConfig.valor });
+      }
+      
+      // Número padrão caso não esteja configurado
+      return res.json({ number: '+5511999999999' });
+    } catch (error: any) {
+      logger.error('[API] Erro ao buscar WhatsApp support:', error);
+      return res.status(200).json({ number: '+5511999999999' });
+    }
+  });
+
+  // Atualizar número do WhatsApp Support (apenas admin)
+  app.post("/api/whatsapp-support", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const { number } = req.body;
+
+      if (!number) {
+        return res.status(400).json({ error: "Número é obrigatório" });
+      }
+
+      await storage.upsertSystemConfig('whatsapp_support_number', number);
+      
+      await storage.logAdminAction?.(
+        userId,
+        "WHATSAPP_ATUALIZADO",
+        `Número do WhatsApp atualizado para: ${number}`,
+        req
+      );
+
+      logger.info('[API] WhatsApp support atualizado', 'WHATSAPP', { number });
+      return res.json({ success: true, number });
+    } catch (error: any) {
+      logger.error('[API] Erro ao atualizar WhatsApp support:', error);
+      return res.status(500).json({ error: error.message });
+    }
+  });
+
   // Buscar preços dos planos
   app.get("/api/plan-prices", async (req, res) => {
     try {
