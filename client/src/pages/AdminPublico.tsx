@@ -50,7 +50,8 @@ import {
   Database,
   Zap,
   Check,
-  Crown
+  Crown,
+  Package
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -2209,7 +2210,7 @@ export default function AdminPublico() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClientFor360, setSelectedClientFor360] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'assinaturas_funcionarios' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes'>('dashboard');
   const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('config');
   const [userEditDialogOpen, setUserEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -2474,6 +2475,17 @@ export default function AdminPublico() {
           >
             <BarChart3 className="h-5 w-5 mr-3" />
             {sidebarOpen && "Métricas"}
+          </Button>
+          <Button
+            variant="ghost"
+            className={`w-full justify-start hover:bg-slate-700 ${!selectedClientFor360 && activeTab === 'assinaturas_funcionarios' ? 'bg-slate-700' : ''}`}
+            onClick={() => {
+              setSelectedClientFor360(null);
+              setActiveTab('assinaturas_funcionarios');
+            }}
+          >
+            <Package className="h-5 w-5 mr-3" />
+            {sidebarOpen && "Assinaturas Func."}
           </Button>
           <Button
             variant="ghost"
@@ -3008,6 +3020,129 @@ export default function AdminPublico() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+            </div>
+          ) : activeTab === 'assinaturas_funcionarios' ? (
+            // Aba de Assinaturas de Funcionários
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-purple-600" />
+                    Assinaturas de Pacotes de Funcionários
+                  </CardTitle>
+                  <CardDescription>
+                    Gerenciar compras de pacotes adicionais de funcionários
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const { data: employeePackages = [], isLoading: loadingPackages } = useQuery<any[]>({
+                      queryKey: ["/api/admin/employee-packages"],
+                    });
+
+                    if (loadingPackages) {
+                      return (
+                        <div className="text-center py-8">
+                          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+                        </div>
+                      );
+                    }
+
+                    const getPackageName = (type: string) => {
+                      const packages: Record<string, string> = {
+                        pacote_5: "+5 Funcionários",
+                        pacote_10: "+10 Funcionários",
+                        pacote_20: "+20 Funcionários",
+                        pacote_50: "+50 Funcionários",
+                      };
+                      return packages[type] || type;
+                    };
+
+                    const totalAtivos = employeePackages.filter((p: any) => p.status === 'ativo').length;
+                    const totalPendentes = employeePackages.filter((p: any) => p.status === 'pendente').length;
+                    const receitaMensal = employeePackages
+                      .filter((p: any) => p.status === 'ativo')
+                      .reduce((sum: number, p: any) => sum + (p.price || 0), 0);
+
+                    return (
+                      <div className="space-y-6">
+                        {/* Cards de Estatísticas */}
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20">
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <p className="text-3xl font-bold text-green-600">{totalAtivos}</p>
+                                <p className="text-sm text-muted-foreground">Pacotes Ativos</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20">
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <p className="text-3xl font-bold text-yellow-600">{totalPendentes}</p>
+                                <p className="text-sm text-muted-foreground">Pendentes</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20">
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <p className="text-3xl font-bold text-blue-600">
+                                  {formatCurrency(receitaMensal)}
+                                </p>
+                                <p className="text-sm text-muted-foreground">Receita Mensal</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        {/* Tabela de Pacotes */}
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Cliente</TableHead>
+                              <TableHead>Pacote</TableHead>
+                              <TableHead>Valor</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Data Compra</TableHead>
+                              <TableHead>Vencimento</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {employeePackages.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                                  Nenhuma compra de pacote registrada
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              employeePackages.map((pkg: any) => {
+                                const user = users.find((u: any) => u.id === pkg.user_id);
+                                return (
+                                  <TableRow key={pkg.id}>
+                                    <TableCell className="font-medium">
+                                      {user?.nome || user?.email || '-'}
+                                    </TableCell>
+                                    <TableCell>{getPackageName(pkg.package_type)}</TableCell>
+                                    <TableCell>{formatCurrency(pkg.price)}</TableCell>
+                                    <TableCell>{getStatusBadge(pkg.status)}</TableCell>
+                                    <TableCell>
+                                      {pkg.data_compra ? formatDate(pkg.data_compra) : '-'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {pkg.data_vencimento ? formatDate(pkg.data_vencimento) : '-'}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
             </div>
           ) : activeTab === 'promocoes' ? (
             // Aba de Promoções e Descontos - SISTEMA ATIVO

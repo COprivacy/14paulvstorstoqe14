@@ -216,9 +216,7 @@ function Router() {
       </Route>
       <Route path="/admin-publico" component={() => (
             <AdminMasterRoute>
-              <DashboardLayout>
-                <AdminPublico />
-              </DashboardLayout>
+              <AdminPublico />
             </AdminMasterRoute>
           )} />
       <Route path="/test-suite">
