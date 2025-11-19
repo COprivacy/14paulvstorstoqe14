@@ -4128,7 +4128,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "External reference não encontrada" });
         }
 
-        // Buscar assinatura pelo external_reference
+        // 🔥 NOVO: Verificar se é pagamento de pacote de funcionários
+        if (externalReference.startsWith("pacote_")) {
+          logger.info("Processando pagamento de pacote de funcionários", "MERCADOPAGO_WEBHOOK", {
+            externalReference,
+            status
+          });
+
+          if (status === "approved") {
+            // Extrair informações do external_reference
+            const parts = externalReference.split("_");
+            const pacoteId = parts[0] + "_" + parts[1]; // pacote_5, pacote_10, etc
+            const userId = parts[2];
+
+            // Mapear pacotes para quantidade de funcionários
+            const pacoteQuantidades: Record<string, number> = {
+              pacote_5: 5,
+              pacote_10: 10,
+              pacote_20: 20,
+              pacote_50: 50,
+            };
+
+            const quantidadeAdicional = pacoteQuantidades[pacoteId];
+
+            if (quantidadeAdicional && userId) {
+              const users = await storage.getUsers();
+              const user = users.find((u) => u.id === userId);
+
+              if (user) {
+                const limiteAtual = user.max_funcionarios || 1;
+                const novoLimite = limiteAtual + quantidadeAdicional;
+
+                // Calcular data de vencimento (30 dias)
+                const dataVencimento = new Date();
+                dataVencimento.setDate(dataVencimento.getDate() + 30);
+
+                // Registrar pacote comprado
+                if (storage.createEmployeePackage) {
+                  await storage.createEmployeePackage({
+                    user_id: userId,
+                    package_type: pacoteId,
+                    quantity: quantidadeAdicional,
+                    price: paymentData.transaction_amount || 0,
+                    status: "ativo",
+                    payment_id: paymentId.toString(),
+                    data_vencimento: dataVencimento.toISOString(),
+                  });
+                }
+
+                // Atualizar usuário
+                await storage.updateUser(userId, {
+                  max_funcionarios: novoLimite,
+                  max_funcionarios_base: user.max_funcionarios_base || 1,
+                  data_expiracao_pacote_funcionarios: dataVencimento.toISOString(),
+                });
+
+                // Reativar funcionários bloqueados
+                if (user.status === 'ativo' && storage.getFuncionarios) {
+                  const funcionarios = await storage.getFuncionarios();
+                  const funcionariosBloqueados = funcionarios
+                    .filter(f => f.conta_id === userId && f.status === 'bloqueado')
+                    .sort((a, b) => new Date(a.data_criacao || 0).getTime() - new Date(b.data_criacao || 0).getTime())
+                    .slice(0, quantidadeAdicional);
+
+                  for (const funcionario of funcionariosBloqueados) {
+                    await storage.updateFuncionario(funcionario.id, {
+                      status: 'ativo',
+                    });
+                  }
+
+                  logger.info('Funcionários reativados após pagamento', 'MERCADOPAGO_WEBHOOK', {
+                    userId,
+                    reativados: funcionariosBloqueados.length
+                  });
+                }
+
+                logger.info("Pacote de funcionários ativado via Mercado Pago", "MERCADOPAGO_WEBHOOK", {
+                  userId,
+                  userEmail: user.email,
+                  pacoteId,
+                  quantidadeAdicional,
+                  limiteAnterior: limiteAtual,
+                  novoLimite,
+                });
+
+                // Enviar email de confirmação
+                try {
+                  const { EmailService } = await import("./email-service");
+                  const emailService = new EmailService();
+                  const nomePacote = `Pacote ${quantidadeAdicional} Funcionários`;
+
+                  await emailService.sendEmployeePackageActivated({
+                    to: user.email,
+                    userName: user.nome,
+                    packageName: nomePacote,
+                    quantity: quantidadeAdicional,
+                    newLimit: novoLimite,
+                    price: paymentData.transaction_amount || 0,
+                  });
+                } catch (emailError) {
+                  logger.error("Erro ao enviar email de ativação", "MERCADOPAGO_WEBHOOK", { emailError });
+                }
+
+                return res.json({
+                  success: true,
+                  message: "Pacote de funcionários processado com sucesso",
+                });
+              }
+            }
+          }
+
+          // Se não aprovado ainda, apenas registrar
+          return res.json({
+            success: true,
+            message: "Webhook de pacote processado",
+          });
+        }
+
+        // Buscar assinatura pelo external_reference (fluxo original para planos)
         const subscriptions = await storage.getSubscriptions?.();
         const subscription = subscriptions?.find(
           (s) => s.external_reference === externalReference,
