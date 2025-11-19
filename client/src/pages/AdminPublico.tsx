@@ -2603,7 +2603,7 @@ export default function AdminPublico() {
                   {(() => {
                     const cliente = users.find(u => u.id === selectedClientFor360);
                     if (!cliente) return <p>Cliente não encontrado</p>;
-                    
+
                     return (
                       <PlanExpirationCountdown
                         expirationDate={cliente.data_expiracao_plano || cliente.data_expiracao_trial}
@@ -3090,7 +3090,9 @@ export default function AdminPublico() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>Cliente</TableHead>
+                            <TableHead>Plano</TableHead>
                             <TableHead>Pacote</TableHead>
+                            <TableHead>Quantidade</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Data Compra</TableHead>
@@ -3100,12 +3102,12 @@ export default function AdminPublico() {
                         <TableBody>
                           {employeePackages.length === 0 ? (
                             <TableRow>
-                              <TableCell colSpan={6} className="text-center text-muted-foreground">
+                              <TableCell colSpan={8} className="text-center text-muted-foreground">
                                 Nenhuma compra de pacote registrada
                               </TableCell>
                             </TableRow>
                           ) : (
-                            employeePackages.map((pkg: any) => {
+                            employeePackages.map((pkg) => {
                               const user = users.find((u: any) => u.id === pkg.user_id);
                               const packageNames: Record<string, string> = {
                                 pacote_5: "+5 Funcionários",
@@ -3114,14 +3116,30 @@ export default function AdminPublico() {
                                 pacote_50: "+50 Funcionários",
                               };
                               const packageName = packageNames[pkg.package_type] || pkg.package_type;
-                              
+
                               return (
                                 <TableRow key={pkg.id}>
-                                  <TableCell className="font-medium">
-                                    {user?.nome || user?.email || '-'}
+                                  <TableCell>
+                                    <div>
+                                      <p className="font-medium">{user?.nome || 'Usuário Desconhecido'}</p>
+                                      <p className="text-sm text-muted-foreground">{user?.email || '-'}</p>
+                                    </div>
                                   </TableCell>
-                                  <TableCell>{packageName}</TableCell>
-                                  <TableCell>{formatCurrency(pkg.price)}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={user?.plano === 'premium_mensal' || user?.plano === 'premium_anual' ? 'default' : 'secondary'}>
+                                      {user?.plano === 'premium_mensal' ? 'Premium Mensal' :
+                                       user?.plano === 'premium_anual' ? 'Premium Anual' :
+                                       user?.plano === 'trial' ? 'Trial' : 'Free'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{getPackageName(pkg.package_type)}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">
+                                      <Users className="h-3 w-3 mr-1" />
+                                      {pkg.quantity}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="font-semibold">{formatCurrency(pkg.price)}</TableCell>
                                   <TableCell>{getStatusBadge(pkg.status)}</TableCell>
                                   <TableCell>
                                     {pkg.data_compra ? formatDate(pkg.data_compra) : '-'}
