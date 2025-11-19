@@ -1,10 +1,69 @@
 
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Package, Shield, Lock, Eye, UserCheck, Database, Mail, Phone, FileText } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Package, Shield, Lock, Eye, UserCheck, Database, Mail, Phone, FileText, Send } from "lucide-react";
 
 export default function Privacy() {
+  const { toast } = useToast();
+  const [contatoOpen, setContatoOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    nome: "",
+    email: "",
+    assunto: "",
+    mensagem: ""
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/contato", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Mensagem enviada!",
+          description: "Obrigado pelo contato. Responderemos em breve.",
+        });
+        setFormData({ nome: "", email: "", assunto: "", mensagem: "" });
+        setContatoOpen(false);
+      } else {
+        throw new Error("Erro ao enviar mensagem");
+      }
+    } catch (error) {
+      const mailtoLink = `mailto:atendimento.pavisoft@gmail.com?subject=${encodeURIComponent(formData.assunto)}&body=${encodeURIComponent(`Nome: ${formData.nome}\nEmail: ${formData.email}\n\nMensagem:\n${formData.mensagem}`)}`;
+      window.location.href = mailtoLink;
+      
+      toast({
+        title: "Abrindo seu cliente de email",
+        description: "Complete o envio pelo seu aplicativo de email.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
       <nav className="sticky top-0 z-50 bg-slate-900/50 backdrop-blur-xl border-b border-blue-500/20">
@@ -446,12 +505,105 @@ export default function Privacy() {
                 Ver Termos de Uso
               </Button>
             </Link>
-            <a href="/contato">
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 w-full sm:w-auto">
-                Fale Conosco
-              </Button>
-            </a>
+            <Button 
+              onClick={() => setContatoOpen(true)}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 w-full sm:w-auto"
+            >
+              Fale Conosco
+            </Button>
           </div>
+
+          {/* Dialog de Contato */}
+          <Dialog open={contatoOpen} onOpenChange={setContatoOpen}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle className="text-2xl flex items-center gap-2">
+                  <Mail className="h-6 w-6 text-blue-500" />
+                  Entre em Contato
+                </DialogTitle>
+                <DialogDescription>
+                  Preencha o formulário abaixo e entraremos em contato o mais breve possível
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="nome">Nome Completo *</Label>
+                    <Input
+                      id="nome"
+                      name="nome"
+                      value={formData.nome}
+                      onChange={handleChange}
+                      required
+                      placeholder="Seu nome"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email *</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      placeholder="seu@email.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="assunto">Assunto *</Label>
+                  <Input
+                    id="assunto"
+                    name="assunto"
+                    value={formData.assunto}
+                    onChange={handleChange}
+                    required
+                    placeholder="Sobre o que você quer falar?"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="mensagem">Mensagem *</Label>
+                  <Textarea
+                    id="mensagem"
+                    name="mensagem"
+                    value={formData.mensagem}
+                    onChange={handleChange}
+                    required
+                    placeholder="Escreva sua mensagem aqui..."
+                    rows={6}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setContatoOpen(false)}
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    {isSubmitting ? (
+                      "Enviando..."
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Enviar Mensagem
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
