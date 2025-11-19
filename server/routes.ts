@@ -4058,6 +4058,344 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 🔧 ADMIN: Ativar pacote manualmente
+  app.post("/api/admin/employee-packages/activate-manual", requireAdmin, async (req, res) => {
+    try {
+      const { userId, packageType, quantity, price } = req.body;
+
+      if (!userId || !packageType || !quantity) {
+        return res.status(400).json({ 
+          error: "Dados incompletos. userId, packageType e quantity são obrigatórios." 
+        });
+      }
+
+      const users = await storage.getUsers();
+      const user = users.find((u: any) => u.id === userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+
+      const limiteAtual = user.max_funcionarios || 1;
+      const novoLimite = limiteAtual + quantity;
+
+      // Calcular data de vencimento (30 dias)
+      const dataVencimento = new Date();
+      dataVencimento.setDate(dataVencimento.getDate() + 30);
+
+      // Registrar pacote comprado
+      const newPackage = await storage.createEmployeePackage({
+        user_id: userId,
+        package_type: packageType,
+        quantity,
+        price: price || 0,
+        status: "ativo",
+        payment_id: `MANUAL_${Date.now()}`,
+        data_vencimento: dataVencimento.toISOString(),
+      });
+
+      // Atualizar usuário
+      await storage.updateUser(userId, {
+        max_funcionarios: novoLimite,
+        max_funcionarios_base: user.max_funcionarios_base || 1,
+        data_expiracao_pacote_funcionarios: dataVencimento.toISOString(),
+      });
+
+      // Reativar funcionários bloqueados
+      if (user.status === 'ativo' && storage.getFuncionarios) {
+        const funcionarios = await storage.getFuncionarios();
+        const funcionariosBloqueados = funcionarios
+          .filter(f => f.conta_id === userId && f.status === 'bloqueado')
+          .sort((a, b) => new Date(a.data_criacao || 0).getTime() - new Date(b.data_criacao || 0).getTime())
+          .slice(0, quantity);
+
+        for (const funcionario of funcionariosBloqueados) {
+          await storage.updateFuncionario(funcionario.id, {
+            status: 'ativo',
+          });
+        }
+
+        logger.info("Funcionários reativados após ativação manual", "ADMIN_MANUAL_ACTIVATION", {
+          userId,
+          funcionariosReativados: funcionariosBloqueados.length,
+        });
+      }
+
+      logger.info("Pacote ativado manualmente pelo admin", "ADMIN_MANUAL_ACTIVATION", {
+        userId,
+        userEmail: user.email,
+        packageType,
+        quantity,
+        limiteAnterior: limiteAtual,
+        novoLimite,
+      });
+
+      res.json({
+        success: true,
+        message: "Pacote ativado com sucesso!",
+        package: newPackage,
+        newLimit: novoLimite,
+      });
+    } catch (error: any) {
+      logger.error("Erro ao ativar pacote manualmente", "ADMIN_MANUAL_ACTIVATION", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 🔄 ADMIN: Reprocessar webhook do Mercado Pago
+  app.post("/api/admin/employee-packages/reprocess-webhook", requireAdmin, async (req, res) => {
+    try {
+      const { paymentId, gateway } = req.body;
+
+      if (!paymentId || !gateway) {
+        return res.status(400).json({ 
+          error: "paymentId e gateway são obrigatórios" 
+        });
+      }
+
+      if (gateway === "mercadopago") {
+        // Buscar configuração do Mercado Pago
+        const config = await storage.getConfigMercadoPago();
+        if (!config || !config.access_token) {
+          return res.status(500).json({ error: "Configuração do Mercado Pago não encontrada" });
+        }
+
+        // Buscar informações do pagamento via API
+        const response = await fetch(
+          `https://api.mercadopago.com/v1/payments/${paymentId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${config.access_token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          return res.status(500).json({ error: "Erro ao buscar pagamento no Mercado Pago" });
+        }
+
+        const paymentData = await response.json();
+        const externalReference = paymentData.external_reference;
+        const status = paymentData.status;
+
+        logger.info("Reprocessando webhook Mercado Pago", "ADMIN_REPROCESS", {
+          paymentId,
+          status,
+          externalReference,
+        });
+
+        // Verificar se é um pacote de funcionários
+        const isEmployeePackage = externalReference && externalReference.startsWith("pacote_");
+
+        if (!isEmployeePackage) {
+          return res.status(400).json({ 
+            error: "Este pagamento não é de um pacote de funcionários",
+            externalReference 
+          });
+        }
+
+        if (status !== "approved") {
+          return res.status(400).json({ 
+            error: `Pagamento não está aprovado. Status atual: ${status}` 
+          });
+        }
+
+        // Extrair informações
+        const parts = externalReference.split("_");
+        const pacoteId = parts[0] + "_" + parts[1];
+        const userId = parts[2];
+
+        const pacoteQuantidades: Record<string, number> = {
+          pacote_5: 5,
+          pacote_10: 10,
+          pacote_20: 20,
+          pacote_50: 50,
+        };
+
+        const pacotePrecos: Record<string, number> = {
+          pacote_5: 39.90,
+          pacote_10: 69.90,
+          pacote_20: 119.90,
+          pacote_50: 249.90,
+        };
+
+        const quantidadeAdicional = pacoteQuantidades[pacoteId];
+
+        if (!quantidadeAdicional || !userId) {
+          return res.status(400).json({ error: "Dados inválidos no external_reference" });
+        }
+
+        const users = await storage.getUsers();
+        const user = users.find((u: any) => u.id === userId);
+
+        if (!user) {
+          return res.status(404).json({ error: "Usuário não encontrado" });
+        }
+
+        // Verificar se já existe pacote com este payment_id
+        const existingPackages = await storage.db.execute(sql`
+          SELECT * FROM employee_packages 
+          WHERE payment_id = ${paymentId.toString()}
+        `);
+
+        if (existingPackages.rows && existingPackages.rows.length > 0) {
+          return res.status(400).json({ 
+            error: "Este pagamento já foi processado anteriormente",
+            package: existingPackages.rows[0]
+          });
+        }
+
+        const limiteAtual = user.max_funcionarios || 1;
+        const novoLimite = limiteAtual + quantidadeAdicional;
+        const dataVencimento = new Date();
+        dataVencimento.setDate(dataVencimento.getDate() + 30);
+
+        // Registrar pacote
+        const newPackage = await storage.createEmployeePackage({
+          user_id: userId,
+          package_type: pacoteId,
+          quantity: quantidadeAdicional,
+          price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
+          status: "ativo",
+          payment_id: paymentId.toString(),
+          data_vencimento: dataVencimento.toISOString(),
+        });
+
+        // Atualizar usuário
+        await storage.updateUser(userId, {
+          max_funcionarios: novoLimite,
+          max_funcionarios_base: user.max_funcionarios_base || 1,
+          data_expiracao_pacote_funcionarios: dataVencimento.toISOString(),
+        });
+
+        // Reativar funcionários bloqueados
+        if (user.status === 'ativo' && storage.getFuncionarios) {
+          const funcionarios = await storage.getFuncionarios();
+          const funcionariosBloqueados = funcionarios
+            .filter(f => f.conta_id === userId && f.status === 'bloqueado')
+            .sort((a, b) => new Date(a.data_criacao || 0).getTime() - new Date(b.data_criacao || 0).getTime())
+            .slice(0, quantidadeAdicional);
+
+          for (const funcionario of funcionariosBloqueados) {
+            await storage.updateFuncionario(funcionario.id, {
+              status: 'ativo',
+            });
+          }
+        }
+
+        logger.info("Webhook reprocessado com sucesso", "ADMIN_REPROCESS", {
+          paymentId,
+          userId,
+          packageType: pacoteId,
+          quantity: quantidadeAdicional,
+        });
+
+        res.json({
+          success: true,
+          message: "Webhook reprocessado com sucesso!",
+          package: newPackage,
+          newLimit: novoLimite,
+        });
+
+      } else if (gateway === "asaas") {
+        return res.status(501).json({ error: "Reprocessamento de Asaas ainda não implementado" });
+      } else {
+        return res.status(400).json({ error: "Gateway inválido. Use 'mercadopago' ou 'asaas'" });
+      }
+
+    } catch (error: any) {
+      logger.error("Erro ao reprocessar webhook", "ADMIN_REPROCESS", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 🔍 ADMIN: Buscar detalhes de pagamento no gateway
+  app.get("/api/admin/employee-packages/payment-details/:paymentId", requireAdmin, async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const { gateway = "mercadopago" } = req.query;
+
+      if (gateway === "mercadopago") {
+        const config = await storage.getConfigMercadoPago();
+        if (!config || !config.access_token) {
+          return res.status(500).json({ error: "Configuração do Mercado Pago não encontrada" });
+        }
+
+        const response = await fetch(
+          `https://api.mercadopago.com/v1/payments/${paymentId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${config.access_token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          return res.status(404).json({ error: "Pagamento não encontrado no Mercado Pago" });
+        }
+
+        const paymentData = await response.json();
+        
+        res.json({
+          success: true,
+          gateway: "mercadopago",
+          payment: {
+            id: paymentData.id,
+            status: paymentData.status,
+            status_detail: paymentData.status_detail,
+            external_reference: paymentData.external_reference,
+            transaction_amount: paymentData.transaction_amount,
+            currency_id: paymentData.currency_id,
+            date_created: paymentData.date_created,
+            date_approved: paymentData.date_approved,
+            payer_email: paymentData.payer?.email,
+            payment_method_id: paymentData.payment_method_id,
+            description: paymentData.description,
+          },
+        });
+
+      } else if (gateway === "asaas") {
+        return res.status(501).json({ error: "Busca de detalhes no Asaas ainda não implementada" });
+      } else {
+        return res.status(400).json({ error: "Gateway inválido" });
+      }
+
+    } catch (error: any) {
+      logger.error("Erro ao buscar detalhes do pagamento", "ADMIN_PAYMENT_DETAILS", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ⚙️ ADMIN: Atualizar status de pacote
+  app.patch("/api/admin/employee-packages/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const packageId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!status || !["ativo", "pendente", "cancelado", "expirado"].includes(status)) {
+        return res.status(400).json({ 
+          error: "Status inválido. Use: ativo, pendente, cancelado ou expirado" 
+        });
+      }
+
+      await storage.db.execute(sql`
+        UPDATE employee_packages 
+        SET status = ${status}
+        WHERE id = ${packageId}
+      `);
+
+      logger.info("Status de pacote atualizado pelo admin", "ADMIN_UPDATE_STATUS", {
+        packageId,
+        newStatus: status,
+      });
+
+      res.json({ success: true, message: "Status atualizado com sucesso" });
+    } catch (error: any) {
+      logger.error("Erro ao atualizar status do pacote", "ADMIN_UPDATE_STATUS", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Mercado Pago Webhook
   app.post("/api/webhook/mercadopago", async (req, res) => {
     try {

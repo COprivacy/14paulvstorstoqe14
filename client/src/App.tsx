@@ -214,6 +214,15 @@ function Router() {
           </DashboardLayout>
         )}
       </Route>
+      <Route path="/assinaturasfuncionarios">
+        {() => (
+          <DashboardLayout>
+            <AdminRoute>
+              <AssinaturasFuncionarios />
+            </AdminRoute>
+          </DashboardLayout>
+        )}
+      </Route>
       <Route path="/admin-publico" component={() => (
             <AdminMasterRoute>
               <AdminPublico />
