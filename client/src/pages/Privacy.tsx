@@ -84,13 +84,7 @@ export default function Privacy() {
                     <strong className="text-white">Razão Social:</strong> Pavisoft Sistemas Ltda.
                   </p>
                   <p className="mb-4">
-                    <strong className="text-white">Endereço:</strong> [INSERIR ENDEREÇO COMPLETO]
-                  </p>
-                  <p className="mb-4">
                     <strong className="text-white">Email de Contato para Privacidade:</strong> privacidade@pavisoft.com.br
-                  </p>
-                  <p>
-                    <strong className="text-white">Encarregado de Dados (DPO):</strong> [INSERIR NOME DO DPO]
                   </p>
                 </section>
 
@@ -429,13 +423,6 @@ export default function Privacy() {
                       <div>
                         <p className="text-sm text-gray-400">WhatsApp</p>
                         <p className="text-white font-medium">(98) 98508-5498</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-5 w-5 text-blue-400" />
-                      <div>
-                        <p className="text-sm text-gray-400">Encarregado de Dados (DPO)</p>
-                        <p className="text-white font-medium">[INSERIR NOME DO DPO]</p>
                       </div>
                     </div>
                   </div>
