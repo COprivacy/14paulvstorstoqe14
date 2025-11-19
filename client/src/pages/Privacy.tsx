@@ -447,7 +447,7 @@ export default function Privacy() {
               </Button>
             </Link>
             <Link href="/contato">
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 w-full sm:w-auto">
                 Fale Conosco
               </Button>
             </Link>
