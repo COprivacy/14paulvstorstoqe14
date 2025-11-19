@@ -3041,6 +3041,27 @@ export default function AdminPublico() {
           ) : activeTab === 'assinaturas_funcionarios' ? (
             // Aba de Assinaturas de Funcionários
             <div className="space-y-6">
+              {/* Botão para Página Completa */}
+              <Alert className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800">
+                <Package className="h-5 w-5 text-purple-600" />
+                <AlertTitle className="text-purple-900 dark:text-purple-100">
+                  Versão Resumida - Acesse a Página Completa
+                </AlertTitle>
+                <AlertDescription className="flex items-center justify-between gap-4">
+                  <span className="text-purple-800 dark:text-purple-200">
+                    Esta é uma visão simplificada. Para acessar todas as funcionalidades como ativar pacotes manualmente, reprocessar webhooks e ver detalhes completos, clique no botão ao lado.
+                  </span>
+                  <Button
+                    onClick={() => window.location.href = '/assinaturasfuncionarios'}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shrink-0"
+                    data-testid="button-full-page"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Abrir Página Completa
+                  </Button>
+                </AlertDescription>
+              </Alert>
+
               {/* Alertas de Pagamentos Pendentes */}
               {employeePackages.filter((p: any) => p.status === 'pendente').length > 0 && (
                 <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800">
