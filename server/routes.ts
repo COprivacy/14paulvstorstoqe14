@@ -740,7 +740,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // VALIDAÇÃO 1: Apenas usuário master pode tentar
-      const authorizedEmail = process.env.MASTER_USER_EMAIL;
+      const authorizedEmail = process.env.MASTER_USER_EMAIL || 'atendimento.pavisoft@gmail.com';
       if (!authorizedEmail) {
         logger.error("MASTER_USER_EMAIL não configurada", "SECURITY");
         return res

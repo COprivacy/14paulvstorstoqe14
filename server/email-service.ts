@@ -30,7 +30,7 @@ export class EmailService {
       port: parseInt(process.env.SMTP_PORT || '587'),
       secure: false,
       auth: {
-        user: process.env.SMTP_USER || 'pavisoft.planos@gmail.com',
+        user: process.env.SMTP_USER || 'atendimento.pavisoft@gmail.com',
         pass: process.env.SMTP_PASS || 'bwks idip qyen kbnd',
       },
     });
@@ -99,7 +99,7 @@ export class EmailService {
                       <strong style="color: #475569;">Gestão Empresarial Completa</strong><br>
                       PDV • Estoque • Financeiro • NFCe • Relatórios<br><br>
                       <span style="font-size: 12px; color: #94a3b8;">
-                        📧 pavisoft.planos@gmail.com<br>
+                        📧 atendimento.pavisoft@gmail.com<br>
                         🌐 www.pavisoft.com.br
                       </span>
                     </p>
@@ -342,7 +342,7 @@ export class EmailService {
           </table>
 
           <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin: 32px 0 0 0;">
-            Dúvidas? Nossa equipe está à disposição para ajudar. Entre em contato conosco através do email <a href="mailto:pavisoft.planos@gmail.com" style="color: #3b82f6; text-decoration: none;">pavisoft.planos@gmail.com</a>
+            Dúvidas? Nossa equipe está à disposição para ajudar. Entre em contato conosco através do email <a href="mailto:atendimento.pavisoft@gmail.com" style="color: #3b82f6; text-decoration: none;">atendimento.pavisoft@gmail.com</a>
           </p>
         </td>
       </tr>
@@ -560,7 +560,7 @@ export class EmailService {
           </table>
 
           <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin: 32px 0 0 0;">
-            Se você não reconhece esta atividade, entre em contato com o administrador da sua conta imediatamente através do email <a href="mailto:pavisoft.planos@gmail.com" style="color: #3b82f6; text-decoration: none;">pavisoft.planos@gmail.com</a>
+            Se você não reconhece esta atividade, entre em contato com o administrador da sua conta imediatamente através do email <a href="mailto:atendimento.pavisoft@gmail.com" style="color: #3b82f6; text-decoration: none;">atendimento.pavisoft@gmail.com</a>
           </p>
         </td>
       </tr>
@@ -778,7 +778,7 @@ export class EmailService {
           </table>
 
           <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin: 32px 0 0 0;">
-            Para renovar ou esclarecer dúvidas, entre em contato conosco através do email <a href="mailto:pavisoft.planos@gmail.com" style="color: #3b82f6; text-decoration: none;">pavisoft.planos@gmail.com</a>
+            Para renovar ou esclarecer dúvidas, entre em contato conosco através do email <a href="mailto:atendimento.pavisoft@gmail.com" style="color: #3b82f6; text-decoration: none;">atendimento.pavisoft@gmail.com</a>
           </p>
         </td>
       </tr>
@@ -883,7 +883,7 @@ export class EmailService {
           </p>
 
           <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin: 32px 0 0 0;">
-            Entre em contato: <a href="mailto:pavisoft.planos@gmail.com" style="color: #3b82f6; text-decoration: none; font-weight: 600;">pavisoft.planos@gmail.com</a>
+            Entre em contato: <a href="mailto:atendimento.pavisoft@gmail.com" style="color: #3b82f6; text-decoration: none; font-weight: 600;">atendimento.pavisoft@gmail.com</a>
           </p>
         </td>
       </tr>
@@ -1015,7 +1015,7 @@ export class EmailService {
 
     await this.transporter.sendMail({
       from: process.env.SMTP_FROM || 'Pavisoft Sistemas <noreply@pavisoft.com>',
-      to: 'pavisoft.suporte@gmail.com',
+      to: 'atendimento.pavisoft@gmail.com',
       subject: '⚠️ Solicitação de Encerramento de Conta - Pavisoft',
       html,
       replyTo: config.userEmail,
@@ -1094,7 +1094,7 @@ export class EmailService {
             Nossa equipe está pronta para ajudá-lo a resolver esta situação o mais rápido possível. Aguardamos seu contato.
           </p>
           <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin-top: 8px;">
-            Você também pode entrar em contato diretamente pelo email: <a href="mailto:pavisoft.planos@gmail.com" style="color: #3b82f6; text-decoration: none; font-weight: 600;">pavisoft.planos@gmail.com</a>
+            Você também pode entrar em contato diretamente pelo email: <a href="mailto:atendimento.pavisoft@gmail.com" style="color: #3b82f6; text-decoration: none; font-weight: 600;">atendimento.pavisoft@gmail.com</a>
           </p>
         </td>
       </tr>

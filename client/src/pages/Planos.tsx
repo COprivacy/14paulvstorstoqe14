@@ -343,7 +343,7 @@ export default function Planos() {
               <Button
                 variant="default"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600"
-                onClick={() => window.location.href = 'mailto:pavisoft.suporte@gmail.com'}
+                onClick={() => window.location.href = 'mailto:atendimento.pavisoft@gmail.com'}
                 data-testid="button-email-suporte"
               >
                 <Mail className="h-4 w-4" />

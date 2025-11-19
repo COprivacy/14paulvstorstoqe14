@@ -110,7 +110,7 @@ export default function Contato() {
                 </div>
                 <CardTitle className="text-white">Email</CardTitle>
                 <CardDescription className="text-gray-400">
-                  pavisoft.suporte@gmail.com
+                  atendimento.pavisoft@gmail.com
                 </CardDescription>
               </CardHeader>
             </Card>
