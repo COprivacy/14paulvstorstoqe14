@@ -4119,7 +4119,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ error: "External reference não encontrada" });
         }
 
-        // Buscar assinatura pelo external_reference
+        // 🔥 NOVO: Verificar se é um pagamento de pacote de funcionários
+        const isEmployeePackage = externalReference.startsWith("pacote_");
+
+        if (isEmployeePackage && status === "approved") {
+          logger.info("Processando pagamento de pacote de funcionários", "MERCADOPAGO_WEBHOOK", {
+            externalReference,
+            paymentId,
+          });
+
+          // Extrair informações do external_reference: pacote_5_userId_timestamp
+          const parts = externalReference.split("_");
+          const pacoteId = parts[0] + "_" + parts[1]; // pacote_5, pacote_10, etc
+          const userId = parts[2];
+
+          // Mapear pacotes para quantidade de funcionários
+          const pacoteQuantidades: Record<string, number> = {
+            pacote_5: 5,
+            pacote_10: 10,
+            pacote_20: 20,
+            pacote_50: 50,
+          };
+
+          // Mapear pacotes para preços
+          const pacotePrecos: Record<string, number> = {
+            pacote_5: 39.90,
+            pacote_10: 69.90,
+            pacote_20: 119.90,
+            pacote_50: 249.90,
+          };
+
+          const quantidadeAdicional = pacoteQuantidades[pacoteId];
+
+          if (quantidadeAdicional && userId) {
+            const users = await storage.getUsers();
+            const user = users.find((u: any) => u.id === userId);
+
+            if (user) {
+              const limiteAtual = user.max_funcionarios || 1;
+              const novoLimite = limiteAtual + quantidadeAdicional;
+
+              // Calcular data de vencimento (30 dias)
+              const dataVencimento = new Date();
+              dataVencimento.setDate(dataVencimento.getDate() + 30);
+
+              // Registrar pacote comprado
+              if (storage.createEmployeePackage) {
+                await storage.createEmployeePackage({
+                  user_id: userId,
+                  package_type: pacoteId,
+                  quantity: quantidadeAdicional,
+                  price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
+                  status: "ativo",
+                  payment_id: paymentId.toString(),
+                  data_vencimento: dataVencimento.toISOString(),
+                });
+              }
+
+              // Atualizar usuário
+              await storage.updateUser(userId, {
+                max_funcionarios: novoLimite,
+                max_funcionarios_base: user.max_funcionarios_base || 1,
+                data_expiracao_pacote_funcionarios: dataVencimento.toISOString(),
+              });
+
+              // Reativar funcionários bloqueados POR FALTA DE LIMITE
+              if (user.status === 'ativo' && storage.getFuncionarios) {
+                const funcionarios = await storage.getFuncionarios();
+                const funcionariosBloqueados = funcionarios
+                  .filter(f => f.conta_id === userId && f.status === 'bloqueado')
+                  .sort((a, b) => new Date(a.data_criacao || 0).getTime() - new Date(b.data_criacao || 0).getTime())
+                  .slice(0, quantidadeAdicional);
+
+                for (const funcionario of funcionariosBloqueados) {
+                  await storage.updateFuncionario(funcionario.id, {
+                    status: 'ativo',
+                  });
+
+                  logger.info('Funcionário reativado após compra de pacote', 'MERCADOPAGO_WEBHOOK', {
+                    funcionarioId: funcionario.id,
+                    funcionarioNome: funcionario.nome,
+                    contaId: userId,
+                  });
+                }
+
+                if (funcionariosBloqueados.length > 0) {
+                  logger.info(`${funcionariosBloqueados.length} funcionário(s) reativado(s)`, "MERCADOPAGO_WEBHOOK", {
+                    userId,
+                    quantidade: funcionariosBloqueados.length,
+                  });
+                }
+              }
+
+              logger.info("Pacote de funcionários ativado com sucesso", "MERCADOPAGO_WEBHOOK", {
+                userId,
+                userEmail: user.email,
+                pacoteId,
+                quantidadeAdicional,
+                limiteAnterior: limiteAtual,
+                novoLimite,
+                dataVencimento: dataVencimento.toISOString(),
+              });
+
+              // Enviar email de confirmação de ativação
+              try {
+                const { EmailService } = await import("./email-service");
+                const emailService = new EmailService();
+                const nomePacote = `Pacote ${quantidadeAdicional} Funcionários`;
+
+                await emailService.sendEmployeePackageActivated({
+                  to: user.email,
+                  userName: user.nome,
+                  packageName: nomePacote,
+                  quantity: quantidadeAdicional,
+                  newLimit: novoLimite,
+                  price: paymentData.transaction_amount || 0,
+                });
+
+                logger.info("Email de ativação enviado", "MERCADOPAGO_WEBHOOK", {
+                  userEmail: user.email,
+                });
+              } catch (emailError) {
+                logger.error("Erro ao enviar email de ativação (não crítico)", "MERCADOPAGO_WEBHOOK", {
+                  error: emailError,
+                });
+              }
+
+              return res.json({ 
+                success: true, 
+                message: "Pacote de funcionários ativado com sucesso" 
+              });
+            }
+          }
+
+          logger.error("Erro ao processar pacote de funcionários", "MERCADOPAGO_WEBHOOK", {
+            externalReference,
+            pacoteId,
+            userId,
+            message: "Dados inválidos ou usuário não encontrado",
+          });
+          return res.status(400).json({ error: "Erro ao processar pacote" });
+        }
+
+        // Processar pagamento de assinatura normal
         const subscriptions = await storage.getSubscriptions?.();
         const subscription = subscriptions?.find(
           (s) => s.external_reference === externalReference,
