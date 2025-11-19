@@ -8,4 +8,5 @@
         body.notification_url = `https://${process.env.PRODUCTION_DOMAIN}/api/webhook/mercadopago`;
       }
 
+
 export { registerRoutes };
