@@ -2226,6 +2226,13 @@ export default function AdminPublico() {
   const [userEditDialogOpen, setUserEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [limparLogsDialogOpen, setLimparLogsDialogOpen] = useState(false);
+  
+  // Estados para assinaturas
+  const [subscriptionFilterStatus, setSubscriptionFilterStatus] = useState<string>("todos");
+  const [subscriptionReprocessDialogOpen, setSubscriptionReprocessDialogOpen] = useState(false);
+  const [subscriptionReprocessPaymentId, setSubscriptionReprocessPaymentId] = useState("");
+  const [subscriptionDetailsDialogOpen, setSubscriptionDetailsDialogOpen] = useState(false);
+  const [subscriptionPaymentDetails, setSubscriptionPaymentDetails] = useState<any>(null);
 
   // Recupera o usuário logado do localStorage
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem("user") || "{}") : {};
@@ -2261,6 +2268,34 @@ export default function AdminPublico() {
         title: "Erro ao limpar logs",
         description: error.message,
         variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para reprocessar webhook de assinatura
+  const subscriptionReprocessMutation = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const response = await apiRequest("POST", "/api/admin/subscriptions/reprocess-webhook", {
+        paymentId,
+        gateway: 'mercadopago',
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "✅ Sucesso!", 
+        description: "Webhook reprocessado com sucesso!" 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setSubscriptionReprocessDialogOpen(false);
+      setSubscriptionReprocessPaymentId("");
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "❌ Erro", 
+        description: error.message || "Erro ao reprocessar webhook",
+        variant: "destructive"
       });
     },
   });
@@ -2374,6 +2409,44 @@ export default function AdminPublico() {
 
   const handleLimparLogs = () => {
     limparLogsMutation.mutate();
+  };
+
+  const handleReprocessSubscription = () => {
+    if (!subscriptionReprocessPaymentId) {
+      toast({ 
+        title: "Erro", 
+        description: "Digite o Payment ID", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    
+    subscriptionReprocessMutation.mutate(subscriptionReprocessPaymentId);
+  };
+
+  const handleViewSubscriptionDetails = async (paymentId: string) => {
+    try {
+      const res = await fetch(`/api/admin/subscriptions/payment-details/${paymentId}?gateway=mercadopago`, {
+        headers: {
+          "x-user-id": user?.id || "",
+          "x-is-admin": "true",
+        },
+      });
+      
+      if (!res.ok) {
+        throw new Error("Erro ao buscar detalhes do pagamento");
+      }
+      
+      const data = await res.json();
+      setSubscriptionPaymentDetails(data.payment);
+      setSubscriptionDetailsDialogOpen(true);
+    } catch (error: any) {
+      toast({ 
+        title: "Erro", 
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   if (isLoadingSubscriptions || isLoadingUsers) {
@@ -2803,62 +2876,365 @@ export default function AdminPublico() {
           ) : activeTab === 'assinaturas' ? (
             // Aba de Assinaturas
             <div className="space-y-6">
+              {/* Alerta de Ajuda */}
+              <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <div className="space-y-1">
+                      <CardTitle className="text-base text-blue-900 dark:text-blue-100">
+                        Gerenciamento de Assinaturas
+                      </CardTitle>
+                      <CardDescription className="text-sm text-blue-700 dark:text-blue-300">
+                        <ul className="list-disc list-inside space-y-1 mt-2">
+                          <li><strong>Reprocessar Webhook:</strong> Forçar processamento de pagamentos aprovados</li>
+                          <li><strong>Ver Detalhes:</strong> Clique no Payment ID para ver status no gateway</li>
+                          <li><strong>Ver Cliente:</strong> Acesse a visão 360° do cliente</li>
+                        </ul>
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+
+              {/* Cards de Estatísticas */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Assinaturas Ativas</CardTitle>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{assinaturasAtivas}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Em Processamento</CardTitle>
+                    <Clock className="h-4 w-4 text-orange-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{assinaturasPendentes}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Receita Mensal</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{formatCurrency(receitaMensal)}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total de Assinaturas</CardTitle>
+                    <CreditCard className="h-4 w-4 text-purple-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{subscriptions.length}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Filtros e Busca */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-purple-600" />
-                    Gerenciar Assinaturas
-                  </CardTitle>
+                  <CardTitle>Filtros</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Cliente</TableHead>
-                        <TableHead>Plano</TableHead>
-                        <TableHead>Valor</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Vencimento</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {subscriptions && subscriptions.length > 0 ? (
-                        subscriptions.map((sub) => {
-                          const user = users.find(u => u.id === sub.user_id);
-                          return (
-                            <TableRow key={sub.id}>
-                              <TableCell className="font-medium">{user?.nome || user?.email || '-'}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{sub.plano}</Badge>
-                              </TableCell>
-                              <TableCell>{formatCurrency(sub.valor)}</TableCell>
-                              <TableCell>{getStatusBadge(sub.status)}</TableCell>
-                              <TableCell>{formatDate(sub.data_vencimento)}</TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setSelectedClientFor360(sub.user_id)}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Ver Cliente
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
-                      ) : (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground">
-                            Nenhuma assinatura encontrada
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex-1 min-w-[200px]">
+                      <Label>Buscar</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Nome, email ou payment ID..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-9"
+                          data-testid="input-search-subscriptions"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="w-[200px]">
+                      <Label>Status</Label>
+                      <Select 
+                        value={subscriptionFilterStatus} 
+                        onValueChange={setSubscriptionFilterStatus}
+                      >
+                        <SelectTrigger data-testid="select-filter-status-subscriptions">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="todos">Todos</SelectItem>
+                          <SelectItem value="ativo">Ativos</SelectItem>
+                          <SelectItem value="pendente">Pendentes</SelectItem>
+                          <SelectItem value="cancelado">Cancelados</SelectItem>
+                          <SelectItem value="expirado">Expirados</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
+
+              {/* Tabela de Assinaturas */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <CreditCard className="h-5 w-5 text-purple-600" />
+                        Histórico Completo de Assinaturas
+                      </CardTitle>
+                      <CardDescription>
+                        Acompanhe todas as assinaturas de planos - ativas, pendentes e históricas
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSubscriptionReprocessDialogOpen(true);
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Reprocessar Webhook
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {subscriptions && subscriptions.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Cliente</TableHead>
+                            <TableHead>Plano</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Payment ID</TableHead>
+                            <TableHead>Forma Pagamento</TableHead>
+                            <TableHead>Vencimento</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {subscriptions
+                            .filter(sub => {
+                              const user = users.find(u => u.id === sub.user_id);
+                              const searchLower = searchTerm.toLowerCase();
+                              const matchSearch = !searchTerm || 
+                                user?.nome?.toLowerCase().includes(searchLower) ||
+                                user?.email?.toLowerCase().includes(searchLower) ||
+                                sub.mercadopago_payment_id?.toLowerCase().includes(searchLower);
+                              
+                              const matchStatus = subscriptionFilterStatus === 'todos' || sub.status === subscriptionFilterStatus;
+                              
+                              return matchSearch && matchStatus;
+                            })
+                            .map((sub) => {
+                              const user = users.find(u => u.id === sub.user_id);
+                              return (
+                                <TableRow key={sub.id}>
+                                  <TableCell>
+                                    <div>
+                                      <p className="font-medium">{user?.nome || 'Usuário Desconhecido'}</p>
+                                      <p className="text-sm text-muted-foreground">{user?.email || '-'}</p>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{sub.plano}</Badge>
+                                  </TableCell>
+                                  <TableCell className="font-semibold">{formatCurrency(sub.valor)}</TableCell>
+                                  <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                                  <TableCell>
+                                    {sub.mercadopago_payment_id ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-auto p-0 font-mono text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                        onClick={() => handleViewSubscriptionDetails(sub.mercadopago_payment_id || '')}
+                                        data-testid={`button-view-sub-details-${sub.id}`}
+                                      >
+                                        {sub.mercadopago_payment_id.substring(0, 12)}...
+                                      </Button>
+                                    ) : (
+                                      <Badge variant="secondary" className="font-mono text-xs">
+                                        MANUAL
+                                      </Badge>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className="text-xs">
+                                      {sub.forma_pagamento || 'N/A'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>{formatDate(sub.data_vencimento)}</TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex gap-2 justify-end">
+                                      {sub.status === 'pendente' && sub.mercadopago_payment_id && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => {
+                                            setSubscriptionReprocessPaymentId(sub.mercadopago_payment_id || '');
+                                            setSubscriptionReprocessDialogOpen(true);
+                                          }}
+                                          data-testid={`button-reprocess-sub-${sub.id}`}
+                                        >
+                                          <RefreshCw className="h-3 w-3 mr-1" />
+                                          Reprocessar
+                                        </Button>
+                                      )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setSelectedClientFor360(sub.user_id)}
+                                      >
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        Ver Cliente
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })
+                          }
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">
+                        {searchTerm || subscriptionFilterStatus !== "todos" 
+                          ? "Nenhuma assinatura encontrada com os filtros aplicados" 
+                          : "Nenhuma assinatura encontrada"}
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Dialog de Reprocessar Webhook de Assinatura */}
+              <Dialog open={subscriptionReprocessDialogOpen} onOpenChange={setSubscriptionReprocessDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Reprocessar Webhook de Assinatura</DialogTitle>
+                    <DialogDescription>
+                      Forçar o processamento de um pagamento já aprovado que não foi ativado automaticamente
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Payment ID</Label>
+                      <Input 
+                        placeholder="Ex: 1234567890"
+                        value={subscriptionReprocessPaymentId}
+                        onChange={(e) => setSubscriptionReprocessPaymentId(e.target.value)}
+                        data-testid="input-sub-payment-id"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        ID do pagamento no Mercado Pago
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setSubscriptionReprocessDialogOpen(false);
+                        setSubscriptionReprocessPaymentId('');
+                      }}
+                      data-testid="button-cancel-reprocess-sub"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button 
+                      onClick={handleReprocessSubscription}
+                      disabled={subscriptionReprocessMutation.isPending}
+                      data-testid="button-confirm-reprocess-sub"
+                    >
+                      {subscriptionReprocessMutation.isPending ? "Reprocessando..." : "Reprocessar"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              {/* Dialog de Detalhes do Pagamento de Assinatura */}
+              <Dialog open={subscriptionDetailsDialogOpen} onOpenChange={setSubscriptionDetailsDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Detalhes do Pagamento</DialogTitle>
+                    <DialogDescription>
+                      Informações diretas do gateway de pagamento
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  {subscriptionPaymentDetails && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label className="text-muted-foreground">ID do Pagamento</Label>
+                          <p className="font-mono text-sm">{subscriptionPaymentDetails.id}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Status</Label>
+                          <p className="font-semibold">{subscriptionPaymentDetails.status}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">External Reference</Label>
+                          <p className="font-mono text-sm">{subscriptionPaymentDetails.external_reference}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Valor</Label>
+                          <p className="font-semibold">
+                            {subscriptionPaymentDetails.currency_id} {subscriptionPaymentDetails.transaction_amount}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Email do Pagador</Label>
+                          <p className="text-sm">{subscriptionPaymentDetails.payer_email}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Método de Pagamento</Label>
+                          <p className="text-sm">{subscriptionPaymentDetails.payment_method_id}</p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Data de Criação</Label>
+                          <p className="text-sm">
+                            {subscriptionPaymentDetails.date_created ? format(new Date(subscriptionPaymentDetails.date_created), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-'}
+                          </p>
+                        </div>
+                        <div>
+                          <Label className="text-muted-foreground">Data de Aprovação</Label>
+                          <p className="text-sm">
+                            {subscriptionPaymentDetails.date_approved ? format(new Date(subscriptionPaymentDetails.date_approved), 'dd/MM/yyyy HH:mm', { locale: ptBR }) : '-'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {subscriptionPaymentDetails.status_detail && (
+                        <div>
+                          <Label className="text-muted-foreground">Detalhes do Status</Label>
+                          <p className="text-sm">{subscriptionPaymentDetails.status_detail}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <DialogFooter>
+                    <Button onClick={() => setSubscriptionDetailsDialogOpen(false)}>Fechar</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           ) : activeTab === 'configuracoes' ? (
             // Aba de Configurações - Apenas Mercado Pago

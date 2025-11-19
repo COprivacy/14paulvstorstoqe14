@@ -1237,6 +1237,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validar que são números válidos e positivos
       if (isNaN(p5) || isNaN(p10) || isNaN(p20) || isNaN(p50) || 
           p5 <= 0 || p10 <= 0 || p20 <= 0 || p50 <= 0) {
+
+
+  // Reprocessar webhook de assinatura (apenas admin master)
+  app.post("/api/admin/subscriptions/reprocess-webhook", requireAdmin, async (req, res) => {
+    try {
+      const { paymentId, gateway = 'mercadopago' } = req.body;
+
+      if (!paymentId) {
+        return res.status(400).json({ error: "Payment ID é obrigatório" });
+      }
+
+      const config = await storage.getConfigMercadoPago();
+      if (!config || !config.access_token) {
+        return res.status(500).json({
+          error: "Mercado Pago não configurado",
+        });
+      }
+
+      const { MercadoPagoService } = await import("./mercadopago");
+      const mercadopago = new MercadoPagoService({
+        accessToken: config.access_token,
+      });
+
+      // Buscar dados do pagamento
+      const payment = await mercadopago.getPayment(paymentId);
+
+      if (!payment || payment.status !== 'approved') {
+        return res.status(400).json({
+          error: "Pagamento não está aprovado ou não foi encontrado",
+        });
+      }
+
+      // Processar webhook manualmente
+      const externalReference = payment.external_reference;
+      if (!externalReference) {
+        return res.status(400).json({
+          error: "External reference não encontrado no pagamento",
+        });
+      }
+
+      // Buscar assinatura pelo external reference
+      const subscriptions = await storage.getSubscriptions();
+      const subscription = subscriptions.find(
+        s => s.external_reference === externalReference
+      );
+
+      if (!subscription) {
+        return res.status(404).json({
+          error: "Assinatura não encontrada",
+        });
+      }
+
+      // Atualizar assinatura
+      await storage.updateSubscription(subscription.id, {
+        status: 'ativo',
+        status_pagamento: 'approved',
+        mercadopago_payment_id: paymentId,
+        data_inicio: new Date().toISOString(),
+      });
+
+      // Atualizar plano do usuário
+      const dataVencimento = new Date();
+      if (subscription.plano === 'premium_mensal') {
+        dataVencimento.setMonth(dataVencimento.getMonth() + 1);
+      } else {
+        dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
+      }
+
+      await storage.updateUser(subscription.user_id, {
+        plano: subscription.plano,
+        status: 'ativo',
+        data_expiracao_plano: dataVencimento.toISOString(),
+      });
+
+      logger.info('Webhook de assinatura reprocessado manualmente', 'ADMIN_SUBSCRIPTIONS', {
+        paymentId,
+        subscriptionId: subscription.id,
+        userId: subscription.user_id,
+      });
+
+      res.json({
+        success: true,
+        message: "Webhook reprocessado com sucesso",
+      });
+    } catch (error: any) {
+      logger.error('Erro ao reprocessar webhook de assinatura', 'ADMIN_SUBSCRIPTIONS', { error });
+      res.status(500).json({ error: error.message || "Erro ao reprocessar webhook" });
+    }
+  });
+
+  // Buscar detalhes do pagamento de assinatura (apenas admin master)
+  app.get("/api/admin/subscriptions/payment-details/:paymentId", requireAdmin, async (req, res) => {
+    try {
+      const { paymentId } = req.params;
+      const gateway = req.query.gateway || 'mercadopago';
+
+      const config = await storage.getConfigMercadoPago();
+      if (!config || !config.access_token) {
+        return res.status(500).json({
+          error: "Mercado Pago não configurado",
+        });
+      }
+
+      const { MercadoPagoService } = await import("./mercadopago");
+      const mercadopago = new MercadoPagoService({
+        accessToken: config.access_token,
+      });
+
+      const payment = await mercadopago.getPayment(paymentId);
+
+      res.json({
+        payment: {
+          id: payment.id,
+          status: payment.status,
+          status_detail: payment.status_detail,
+          external_reference: payment.external_reference,
+          transaction_amount: payment.transaction_amount,
+          currency_id: payment.currency_id,
+          payment_method_id: payment.payment_method_id,
+          payer_email: payment.payer?.email,
+          date_created: payment.date_created,
+          date_approved: payment.date_approved,
+        },
+      });
+    } catch (error: any) {
+      logger.error('Erro ao buscar detalhes do pagamento', 'ADMIN_SUBSCRIPTIONS', { error });
+      res.status(500).json({ error: error.message || "Erro ao buscar detalhes do pagamento" });
+    }
+  });
+
+
         console.log('❌ [EMPLOYEE_PACKAGES] Valores inválidos');
         return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
       }
