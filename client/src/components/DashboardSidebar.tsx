@@ -37,10 +37,6 @@ const configMenuItems: MenuItem[] = [
   { title: "Planos", url: "/planos", icon: Crown, adminOnly: true },
 ];
 
-const adminMenuItems: MenuItem[] = [
-  { title: "Assinaturas Func.", url: "/assinaturasfuncionarios", icon: Package, adminOnly: true },
-];
-
 const configMenuItemsAfterAdmin: MenuItem[] = [
   { title: "Config. Fiscal", url: "/config-fiscal", icon: FileText, permission: "config_fiscal", adminOnly: true },
 ];
@@ -163,9 +159,6 @@ export default function DashboardSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              
-              {/* 2.5 Menu Administrativo */}
-              {adminMenuItems.map(renderMenuItem)}
               
               {/* 3. Config. Fiscal */}
               {configMenuItemsAfterAdmin.map(renderMenuItem)}
