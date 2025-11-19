@@ -1888,4 +1888,48 @@ export class PostgresStorage implements IStorage {
       WHERE email = ${email} AND code = ${code}
     `);
   }
+
+  // Métodos para System Owner (Dono do Sistema)
+  async getSystemOwner(): Promise<any | undefined> {
+    try {
+      const result = await this.db.execute(sql`
+        SELECT * FROM system_owner LIMIT 1
+      `);
+      return result.rows[0];
+    } catch (error) {
+      logger.error('[DB] Erro ao buscar system owner:', { error });
+      return undefined;
+    }
+  }
+
+  async setSystemOwner(data: any): Promise<any> {
+    try {
+      const existing = await this.getSystemOwner();
+
+      if (existing) {
+        // Atualizar existente
+        const result = await this.db.execute(sql`
+          UPDATE system_owner 
+          SET owner_user_id = ${data.owner_user_id},
+              observacoes = ${data.observacoes || null}
+          WHERE id = ${existing.id}
+          RETURNING *
+        `);
+        logger.info('[DB] System owner atualizado', { owner_user_id: data.owner_user_id });
+        return result.rows[0];
+      } else {
+        // Criar novo
+        const result = await this.db.execute(sql`
+          INSERT INTO system_owner (owner_user_id, data_configuracao, observacoes)
+          VALUES (${data.owner_user_id}, ${new Date().toISOString()}, ${data.observacoes || null})
+          RETURNING *
+        `);
+        logger.info('[DB] System owner criado', { owner_user_id: data.owner_user_id });
+        return result.rows[0];
+      }
+    } catch (error) {
+      logger.error('[DB] Erro ao configurar system owner:', { error });
+      throw error;
+    }
+  }
 }

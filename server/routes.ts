@@ -3258,6 +3258,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // ROTAS DE SYSTEM OWNER (DONO DO SISTEMA)
+  // ============================================
+
+  // Buscar configuração do System Owner (apenas admin master)
+  app.get("/api/system-owner", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const user = await storage.getUserById(userId);
+      const isMasterAdmin = user?.email === 'pavisoft.suporte@gmail.com';
+
+      if (!isMasterAdmin) {
+        return res.status(403).json({ error: "Acesso negado - apenas master admin" });
+      }
+
+      const systemOwner = await storage.getSystemOwner?.();
+      res.json(systemOwner || null);
+    } catch (error: any) {
+      logger.error('[API] Erro ao buscar system owner:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Configurar System Owner (apenas admin master)
+  app.post("/api/system-owner", requireAdmin, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const user = await storage.getUserById(userId);
+      const isMasterAdmin = user?.email === 'pavisoft.suporte@gmail.com';
+
+      if (!isMasterAdmin) {
+        return res.status(403).json({ error: "Acesso negado - apenas master admin" });
+      }
+
+      const { owner_user_id, observacoes } = req.body;
+
+      if (!owner_user_id) {
+        return res.status(400).json({ error: "owner_user_id é obrigatório" });
+      }
+
+      // Verificar se o usuário existe
+      const ownerUser = await storage.getUserById(owner_user_id);
+      if (!ownerUser) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+
+      const systemOwner = await storage.setSystemOwner?.({
+        owner_user_id,
+        observacoes: observacoes || null
+      });
+
+      await storage.logAdminAction?.(
+        userId,
+        "SYSTEM_OWNER_CONFIGURADO",
+        `System Owner configurado para usuário: ${ownerUser.nome} (${ownerUser.email})`,
+        req
+      );
+
+      logger.info('[API] System Owner configurado com sucesso', { owner_user_id, admin: userId });
+      res.json(systemOwner);
+    } catch (error: any) {
+      logger.error('[API] Erro ao configurar system owner:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
       console.error("❌ Erro ao criar conta a pagar:", error);
       res.status(500).json({ error: error.message });
     }
