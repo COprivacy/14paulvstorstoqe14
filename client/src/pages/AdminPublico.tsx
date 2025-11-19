@@ -51,7 +51,8 @@ import {
   Zap,
   Check,
   Crown,
-  Package
+  Package,
+  Info
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
