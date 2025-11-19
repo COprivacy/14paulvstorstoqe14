@@ -84,9 +84,6 @@ export default function Privacy() {
                     <strong className="text-white">Razão Social:</strong> Pavisoft Sistemas Ltda.
                   </p>
                   <p className="mb-4">
-                    <strong className="text-white">CNPJ:</strong> [INSERIR CNPJ]
-                  </p>
-                  <p className="mb-4">
                     <strong className="text-white">Endereço:</strong> [INSERIR ENDEREÇO COMPLETO]
                   </p>
                   <p className="mb-4">
