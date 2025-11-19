@@ -3680,7 +3680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           packageName: nomePacote,
           quantity: quantidade,
           price: valor,
-          paymentUrl: preference.init_point,
+          paymentUrl: preference.init_point || '',
         });
 
         console.log(`📧 Email de compra enviado para ${user.email}`);
@@ -3688,6 +3688,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("⚠️ Erro ao enviar email (não crítico):", emailError);
         // Não bloqueia a compra se o email falhar
       }
+
+      logger.info('Preferência de pagamento criada com sucesso', 'EMPLOYEE_PACKAGE', {
+        pacote: nomePacote,
+        usuario: user.email,
+        preferenceId: preference.id,
+        initPoint: preference.init_point
+      });
 
       console.log(
         `✅ Preferência de pagamento criada - Pacote: ${nomePacote}, User: ${user.email}`,
@@ -3698,12 +3705,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         preference: {
           id: preference.id,
           init_point: preference.init_point,
+          sandbox_init_point: preference.sandbox_init_point,
         },
         message:
           "✅ Pacote selecionado. Você será redirecionado para o pagamento.",
       });
     } catch (error: any) {
       console.error("❌ Erro ao processar compra de funcionários:", error);
+      logger.error('Erro ao processar compra de funcionários', 'EMPLOYEE_PACKAGE', { error: error.message });
       res.status(500).json({
         error:
           error.message ||

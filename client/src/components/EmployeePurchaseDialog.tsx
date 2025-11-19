@@ -127,27 +127,35 @@ export function EmployeePurchaseDialog({
 
       const response = await res.json();
 
-      if (response.payment?.invoiceUrl) {
-        window.open(response.payment.invoiceUrl, "_blank");
-      } else if (response.payment?.bankSlipUrl) {
-        window.open(response.payment.bankSlipUrl, "_blank");
+      if (!response.success) {
+        throw new Error(response.error || "Erro ao processar pagamento");
+      }
+
+      // Redirecionar para o Mercado Pago
+      if (response.preference?.init_point) {
+        console.log('🔗 Redirecionando para Mercado Pago:', response.preference.init_point);
+        window.location.href = response.preference.init_point;
+      } else if (response.preference?.sandbox_init_point) {
+        console.log('🔗 Redirecionando para Mercado Pago (sandbox):', response.preference.sandbox_init_point);
+        window.location.href = response.preference.sandbox_init_point;
+      } else {
+        throw new Error("Link de pagamento não disponível");
       }
 
       toast({
         title: "🎉 Pacote selecionado!",
-        description: `Você será redirecionado para o pagamento do pacote ${pacote.nome}.`,
+        description: `Redirecionando para o pagamento do pacote ${pacote.nome}...`,
       });
 
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
 
-      onOpenChange(false);
     } catch (error: any) {
+      console.error('❌ Erro ao processar compra:', error);
       toast({
         title: "Erro ao processar compra",
         description: error.message || "Tente novamente mais tarde.",
         variant: "destructive",
       });
-    } finally {
       setIsProcessing(false);
     }
   };
