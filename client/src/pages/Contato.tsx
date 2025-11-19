@@ -49,10 +49,13 @@ export default function Contato() {
         throw new Error("Erro ao enviar mensagem");
       }
     } catch (error) {
+      // Fallback: abrir cliente de email
+      const mailtoLink = `mailto:atendimento.pavisoft@gmail.com?subject=${encodeURIComponent(formData.assunto)}&body=${encodeURIComponent(`Nome: ${formData.nome}\nEmail: ${formData.email}\n\nMensagem:\n${formData.mensagem}`)}`;
+      window.location.href = mailtoLink;
+      
       toast({
-        title: "Erro ao enviar",
-        description: "Não foi possível enviar sua mensagem. Tente novamente.",
-        variant: "destructive",
+        title: "Abrindo seu cliente de email",
+        description: "Complete o envio pelo seu aplicativo de email.",
       });
     } finally {
       setIsSubmitting(false);
