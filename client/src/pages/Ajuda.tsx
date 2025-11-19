@@ -569,7 +569,7 @@ export default function Ajuda() {
                     <section>
                       <h2 className="text-2xl font-semibold text-white mb-4">8. Proteção de Dados (LGPD)</h2>
                       <p className="mb-4">
-                        O tratamento de dados pessoais no Pavisoft está em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018). Para mais detalhes, consulte nossa <Link href="/privacy" className="text-blue-400 hover:text-blue-300">Política de Privacidade</Link>.
+                        O tratamento de dados pessoais no Pavisoft está em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018). Para mais detalhes, consulte nossa <a href="/privacy" className="text-blue-400 hover:text-blue-300">Política de Privacidade</a>.
                       </p>
                       <p className="mb-4">
                         <strong>Seus dados:</strong> Você mantém todos os direitos sobre os dados que insere no sistema. Nós apenas processamos esses dados para fornecer o Serviço.
@@ -719,7 +719,7 @@ export default function Ajuda() {
           </div>
           <p className="text-sm">© 2025 Pavisoft Sistemas. Todos os direitos reservados.</p>
           <div className="mt-4 flex justify-center gap-4 text-sm">
-            <Link href="/privacy" className="text-gray-400 hover:text-blue-400">Privacidade</Link>
+            <a href="/privacy" className="text-gray-400 hover:text-blue-400">Privacidade</a>
             <span>•</span>
             <a href="#termos" className="text-gray-400 hover:text-blue-400">Termos de Uso</a>
           </div>
