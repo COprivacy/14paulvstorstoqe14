@@ -2301,6 +2301,29 @@ export default function AdminPublico() {
     },
   });
 
+  // Mutation para cancelar assinatura
+  const cancelSubscriptionMutation = useMutation({
+    mutationFn: async (subscriptionId: number) => {
+      const response = await apiRequest("POST", `/api/admin/subscriptions/${subscriptionId}/cancel`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "✅ Assinatura cancelada!", 
+        description: "A assinatura foi cancelada com sucesso" 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "❌ Erro", 
+        description: error.message || "Erro ao cancelar assinatura",
+        variant: "destructive"
+      });
+    },
+  });
+
   const { data: subscriptions = [], isLoading: isLoadingSubscriptions, error: subscriptionsError } = useQuery<Subscription[]>({
     queryKey: ["/api/subscriptions"],
     retry: 1,
@@ -2423,6 +2446,10 @@ export default function AdminPublico() {
     }
     
     subscriptionReprocessMutation.mutate(subscriptionReprocessPaymentId);
+  };
+
+  const handleCancelSubscription = (subscriptionId: number) => {
+    cancelSubscriptionMutation.mutate(subscriptionId);
   };
 
   const handleViewSubscriptionDetails = async (paymentId: string) => {
@@ -3019,6 +3046,7 @@ export default function AdminPublico() {
                             <TableHead>Valor</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Payment ID</TableHead>
+                            <TableHead>Data Pagamento</TableHead>
                             <TableHead>Forma Pagamento</TableHead>
                             <TableHead>Vencimento</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
@@ -3071,6 +3099,17 @@ export default function AdminPublico() {
                                     )}
                                   </TableCell>
                                   <TableCell>
+                                    {sub.data_inicio ? (
+                                      <div className="text-sm">
+                                        {formatDate(sub.data_inicio)}
+                                      </div>
+                                    ) : (
+                                      <Badge variant="secondary" className="text-xs">
+                                        Pendente
+                                      </Badge>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
                                     <Badge variant="outline" className="text-xs">
                                       {sub.forma_pagamento || 'N/A'}
                                     </Badge>
@@ -3090,6 +3129,22 @@ export default function AdminPublico() {
                                         >
                                           <RefreshCw className="h-3 w-3 mr-1" />
                                           Reprocessar
+                                        </Button>
+                                      )}
+                                      {(sub.status === 'ativo' || sub.status === 'pendente') && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                          onClick={() => {
+                                            if (confirm(`Tem certeza que deseja cancelar a assinatura de ${user?.nome}?`)) {
+                                              handleCancelSubscription(sub.id);
+                                            }
+                                          }}
+                                          data-testid={`button-cancel-sub-${sub.id}`}
+                                        >
+                                          <XCircle className="h-3 w-3 mr-1" />
+                                          Cancelar
                                         </Button>
                                       )}
                                       <Button

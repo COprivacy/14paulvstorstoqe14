@@ -1237,7 +1237,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validar que são números válidos e positivos
       if (isNaN(p5) || isNaN(p10) || isNaN(p20) || isNaN(p50) || 
           p5 <= 0 || p10 <= 0 || p20 <= 0 || p50 <= 0) {
+        console.log('❌ [EMPLOYEE_PACKAGES] Valores inválidos');
+        return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
+      }
 
+      const precos = {
+        pacote_5: p5,
+        pacote_10: p10,
+        pacote_20: p20,
+        pacote_50: p50,
+      };
+
+      console.log('💾 [EMPLOYEE_PACKAGES] Salvando no banco:', precos);
+
+      // Salvar no banco
+      await storage.upsertSystemConfig('pacotes_funcionarios_precos', JSON.stringify(precos));
+      
+      // Verificar se foi salvo corretamente
+      const verificacao = await storage.getSystemConfig('pacotes_funcionarios_precos');
+      console.log('🔍 [EMPLOYEE_PACKAGES] Verificação após salvar:', verificacao);
+
+      // Log da ação
+      await storage.logAdminAction(
+        userId,
+        "PACOTES_PRECOS_ATUALIZADOS",
+        `Preços de pacotes atualizados - 5: R$ ${p5.toFixed(2)}, 10: R$ ${p10.toFixed(2)}, 20: R$ ${p20.toFixed(2)}, 50: R$ ${p50.toFixed(2)}`,
+        req
+      );
+
+      logger.info('[API] Preços dos pacotes atualizados com sucesso', 'EMPLOYEE_PACKAGES', precos);
+
+      console.log('✅ [EMPLOYEE_PACKAGES] Resposta enviada:', { success: true, precos });
+      
+      return res.status(200).json({ success: true, precos });
+      
+    } catch (error: any) {
+      console.error('❌ [EMPLOYEE_PACKAGES] Erro:', error);
+      logger.error('[API] Erro ao atualizar preços dos pacotes:', error);
+      return res.status(500).json({ error: error.message || "Erro ao atualizar preços dos pacotes" });
+    }
+  });
 
   // Reprocessar webhook de assinatura (apenas admin master)
   app.post("/api/admin/subscriptions/reprocess-webhook", requireAdmin, async (req, res) => {
@@ -1327,6 +1366,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cancelar assinatura (apenas admin)
+  app.post("/api/admin/subscriptions/:id/cancel", requireAdmin, async (req, res) => {
+    try {
+      const subscriptionId = parseInt(req.params.id);
+      const userId = req.headers["x-user-id"] as string;
+
+      if (isNaN(subscriptionId)) {
+        return res.status(400).json({ error: "ID de assinatura inválido" });
+      }
+
+      // Buscar assinatura
+      const subscriptions = await storage.getSubscriptions();
+      const subscription = subscriptions.find(s => s.id === subscriptionId);
+
+      if (!subscription) {
+        return res.status(404).json({ error: "Assinatura não encontrada" });
+      }
+
+      // Atualizar status da assinatura
+      await storage.updateSubscription(subscriptionId, {
+        status: 'cancelado',
+        status_pagamento: 'cancelled',
+      });
+
+      // Log da ação
+      if (storage.logAdminAction) {
+        await storage.logAdminAction(
+          userId,
+          "ASSINATURA_CANCELADA",
+          `Assinatura #${subscriptionId} cancelada - Usuário: ${subscription.user_id}`,
+          req
+        );
+      }
+
+      logger.info('Assinatura cancelada pelo admin', 'ADMIN_SUBSCRIPTIONS', {
+        subscriptionId,
+        userId: subscription.user_id,
+      });
+
+      res.json({
+        success: true,
+        message: "Assinatura cancelada com sucesso",
+      });
+    } catch (error: any) {
+      logger.error('Erro ao cancelar assinatura', 'ADMIN_SUBSCRIPTIONS', { error });
+      res.status(500).json({ error: error.message || "Erro ao cancelar assinatura" });
+    }
+  });
+
   // Buscar detalhes do pagamento de assinatura (apenas admin master)
   app.get("/api/admin/subscriptions/payment-details/:paymentId", requireAdmin, async (req, res) => {
     try {
@@ -1367,16 +1455,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Atualizar preços dos pacotes de funcionários (apenas admin)
+  app.post("/api/employee-package-prices", requireAdmin, async (req, res) => {
+    try {
+      const { p5, p10, p20, p50 } = req.body;
+      const userId = req.headers["x-user-id"] as string;
 
+      console.log('📥 [EMPLOYEE_PACKAGES] Recebendo preços:', { p5, p10, p20, p50 });
+
+      // Converter para números
+      const p5Num = Number(p5);
+      const p10Num = Number(p10);
+      const p20Num = Number(p20);
+      const p50Num = Number(p50);
+
+      // Validação
+      if (isNaN(p5Num) || isNaN(p10Num) || isNaN(p20Num) || isNaN(p50Num) ||
+          p5Num <= 0 || p10Num <= 0 || p20Num <= 0 || p50Num <= 0) {
         console.log('❌ [EMPLOYEE_PACKAGES] Valores inválidos');
         return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
       }
 
       const precos = {
-        pacote_5: p5,
-        pacote_10: p10,
-        pacote_20: p20,
-        pacote_50: p50,
+        pacote_5: p5Num,
+        pacote_10: p10Num,
+        pacote_20: p20Num,
+        pacote_50: p50Num,
       };
 
       console.log('💾 [EMPLOYEE_PACKAGES] Salvando no banco:', precos);
@@ -1395,7 +1499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.logAdminAction(
           userId,
           "PACOTES_PRECOS_ATUALIZADOS",
-          `Preços de pacotes atualizados - +5: R$ ${p5.toFixed(2)}, +10: R$ ${p10.toFixed(2)}, +20: R$ ${p20.toFixed(2)}, +50: R$ ${p50.toFixed(2)}`,
+          `Preços de pacotes atualizados - +5: R$ ${p5Num.toFixed(2)}, +10: R$ ${p10Num.toFixed(2)}, +20: R$ ${p20Num.toFixed(2)}, +50: R$ ${p50Num.toFixed(2)}`,
           req
         );
       }
@@ -3832,23 +3936,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const externalReference = `${plano}_${Date.now()}`;
 
-      // Criar descrição com informação do cupom se aplicado
-      let descricaoProduto = `Plano ${planoNomes[plano as keyof typeof planoNomes]}`;
-      if (cupomAplicado) {
-        descricaoProduto += ` (Cupom: ${cupomAplicado.codigo} - ${valorDesconto.toFixed(2)} de desconto)`;
+      // Criar items para o Mercado Pago
+      const valorOriginal = planoValues[plano as keyof typeof planoValues];
+      const items = [
+        {
+          title: `Assinatura ${planoNomes[plano as keyof typeof planoNomes]} - Pavisoft Sistemas`,
+          quantity: 1,
+          unit_price: valorOriginal,
+          currency_id: "BRL",
+          description: `Plano ${planoNomes[plano as keyof typeof planoNomes]}`,
+        },
+      ];
+
+      // Se houver cupom, adicionar como item de desconto
+      if (cupomAplicado && valorDesconto > 0) {
+        items.push({
+          title: `Desconto - Cupom ${cupomAplicado.codigo}`,
+          quantity: 1,
+          unit_price: -valorDesconto,
+          currency_id: "BRL",
+          description: `Cupom de desconto: ${cupomAplicado.codigo} (${cupomAplicado.tipo === 'percentual' ? cupomAplicado.valor + '%' : 'R$ ' + cupomAplicado.valor.toFixed(2)})`,
+        });
       }
 
-      // Criar preferência de pagamento no Mercado Pago com valor final (com desconto se houver)
+      // Criar preferência de pagamento no Mercado Pago
       const preference = await mercadopago.createPreference({
-        items: [
-          {
-            title: `Assinatura ${planoNomes[plano as keyof typeof planoNomes]} - Pavisoft Sistemas`,
-            quantity: 1,
-            unit_price: valorFinal,
-            currency_id: "BRL",
-            description: descricaoProduto,
-          },
-        ],
+        items,
         payer: {
           email,
           name: nome,
