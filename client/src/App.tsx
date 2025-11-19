@@ -35,6 +35,7 @@ import Devolucoes from "@/pages/Devolucoes";
 import Orcamentos from "@/pages/Orcamentos";
 import TestSuite from "./pages/TestSuite";
 import Ajuda from "./pages/Ajuda";
+import Privacy from "@/pages/Privacy";
 
 function Router() {
   return (
@@ -238,6 +239,7 @@ function Router() {
       <Route path="/ajuda">
         {() => <Ajuda />}
       </Route>
+      <Route path="/privacy" component={Privacy} />
       <Route component={NotFound} />
     </Switch>
   );

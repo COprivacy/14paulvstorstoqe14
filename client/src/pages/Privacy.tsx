@@ -471,7 +471,7 @@ export default function Privacy() {
           </div>
           <p className="text-sm">© 2025 Pavisoft Sistemas. Todos os direitos reservados.</p>
           <div className="mt-4 flex justify-center gap-4 text-sm">
-            <a href="#" className="text-gray-400 hover:text-blue-400">Privacidade</a>
+            <Link href="/privacy" className="text-gray-400 hover:text-blue-400">Privacidade</Link>
             <span>•</span>
             <Link href="/ajuda" className="text-gray-400 hover:text-blue-400">Termos de Uso</Link>
           </div>
