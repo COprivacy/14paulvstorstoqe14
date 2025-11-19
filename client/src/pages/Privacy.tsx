@@ -84,7 +84,7 @@ export default function Privacy() {
                     <strong className="text-white">Razão Social:</strong> Pavisoft Sistemas Ltda.
                   </p>
                   <p className="mb-4">
-                    <strong className="text-white">Email de Contato para Privacidade:</strong> privacidade@pavisoft.com.br
+                    <strong className="text-white">Email de Contato:</strong> atendimento.pavisoft@gmail.com
                   </p>
                 </section>
 
@@ -295,8 +295,8 @@ export default function Privacy() {
                   <p className="mb-4">Para exercer qualquer um desses direitos, você pode:</p>
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Acessar as configurações da sua conta no sistema</li>
-                    <li>Enviar email para: <strong className="text-white">privacidade@pavisoft.com.br</strong></li>
-                    <li>Entrar em contato pelo WhatsApp: <strong className="text-white">(98) 98508-5498</strong></li>
+                    <li>Enviar email para: <strong className="text-white">atendimento.pavisoft@gmail.com</strong></li>
+                    <li>Entrar em contato pelo WhatsApp: <strong className="text-white">(98) 98426-7488</strong></li>
                   </ul>
                   <p className="mt-4">
                     Responderemos sua solicitação em até 15 dias úteis, conforme previsto na LGPD.
@@ -400,29 +400,21 @@ export default function Privacy() {
                     14. Entre em Contato
                   </h2>
                   <p className="mb-4">
-                    Para questões relacionadas à privacidade, proteção de dados ou para exercer seus direitos, 
-                    entre em contato conosco:
+                    Para questões relacionadas à privacidade, proteção de dados ou para exercer seus direitos:
                   </p>
                   <div className="bg-slate-800/50 rounded-lg p-6 space-y-3">
                     <div className="flex items-center gap-3">
                       <Mail className="h-5 w-5 text-blue-400" />
                       <div>
-                        <p className="text-sm text-gray-400">Email de Privacidade</p>
-                        <p className="text-white font-medium">privacidade@pavisoft.com.br</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Mail className="h-5 w-5 text-blue-400" />
-                      <div>
                         <p className="text-sm text-gray-400">Suporte Geral</p>
-                        <p className="text-white font-medium">pavisoft.suporte@gmail.com</p>
+                        <p className="text-white font-medium">atendimento.pavisoft@gmail.com</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <Phone className="h-5 w-5 text-blue-400" />
                       <div>
                         <p className="text-sm text-gray-400">WhatsApp</p>
-                        <p className="text-white font-medium">(98) 98508-5498</p>
+                        <p className="text-white font-medium">(98) 98426-7488</p>
                       </div>
                     </div>
                   </div>
