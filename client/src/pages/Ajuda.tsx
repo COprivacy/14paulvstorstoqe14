@@ -446,7 +446,7 @@ export default function Ajuda() {
                         Ao acessar e utilizar o Pavisoft Sistemas ("Serviço"), você concorda em cumprir e estar vinculado aos seguintes termos e condições de uso. Se você não concordar com estes termos, não utilize o Serviço.
                       </p>
                       <p>
-                        O Pavisoft é operado pela Pavisoft Sistemas Ltda., inscrita no CNPJ sob o nº [INSERIR CNPJ], com sede em [INSERIR ENDEREÇO].
+                        O Pavisoft é operado pela Pavisoft Sistemas Ltda.
                       </p>
                     </section>
 
