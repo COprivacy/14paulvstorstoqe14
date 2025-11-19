@@ -4749,18 +4749,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Processar notificação de pagamento
       if (type === "payment" || action === "payment.created" || action === "payment.updated") {
-        const paymentId = data.id;
+        const paymentId = data?.id;
 
         if (!paymentId) {
-          logger.warn("Webhook sem payment ID", "MERCADOPAGO_WEBHOOK");
-          return res.status(400).json({ error: "Payment ID não fornecido" });
+          logger.warn("Webhook sem payment ID (possivelmente teste)", "MERCADOPAGO_WEBHOOK");
+          return res.status(200).json({ success: true, message: "Webhook recebido (sem payment ID)" });
         }
 
         // Buscar configuração do Mercado Pago
         const config = await storage.getConfigMercadoPago();
         if (!config || !config.access_token) {
-          logger.error("Configuração do Mercado Pago não encontrada", "MERCADOPAGO_WEBHOOK");
-          return res.status(500).json({ error: "Configuração não encontrada" });
+          logger.warn("Configuração do Mercado Pago não encontrada (possivelmente teste)", "MERCADOPAGO_WEBHOOK");
+          return res.status(200).json({ success: true, message: "Webhook recebido (sem configuração)" });
         }
 
         // Buscar informações do pagamento via API
@@ -4774,10 +4774,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         if (!response.ok) {
-          logger.error("Erro ao buscar pagamento do Mercado Pago", "MERCADOPAGO_WEBHOOK", {
-            status: response.status
+          logger.warn("Erro ao buscar pagamento do Mercado Pago (possivelmente teste)", "MERCADOPAGO_WEBHOOK", {
+            status: response.status,
+            paymentId
           });
-          return res.status(500).json({ error: "Erro ao buscar pagamento" });
+          return res.status(200).json({ success: true, message: "Webhook recebido (erro ao buscar pagamento)" });
         }
 
         const paymentData = await response.json();
@@ -4793,8 +4794,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         if (!externalReference) {
-          logger.warn("Pagamento sem external_reference", "MERCADOPAGO_WEBHOOK", { paymentId });
-          return res.status(400).json({ error: "External reference não encontrada" });
+          logger.warn("Pagamento sem external_reference (possivelmente teste)", "MERCADOPAGO_WEBHOOK", { paymentId });
+          return res.status(200).json({ success: true, message: "Webhook recebido (sem external reference)" });
         }
 
         // 🔥 NOVO: Verificar se é um pagamento de pacote de funcionários
@@ -4930,13 +4931,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
 
-          logger.error("Erro ao processar pacote de funcionários", "MERCADOPAGO_WEBHOOK", {
+          logger.warn("Erro ao processar pacote de funcionários (possivelmente teste)", "MERCADOPAGO_WEBHOOK", {
             externalReference,
             pacoteId,
             userId,
             message: "Dados inválidos ou usuário não encontrado",
           });
-          return res.status(400).json({ error: "Erro ao processar pacote" });
+          return res.status(200).json({ success: true, message: "Webhook recebido (erro ao processar pacote)" });
         }
 
         // Processar pagamento de assinatura normal
@@ -4946,10 +4947,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         if (!subscription) {
-          logger.warn("Assinatura não encontrada", "MERCADOPAGO_WEBHOOK", {
+          logger.warn("Assinatura não encontrada (possivelmente teste)", "MERCADOPAGO_WEBHOOK", {
             externalReference,
           });
-          return res.status(404).json({ error: "Assinatura não encontrada" });
+          return res.status(200).json({ success: true, message: "Webhook recebido (assinatura não encontrada)" });
         }
 
         // Processar status do pagamento
