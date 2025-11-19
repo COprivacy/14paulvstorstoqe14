@@ -112,9 +112,9 @@ export default function Ajuda() {
     {
       icon: Mail,
       titulo: "Email",
-      descricao: "pavisoft.suporte@gmail.com",
+      descricao: "atendimento.pavisoft@gmail.com",
       disponibilidade: "Resposta em até 24h",
-      link: "mailto:pavisoft.suporte@gmail.com",
+      link: "mailto:atendimento.pavisoft@gmail.com",
       badge: "Suporte Técnico",
       badgeColor: "bg-blue-500"
     },
@@ -690,7 +690,7 @@ export default function Ajuda() {
                       </p>
                       <ul className="list-none space-y-2">
                         <li><strong>Email:</strong> termos@pavisoft.com.br</li>
-                        <li><strong>Suporte:</strong> pavisoft.suporte@gmail.com</li>
+                        <li><strong>Suporte:</strong> atendimento.pavisoft@gmail.com</li>
                         <li><strong>WhatsApp:</strong> (98) 98426-7488</li>
                         <li><strong>Telefone:</strong> (98) 98426-7488</li>
                       </ul>
