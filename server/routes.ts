@@ -3610,7 +3610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/checkout", async (req, res) => {
     try {
-      const { nome, email, cpfCnpj, plano, formaPagamento } = req.body;
+      const { nome, email, cpfCnpj, plano, formaPagamento, cupom } = req.body;
 
       if (!nome || !email || !plano || !formaPagamento) {
         return res.status(400).json({
@@ -3629,10 +3629,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const planoValues = {
+      // Buscar preços atualizados do banco de dados
+      const precosConfig = await storage.getSystemConfig('planos_precos');
+      let planoValues = {
         premium_mensal: 79.99,
         premium_anual: 767.04,
       };
+
+      if (precosConfig && precosConfig.valor) {
+        try {
+          const precosParsed = JSON.parse(precosConfig.valor);
+          if (precosParsed.premium_mensal && precosParsed.premium_anual) {
+            planoValues = precosParsed;
+          }
+        } catch (error) {
+          console.error('Erro ao parsear preços dos planos:', error);
+        }
+      }
 
       const planoNomes = {
         premium_mensal: "Premium Mensal",
@@ -3641,6 +3654,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!planoValues[plano as keyof typeof planoValues]) {
         return res.status(400).json({ error: "Plano inválido" });
+      }
+
+      // Valor original do plano
+      let valorFinal = planoValues[plano as keyof typeof planoValues];
+      let cupomAplicado = null;
+      let valorDesconto = 0;
+
+      // Aplicar cupom se fornecido
+      if (cupom) {
+        try {
+          const resultadoCupom = await storage.validarCupom?.(cupom, plano, 'temp');
+          
+          if (resultadoCupom?.valido && resultadoCupom.cupom) {
+            cupomAplicado = resultadoCupom.cupom;
+            
+            // Calcular desconto
+            if (cupomAplicado.tipo === 'percentual') {
+              valorDesconto = (valorFinal * cupomAplicado.valor) / 100;
+            } else {
+              valorDesconto = Math.min(cupomAplicado.valor, valorFinal);
+            }
+            
+            valorFinal = Math.max(0, valorFinal - valorDesconto);
+            
+            console.log(`✅ [CHECKOUT] Cupom aplicado: ${cupom} - Desconto: R$ ${valorDesconto.toFixed(2)}`);
+          }
+        } catch (error) {
+          console.error('Erro ao validar cupom no checkout:', error);
+          // Continua sem cupom se houver erro
+        }
       }
 
       const config = await storage.getConfigMercadoPago();
@@ -3658,15 +3701,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const externalReference = `${plano}_${Date.now()}`;
 
-      // Criar preferência de pagamento no Mercado Pago
+      // Criar descrição com informação do cupom se aplicado
+      let descricaoProduto = `Plano ${planoNomes[plano as keyof typeof planoNomes]}`;
+      if (cupomAplicado) {
+        descricaoProduto += ` (Cupom: ${cupomAplicado.codigo} - ${valorDesconto.toFixed(2)} de desconto)`;
+      }
+
+      // Criar preferência de pagamento no Mercado Pago com valor final (com desconto se houver)
       const preference = await mercadopago.createPreference({
         items: [
           {
             title: `Assinatura ${planoNomes[plano as keyof typeof planoNomes]} - Pavisoft Sistemas`,
             quantity: 1,
-            unit_price: planoValues[plano as keyof typeof planoValues],
+            unit_price: valorFinal,
             currency_id: "BRL",
-            description: `Plano ${planoNomes[plano as keyof typeof planoNomes]}`,
+            description: descricaoProduto,
           },
         ],
         payer: {
@@ -3712,7 +3761,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         user_id: user.id,
         plano,
         status: "pendente",
-        valor: planoValues[plano as keyof typeof planoValues],
+        valor: valorFinal, // Valor com desconto aplicado
         data_vencimento: dataVencimento.toISOString(),
         prazo_limite_pagamento: prazoLimitePagamento.toISOString(),
         tentativas_cobranca: 0,
@@ -3723,8 +3772,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         external_reference: externalReference,
       });
 
+      // Registrar uso do cupom se foi aplicado
+      if (cupomAplicado && storage.registrarUsoCupom) {
+        try {
+          await storage.registrarUsoCupom({
+            cupom_id: cupomAplicado.id,
+            user_id: user.id,
+            subscription_id: subscription.id,
+            valor_desconto: valorDesconto,
+          });
+          
+          logger.info('Cupom registrado com sucesso', 'CHECKOUT', {
+            cupom: cupomAplicado.codigo,
+            userId: user.id,
+            subscriptionId: subscription.id,
+            valorDesconto
+          });
+        } catch (error) {
+          logger.error('Erro ao registrar uso do cupom', 'CHECKOUT', { error });
+        }
+      }
+
       console.log(
-        `✅ Assinatura criada com sucesso - User: ${user.email}, Plano: ${planoNomes[plano as keyof typeof planoNomes]}, Forma: ${formaPagamento}`,
+        `✅ Assinatura criada com sucesso - User: ${user.email}, Plano: ${planoNomes[plano as keyof typeof planoNomes]}, Forma: ${formaPagamento}${cupomAplicado ? `, Cupom: ${cupomAplicado.codigo}` : ''}`,
       );
 
       res.json({
@@ -3734,6 +3804,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: preference.id,
           init_point: preference.init_point,
         },
+        cupomAplicado: cupomAplicado ? {
+          codigo: cupomAplicado.codigo,
+          valorDesconto: valorDesconto.toFixed(2),
+        } : null,
         message: `Assinatura ${planoNomes[plano as keyof typeof planoNomes]} criada com sucesso! Você será redirecionado para o pagamento.`,
       });
     } catch (error: any) {
