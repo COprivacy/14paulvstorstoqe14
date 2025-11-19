@@ -112,10 +112,20 @@ export default function LoginForm({
       return;
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       toast({
         title: "❌ Erro",
-        description: "A senha deve ter no mínimo 6 caracteres",
+        description: "A senha deve ter no mínimo 8 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      toast({
+        title: "❌ Erro",
+        description: "A senha deve conter letras maiúsculas, minúsculas e números",
         variant: "destructive",
       });
       return;
@@ -339,7 +349,7 @@ export default function LoginForm({
                               <Input
                                 id="new-password"
                                 type="password"
-                                placeholder="Mínimo 6 caracteres"
+                                placeholder="Mínimo 8 caracteres (letras e números)"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
                                 required

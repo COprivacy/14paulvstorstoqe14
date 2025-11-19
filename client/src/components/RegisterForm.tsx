@@ -21,6 +21,26 @@ export default function RegisterForm({ onRegister, onLoginClick, isLoading }: Re
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validação de email
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      alert("Por favor, insira um email válido");
+      return;
+    }
+
+    // Validação forte de senha
+    if (password.length < 8) {
+      alert("A senha deve ter no mínimo 8 caracteres");
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      alert("A senha deve conter letras maiúsculas, minúsculas e números");
+      return;
+    }
+    
     if (onRegister && name && email && password) {
       onRegister(name, email, password);
     }
@@ -155,7 +175,7 @@ export default function RegisterForm({ onRegister, onLoginClick, isLoading }: Re
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Mínimo de 6 caracteres
+                  Mínimo 8 caracteres com letras maiúsculas, minúsculas e números
                 </p>
               </div>
             </CardContent>

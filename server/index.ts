@@ -11,6 +11,7 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { sql } from 'drizzle-orm';
 import ws from 'ws';
 import { autoCleanupService } from './auto-cleanup';
+import { validateEmail } from "./lib/validators";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -135,22 +136,22 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
         imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
       },
     },
     hsts: {
-      maxAge: 31536000, // 1 ano
+      maxAge: 31536000, // 1 ano em segundos
       includeSubDomains: true,
-      preload: true
+      preload: true,
     },
-    frameguard: {
-      action: 'deny' // Previne clickjacking
-    },
-    noSniff: true, // Previne MIME sniffing
-    xssFilter: true // Ativa filtro XSS do navegador
-  })
+    noSniff: true,
+    frameguard: { action: 'deny' },
+    xssFilter: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  }),
 );
 
 // Rate limiting para prevenir ataques de força bruta
@@ -220,6 +221,16 @@ app.use((req, res, next) => {
     throw err;
   });
 
+  // Force HTTPS em produção
+  if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+      if (req.headers['x-forwarded-proto'] !== 'https') {
+        return res.redirect(301, `https://${req.headers.host}${req.url}`);
+      }
+      next();
+    });
+  }
+
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
@@ -287,14 +298,4 @@ app.use((req, res, next) => {
     }
     process.exit(0);
   });
-
-  // Forçar HTTPS em produção
-  if (process.env.NODE_ENV === 'production') {
-    app.use((req, res, next) => {
-      if (req.headers['x-forwarded-proto'] !== 'https') {
-        return res.redirect(301, `https://${req.headers.host}${req.url}`);
-      }
-      next();
-    });
-  }
 })();

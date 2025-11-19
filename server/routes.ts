@@ -155,6 +155,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email já cadastrado" });
       }
 
+      // Validação forte de senha
+      if (userData.senha.length < 8) {
+        return res.status(400).json({ 
+          error: "A senha deve ter no mínimo 8 caracteres" 
+        });
+      }
+
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+      if (!passwordRegex.test(userData.senha)) {
+        return res.status(400).json({ 
+          error: "A senha deve conter letras maiúsculas, minúsculas e números" 
+        });
+      }
+
       // Hash da senha ANTES de armazenar
       const hashedPassword = await bcrypt.hash(userData.senha, 10);
 
@@ -323,7 +337,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Email ou senha inválidos" });
       }
 
-      if (funcionario.senha !== senha) {
+      // Verificar se senha está em hash ou texto puro (migração gradual)
+      let senhaValida = false;
+      
+      if (funcionario.senha.startsWith('$2a$') || funcionario.senha.startsWith('$2b$')) {
+        // Senha já está em hash - usar bcrypt
+        senhaValida = await bcrypt.compare(senha, funcionario.senha);
+      } else {
+        // Senha ainda em texto puro - comparar diretamente e fazer hash
+        senhaValida = funcionario.senha === senha;
+        
+        if (senhaValida) {
+          // Atualizar para hash na próxima vez
+          const hashedPassword = await bcrypt.hash(senha, 10);
+          await storage.updateFuncionario(funcionario.id, { senha: hashedPassword });
+          logger.info('[SECURITY] Senha de funcionário migrada para hash', 'AUTH', { funcionarioId: funcionario.id });
+        }
+      }
+
+      if (!senhaValida) {
         if (process.env.NODE_ENV === "development") {
           console.log(`❌ Falha de login - Senha incorreta`);
         }
@@ -493,6 +525,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Validação forte de senha
+      if (newPassword.length < 8) {
+        return res.status(400).json({
+          success: false,
+          message: "A senha deve ter no mínimo 8 caracteres",
+        });
+      }
+
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+      if (!passwordRegex.test(newPassword)) {
+        return res.status(400).json({
+          success: false,
+          message: "A senha deve conter letras maiúsculas, minúsculas e números",
+        });
+      }
+
       // Buscar o código armazenado para este email
       const storedCode = await storage.getPasswordResetCode(email);
 
@@ -528,15 +576,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Atualizar senha diretamente (sem hash, como o sistema está configurado)
+      // Hash da nova senha
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Atualizar senha com hash
       await storage.updateUser(user.id, {
-        senha: newPassword
+        senha: hashedPassword
       });
 
       // Marcar código como usado
       await storage.markPasswordResetCodeAsUsed(email, code);
 
-      console.log(`✅ Senha resetada com sucesso para: ${email}`);
+      logger.info('Senha resetada com sucesso', 'AUTH', { userId: user.id, email });
 
       return res.json({
         success: true,
@@ -544,6 +595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Erro ao resetar senha:", error);
+      logger.error('Erro ao resetar senha', 'AUTH', { error });
       return res.status(500).json({
         success: false,
         message: "Erro ao resetar senha",
@@ -2049,6 +2101,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
+      // Validação forte de senha
+      if (senha.length < 8) {
+        return res.status(400).json({ 
+          error: "A senha deve ter no mínimo 8 caracteres" 
+        });
+      }
+
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+      if (!passwordRegex.test(senha)) {
+        return res.status(400).json({ 
+          error: "A senha deve conter letras maiúsculas, minúsculas e números" 
+        });
+      }
+
       // Verificar limite de funcionários
       const usuario = await storage.getUserByEmail(
         (await storage.getUsers()).find((u: any) => u.id === conta_id)?.email ||
@@ -2088,12 +2154,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
       }
 
+      // Hash da senha antes de salvar
+      const hashedPassword = await bcrypt.hash(senha, 10);
+
       const funcionario = await storage.createFuncionario({
         id: crypto.randomUUID(),
         conta_id,
         nome,
         email,
-        senha,
+        senha: hashedPassword,
         cargo: cargo || null,
         status: "ativo",
         data_criacao: new Date().toISOString(),
