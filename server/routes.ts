@@ -3176,11 +3176,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "Acesso negado - apenas master admin" });
       }
 
-      // Buscar todos os pacotes de funcionários do sistema
+      // Buscar todos os pacotes de funcionários do sistema com informações completas
       const packages = await storage.db.execute(sql`
-        SELECT * FROM employee_packages 
-        ORDER BY data_compra DESC
+        SELECT 
+          ep.*,
+          u.nome as user_name,
+          u.email as user_email,
+          u.plano as user_plan,
+          u.max_funcionarios as current_limit
+        FROM employee_packages ep
+        LEFT JOIN users u ON ep.user_id = u.id
+        ORDER BY ep.data_compra DESC
       `);
+
+      logger.info('Pacotes de funcionários retornados', 'ADMIN', { 
+        total: packages.rows?.length || 0,
+        pendentes: packages.rows?.filter((p: any) => p.status === 'pendente').length || 0,
+        ativos: packages.rows?.filter((p: any) => p.status === 'ativo').length || 0
+      });
 
       res.json(packages.rows || []);
     } catch (error: any) {
@@ -4130,16 +4143,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // 🔥 NOVO: Verificar se é pagamento de pacote de funcionários
         if (externalReference.startsWith("pacote_")) {
-          logger.info("Processando pagamento de pacote de funcionários", "MERCADOPAGO_WEBHOOK", {
+          logger.info("🎯 Webhook recebido para pacote de funcionários", "MERCADOPAGO_WEBHOOK", {
             externalReference,
-            status
+            status,
+            paymentId,
+            statusDetail
           });
 
           if (status === "approved") {
+            logger.info("✅ Pagamento APROVADO - Processando ativação", "MERCADOPAGO_WEBHOOK", {
+              externalReference
+            });
+
             // Extrair informações do external_reference
             const parts = externalReference.split("_");
             const pacoteId = parts[0] + "_" + parts[1]; // pacote_5, pacote_10, etc
             const userId = parts[2];
+
+            logger.info("📦 Dados do pacote extraídos", "MERCADOPAGO_WEBHOOK", {
+              pacoteId,
+              userId,
+              parts
+            });
 
             // Mapear pacotes para quantidade de funcionários
             const pacoteQuantidades: Record<string, number> = {
@@ -4151,6 +4176,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const quantidadeAdicional = pacoteQuantidades[pacoteId];
 
+            logger.info("🔢 Quantidade adicional calculada", "MERCADOPAGO_WEBHOOK", {
+              pacoteId,
+              quantidadeAdicional
+            });
+
             if (quantidadeAdicional && userId) {
               const users = await storage.getUsers();
               const user = users.find((u) => u.id === userId);
@@ -4158,6 +4188,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (user) {
                 const limiteAtual = user.max_funcionarios || 1;
                 const novoLimite = limiteAtual + quantidadeAdicional;
+
+                logger.info("👤 Usuário encontrado - Atualizando limite", "MERCADOPAGO_WEBHOOK", {
+                  userId,
+                  userEmail: user.email,
+                  limiteAtual,
+                  quantidadeAdicional,
+                  novoLimite
+                });
 
                 // Calcular data de vencimento (30 dias)
                 const dataVencimento = new Date();

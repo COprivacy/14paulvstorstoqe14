@@ -2203,6 +2203,17 @@ type User = {
   max_funcionarios?: number;
 };
 
+// Helper function para obter nome do pacote
+const getPackageName = (packageType: string): string => {
+  const packageNames: Record<string, string> = {
+    pacote_5: "+5 Funcionários",
+    pacote_10: "+10 Funcionários",
+    pacote_20: "+20 Funcionários",
+    pacote_50: "+50 Funcionários",
+  };
+  return packageNames[packageType] || packageType;
+};
+
 export default function AdminPublico() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -3030,131 +3041,291 @@ export default function AdminPublico() {
           ) : activeTab === 'assinaturas_funcionarios' ? (
             // Aba de Assinaturas de Funcionários
             <div className="space-y-6">
+              {/* Alertas de Pagamentos Pendentes */}
+              {employeePackages.filter((p: any) => p.status === 'pendente').length > 0 && (
+                <Alert className="bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800">
+                  <AlertCircle className="h-5 w-5 text-amber-600" />
+                  <AlertTitle className="text-amber-900 dark:text-amber-100">
+                    {employeePackages.filter((p: any) => p.status === 'pendente').length} pagamento(s) aguardando confirmação
+                  </AlertTitle>
+                  <AlertDescription className="text-amber-800 dark:text-amber-200">
+                    Os pacotes aparecerão como "Pendente" até que o Mercado Pago confirme o pagamento via webhook.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Cards de Estatísticas */}
+              <div className="grid gap-4 md:grid-cols-4">
+                <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 border-green-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-green-600">
+                          {employeePackages.filter((p: any) => p.status === 'ativo').length}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Pacotes Ativos</p>
+                      </div>
+                      <CheckCircle className="h-10 w-10 text-green-500/30" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20 border-amber-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-yellow-600">
+                          {employeePackages.filter((p: any) => p.status === 'pendente').length}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Em Processamento</p>
+                      </div>
+                      <Clock className="h-10 w-10 text-yellow-500/30" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 border-blue-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {formatCurrency(
+                            employeePackages
+                              .filter((p: any) => p.status === 'ativo')
+                              .reduce((sum: number, p: any) => sum + (p.price || 0), 0)
+                          )}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Receita Total</p>
+                      </div>
+                      <DollarSign className="h-10 w-10 text-blue-500/30" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 border-purple-200">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {employeePackages.reduce((sum: number, p: any) => sum + (p.quantity || 0), 0)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Total Func. Vendidos</p>
+                      </div>
+                      <Users className="h-10 w-10 text-purple-500/30" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Tabela de Pacotes Completa */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-purple-600" />
-                    Assinaturas de Pacotes de Funcionários
-                  </CardTitle>
-                  <CardDescription>
-                    Gerenciar compras de pacotes adicionais de funcionários
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5 text-purple-600" />
+                        Histórico Completo de Compras
+                      </CardTitle>
+                      <CardDescription>
+                        Acompanhe todos os pacotes de funcionários - ativos, pendentes e históricos
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        queryClient.invalidateQueries({ queryKey: ["/api/admin/employee-packages"] });
+                        queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+                      }}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Atualizar
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {loadingPackages ? (
                     <div className="text-center py-8">
                       <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+                      <p className="mt-3 text-muted-foreground">Carregando pacotes...</p>
+                    </div>
+                  ) : employeePackages.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Package className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                      <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+                        Nenhum pacote registrado
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        As compras de pacotes de funcionários aparecerão aqui
+                      </p>
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      {/* Cards de Estatísticas */}
-                      <div className="grid gap-4 md:grid-cols-3">
-                        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20">
-                          <CardContent className="pt-6">
-                            <div className="text-center">
-                              <p className="text-3xl font-bold text-green-600">
-                                {employeePackages.filter((p: any) => p.status === 'ativo').length}
-                              </p>
-                              <p className="text-sm text-muted-foreground">Pacotes Ativos</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card className="bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-900/20">
-                          <CardContent className="pt-6">
-                            <div className="text-center">
-                              <p className="text-3xl font-bold text-yellow-600">
-                                {employeePackages.filter((p: any) => p.status === 'pendente').length}
-                              </p>
-                              <p className="text-sm text-muted-foreground">Pendentes</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20">
-                          <CardContent className="pt-6">
-                            <div className="text-center">
-                              <p className="text-3xl font-bold text-blue-600">
-                                {formatCurrency(
-                                  employeePackages
-                                    .filter((p: any) => p.status === 'ativo')
-                                    .reduce((sum: number, p: any) => sum + (p.price || 0), 0)
-                                )}
-                              </p>
-                              <p className="text-sm text-muted-foreground">Receita Mensal</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Cliente</TableHead>
+                          <TableHead>Plano Atual</TableHead>
+                          <TableHead>Pacote</TableHead>
+                          <TableHead>Funcionários</TableHead>
+                          <TableHead>Valor</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Mercado Pago ID</TableHead>
+                          <TableHead>Data Compra</TableHead>
+                          <TableHead>Vencimento</TableHead>
+                          <TableHead>Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {employeePackages.map((pkg: any) => {
+                          const user = users.find((u: any) => u.id === pkg.user_id);
+                          const packageNames: Record<string, string> = {
+                            pacote_5: "+5 Funcionários",
+                            pacote_10: "+10 Funcionários",
+                            pacote_20: "+20 Funcionários",
+                            pacote_50: "+50 Funcionários",
+                          };
+                          const packageName = packageNames[pkg.package_type] || pkg.package_type;
 
-                      {/* Tabela de Pacotes */}
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Cliente</TableHead>
-                            <TableHead>Plano</TableHead>
-                            <TableHead>Pacote</TableHead>
-                            <TableHead>Quantidade</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Data Compra</TableHead>
-                            <TableHead>Vencimento</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {employeePackages.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={8} className="text-center text-muted-foreground">
-                                Nenhuma compra de pacote registrada
+                          return (
+                            <TableRow key={pkg.id} className={pkg.status === 'pendente' ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{user?.nome || 'Usuário Desconhecido'}</p>
+                                  <p className="text-xs text-muted-foreground">{user?.email || '-'}</p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={user?.plano === 'premium_mensal' || user?.plano === 'premium_anual' ? 'default' : 'secondary'}>
+                                  {user?.plano === 'premium_mensal' ? 'Premium Mensal' :
+                                   user?.plano === 'premium_anual' ? 'Premium Anual' :
+                                   user?.plano === 'trial' ? 'Trial' : 'Free'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-medium">{packageName}</span>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-semibold">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  +{pkg.quantity}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-semibold text-green-600">
+                                {formatCurrency(pkg.price)}
+                              </TableCell>
+                              <TableCell>
+                                {pkg.status === 'pendente' ? (
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      Processando
+                                    </Badge>
+                                  </div>
+                                ) : (
+                                  getStatusBadge(pkg.status)
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {pkg.mercadopago_payment_id ? (
+                                  <code className="text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                                    {pkg.mercadopago_payment_id.substring(0, 12)}...
+                                  </code>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">Aguardando</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <span className="text-sm">
+                                    {pkg.data_compra ? formatDate(pkg.data_compra) : '-'}
+                                  </span>
+                                  {pkg.data_compra && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(pkg.data_compra).toLocaleTimeString('pt-BR', { 
+                                        hour: '2-digit', 
+                                        minute: '2-digit' 
+                                      })}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {pkg.data_vencimento ? (
+                                  <div className="flex flex-col">
+                                    <span className="text-sm">{formatDate(pkg.data_vencimento)}</span>
+                                    {pkg.status === 'ativo' && (() => {
+                                      const daysLeft = Math.ceil(
+                                        (new Date(pkg.data_vencimento).getTime() - new Date().getTime()) / 
+                                        (1000 * 60 * 60 * 24)
+                                      );
+                                      return (
+                                        <span className={`text-xs ${daysLeft <= 7 ? 'text-red-600' : 'text-green-600'}`}>
+                                          {daysLeft} dias restantes
+                                        </span>
+                                      );
+                                    })()}
+                                  </div>
+                                ) : (
+                                  '-'
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setSelectedClientFor360(pkg.user_id)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  Ver Cliente
+                                </Button>
                               </TableCell>
                             </TableRow>
-                          ) : (
-                            employeePackages.map((pkg) => {
-                              const user = users.find((u: any) => u.id === pkg.user_id);
-                              const packageNames: Record<string, string> = {
-                                pacote_5: "+5 Funcionários",
-                                pacote_10: "+10 Funcionários",
-                                pacote_20: "+20 Funcionários",
-                                pacote_50: "+50 Funcionários",
-                              };
-                              const packageName = packageNames[pkg.package_type] || pkg.package_type;
-
-                              return (
-                                <TableRow key={pkg.id}>
-                                  <TableCell>
-                                    <div>
-                                      <p className="font-medium">{user?.nome || 'Usuário Desconhecido'}</p>
-                                      <p className="text-sm text-muted-foreground">{user?.email || '-'}</p>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant={user?.plano === 'premium_mensal' || user?.plano === 'premium_anual' ? 'default' : 'secondary'}>
-                                      {user?.plano === 'premium_mensal' ? 'Premium Mensal' :
-                                       user?.plano === 'premium_anual' ? 'Premium Anual' :
-                                       user?.plano === 'trial' ? 'Trial' : 'Free'}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>{getPackageName(pkg.package_type)}</TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline">
-                                      <Users className="h-3 w-3 mr-1" />
-                                      {pkg.quantity}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell className="font-semibold">{formatCurrency(pkg.price)}</TableCell>
-                                  <TableCell>{getStatusBadge(pkg.status)}</TableCell>
-                                  <TableCell>
-                                    {pkg.data_compra ? formatDate(pkg.data_compra) : '-'}
-                                  </TableCell>
-                                  <TableCell>
-                                    {pkg.data_vencimento ? formatDate(pkg.data_vencimento) : '-'}
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* Informações sobre Processamento */}
+              <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                        Como funciona o processamento de pagamentos
+                      </h4>
+                      <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-600 mt-0.5">1.</span>
+                          <span>Cliente seleciona um pacote e é redirecionado ao Mercado Pago</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-600 mt-0.5">2.</span>
+                          <span>Status inicial: <strong>"Pendente"</strong> (aguardando confirmação do pagamento)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-600 mt-0.5">3.</span>
+                          <span>Mercado Pago processa o pagamento e envia webhook para nosso sistema</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-600 mt-0.5">4.</span>
+                          <span>Sistema recebe confirmação e atualiza para <strong>"Ativo"</strong></span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-blue-600 mt-0.5">5.</span>
+                          <span>Limite de funcionários é aumentado automaticamente</span>
+                        </li>
+                      </ul>
+                      <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-800/30 rounded-lg">
+                        <p className="text-sm text-blue-900 dark:text-blue-100 font-semibold">
+                          ⏱️ Tempo de processamento: geralmente 5-30 segundos após o pagamento ser aprovado
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
