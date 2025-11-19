@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,14 +8,68 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Users, Package, CheckCircle, Clock, XCircle, TrendingUp, RefreshCw, PlayCircle, Search, AlertCircle, Info } from "lucide-react";
+import { Users, Package, CheckCircle, Clock, XCircle, TrendingUp, RefreshCw, PlayCircle, Search, AlertCircle, Info, ShieldAlert } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useUser } from "@/hooks/use-user";
+import { useLocation } from "wouter";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AssinaturasFuncionarios() {
   const { toast } = useToast();
+  const { user } = useUser();
+  const [, setLocation] = useLocation();
+  
+  // Verificação de acesso - apenas Admin Master
+  useEffect(() => {
+    if (user && (user.email !== "pavisoft.suporte@gmail.com" || user.is_admin !== "true")) {
+      toast({
+        title: "❌ Acesso Negado",
+        description: "Esta página é restrita ao Administrador Master do sistema.",
+        variant: "destructive",
+      });
+      setLocation("/dashboard");
+    }
+  }, [user, setLocation, toast]);
+
+  // Se não é o usuário master, mostrar mensagem de acesso negado
+  if (!user || user.email !== "pavisoft.suporte@gmail.com" || user.is_admin !== "true") {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="h-8 w-8 text-red-600" />
+              <div>
+                <CardTitle className="text-red-600">Acesso Negado</CardTitle>
+                <CardDescription>Área Restrita</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Permissão Insuficiente</AlertTitle>
+              <AlertDescription>
+                Esta página é exclusiva para o Administrador Master do sistema.
+                Você será redirecionado para o dashboard.
+              </AlertDescription>
+            </Alert>
+            <Button 
+              onClick={() => setLocation("/dashboard")} 
+              className="w-full mt-4"
+              data-testid="button-back-dashboard"
+            >
+              Voltar ao Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   const [filterStatus, setFilterStatus] = useState<string>("todos");
   const [searchTerm, setSearchTerm] = useState("");
   
