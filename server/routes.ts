@@ -3671,7 +3671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ],
         payer: {
           email,
-          name,
+          name: nome,
           identification: cpfCnpj
             ? {
                 type: cpfCnpj.replace(/\D/g, "").length === 11 ? "CPF" : "CNPJ",
