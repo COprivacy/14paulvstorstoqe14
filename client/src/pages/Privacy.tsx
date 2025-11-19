@@ -394,7 +394,7 @@ export default function Privacy() {
                     <li>Código de Defesa do Consumidor (Lei nº 8.078/1990)</li>
                   </ul>
                   <p>
-                    Fica eleito o foro da comarca de [INSERIR CIDADE], Estado de [INSERIR ESTADO], 
+                    Fica eleito o foro da comarca de São José de Ribamar, Estado do Maranhão, 
                     para dirimir quaisquer controvérsias decorrentes desta Política.
                   </p>
                 </section>

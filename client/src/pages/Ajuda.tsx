@@ -678,7 +678,7 @@ export default function Ajuda() {
                         Estes Termos são regidos pelas leis da República Federativa do Brasil.
                       </p>
                       <p>
-                        Fica eleito o foro da comarca de [INSERIR CIDADE], Estado de [INSERIR ESTADO], para dirimir quaisquer controvérsias decorrentes destes Termos.
+                        Fica eleito o foro da comarca de São José de Ribamar, Estado do Maranhão, para dirimir quaisquer controvérsias decorrentes destes Termos.
                       </p>
                     </section>
 
