@@ -27,6 +27,13 @@ export const users = pgTable("users", {
   meta_mensal: real("meta_mensal").default(15000),
 });
 
+export const systemOwner = pgTable("system_owner", {
+  id: serial("id").primaryKey(),
+  owner_user_id: text("owner_user_id").notNull().unique().references(() => users.id),
+  data_configuracao: text("data_configuracao").notNull(),
+  observacoes: text("observacoes"),
+});
+
 export const produtos = pgTable("produtos", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   user_id: text("user_id").notNull(),
@@ -152,6 +159,13 @@ export const insertUserSchema = createInsertSchema(users).omit({
     .regex(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um caractere especial"),
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(100),
   meta_mensal: z.number().optional(),
+});
+
+export const insertSystemOwnerSchema = createInsertSchema(systemOwner).omit({
+  id: true,
+}).extend({
+  owner_user_id: z.string().min(1, "ID do usuário é obrigatório"),
+  data_configuracao: z.string().optional(),
 });
 
 export const insertProdutoSchema = createInsertSchema(produtos).omit({
@@ -736,6 +750,8 @@ export type ClientCommunication = typeof clientCommunications.$inferSelect;
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type InsertSystemOwner = z.infer<typeof insertSystemOwnerSchema>;
+export type SystemOwner = typeof systemOwner.$inferSelect;
 export type InsertProduto = z.infer<typeof insertProdutoSchema>;
 export type Produto = typeof produtos.$inferSelect;
 export type InsertBloqueioEstoque = z.infer<typeof insertBloqueioEstoqueSchema>;

@@ -1,6 +1,8 @@
 import {
   type User,
   type InsertUser,
+  type SystemOwner,
+  type InsertSystemOwner,
   type Produto,
   type InsertProduto,
   type Venda,
@@ -52,6 +54,10 @@ export interface IStorage {
   createUser(insertUser: InsertUser): Promise<User>;
   updateUser?(id: string, updates: Partial<User>): Promise<User | undefined>;
   deleteUser?(id: string): Promise<void>;
+  
+  // Métodos para System Owner (Dono do Sistema)
+  getSystemOwner?(): Promise<SystemOwner | undefined>;
+  setSystemOwner?(data: InsertSystemOwner): Promise<SystemOwner>;
   getProdutos(): Promise<Produto[]>;
   getProduto(id: number): Promise<Produto | undefined>;
   getProdutoByCodigoBarras(codigo: string): Promise<Produto | undefined>;
