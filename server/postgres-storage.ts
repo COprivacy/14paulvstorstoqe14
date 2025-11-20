@@ -31,6 +31,7 @@ import {
   cupons,
   usoCupons,
   userCustomization,
+  employeePackages,
   type User,
   type InsertUser,
   type Produto,
@@ -1751,16 +1752,16 @@ export class PostgresStorage implements IStorage {
         updateFields.data_cancelamento = dataCancelamento;
       }
 
-      const result = await this.db
+      const [result] = await this.db
         .update(employeePackages)
         .set(updateFields)
         .where(eq(employeePackages.id, packageId))
         .returning();
       
       logger.info('[DB] Status do pacote de funcionários atualizado', { packageId, status });
-      return result[0];
-    } catch (error) {
-      logger.error('[DB] Erro ao atualizar status do pacote:', { error });
+      return result;
+    } catch (error: any) {
+      logger.error('[DB] Erro ao atualizar status do pacote:', { error: error.message, packageId, status });
       throw error;
     }
   }
