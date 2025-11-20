@@ -231,9 +231,11 @@ function Router() {
           )} />
       <Route path="/test-suite">
         {() => (
-          <AdminMasterRoute>
-            <TestSuite />
-          </AdminMasterRoute>
+          <DashboardLayout>
+            <AdminRoute>
+              <TestSuite />
+            </AdminRoute>
+          </DashboardLayout>
         )}
       </Route>
       <Route path="/ajuda">
