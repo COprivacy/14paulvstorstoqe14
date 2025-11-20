@@ -739,8 +739,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`🔐 [MASTER PASSWORD] Tentativa de acesso`);
       }
 
-      // VALIDAÇÃO 1: Apenas usuário master pode tentar (por EMAIL)
+      // VALIDAÇÃO 1: Apenas usuário master específico pode tentar (ID E EMAIL)
       const authorizedEmail = process.env.MASTER_USER_EMAIL || 'pavisoft.suporte@gmail.com';
+      const authorizedUserId = "pavisoft-admin-001";
       
       if (!authorizedEmail) {
         logger.error("MASTER_USER_EMAIL não configurada", "SECURITY");
@@ -749,7 +750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ error: "Configuração de segurança incompleta" });
       }
 
-      if (userEmail !== authorizedEmail) {
+      if (userId !== authorizedUserId || userEmail !== authorizedEmail) {
         logger.warn(
           "Tentativa de acesso não autorizada ao admin master",
           "SECURITY",
