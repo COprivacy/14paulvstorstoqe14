@@ -4,30 +4,26 @@ echo   CRIANDO ZIP PARA DEPLOY NO DISCLOUD
 echo ========================================
 echo.
 
-echo [1/4] Fazendo build da aplicacao...
-call npm run build
-if %errorlevel% neq 0 (
-    echo ERRO: Build falhou!
+echo [1/3] Verificando arquivos necessarios...
+if not exist "server\index.ts" (
+    echo ERRO: server/index.ts nao foi encontrado!
+    pause
+    exit /b 1
+)
+
+if not exist "package.json" (
+    echo ERRO: package.json nao foi encontrado!
     pause
     exit /b 1
 )
 
 echo.
-echo [2/4] Verificando arquivos necessarios...
-if not exist "dist\index.js" (
-    echo ERRO: dist/index.js nao foi criado!
-    echo Execute: npm run build
-    pause
-    exit /b 1
-)
-
-echo.
-echo [3/4] Removendo zip antigo (se existir)...
+echo [2/3] Removendo zip antigo (se existir)...
 if exist "pavisoft-deploy.zip" del pavisoft-deploy.zip
 
 echo.
-echo [4/4] Criando arquivo ZIP...
-powershell -Command "Compress-Archive -Path discloud.config,package.json,package-lock.json,dist,server,shared,migrations,drizzle.config.ts,tsconfig.json -DestinationPath pavisoft-deploy.zip -Force"
+echo [3/3] Criando arquivo ZIP...
+powershell -Command "Compress-Archive -Path discloud.config,package.json,package-lock.json,server,client,shared,migrations,drizzle.config.ts,tsconfig.json,vite.config.ts,postcss.config.js,tailwind.config.ts,components.json -DestinationPath pavisoft-deploy.zip -Force"
 
 if %errorlevel% equ 0 (
     echo.

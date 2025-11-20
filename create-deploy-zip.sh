@@ -5,38 +5,38 @@ echo "  CRIANDO ZIP PARA DEPLOY NO DISCLOUD"
 echo "========================================"
 echo ""
 
-echo "[1/4] Fazendo build da aplicação..."
-npm run build
-if [ $? -ne 0 ]; then
-    echo "ERRO: Build falhou!"
+echo "[1/3] Verificando arquivos necessários..."
+if [ ! -f "server/index.ts" ]; then
+    echo "ERRO: server/index.ts não foi encontrado!"
+    exit 1
+fi
+
+if [ ! -f "package.json" ]; then
+    echo "ERRO: package.json não foi encontrado!"
     exit 1
 fi
 
 echo ""
-echo "[2/4] Verificando arquivos necessários..."
-if [ ! -f "dist/index.js" ]; then
-    echo "ERRO: dist/index.js não foi criado!"
-    echo "Execute: npm run build"
-    exit 1
-fi
-
-echo ""
-echo "[3/4] Removendo zip antigo (se existir)..."
+echo "[2/3] Removendo zip antigo (se existir)..."
 rm -f pavisoft-deploy.zip
 
 echo ""
-echo "[4/4] Criando arquivo ZIP..."
+echo "[3/3] Criando arquivo ZIP..."
 zip -r pavisoft-deploy.zip \
     discloud.config \
     package.json \
     package-lock.json \
-    dist/ \
     server/ \
+    client/ \
     shared/ \
     migrations/ \
     drizzle.config.ts \
     tsconfig.json \
-    -x "*.git*" "*/node_modules/*" "*.env*"
+    vite.config.ts \
+    postcss.config.js \
+    tailwind.config.ts \
+    components.json \
+    -x "*.git*" "*/node_modules/*" "*.env*" "*/dist/*"
 
 if [ $? -eq 0 ]; then
     echo ""
