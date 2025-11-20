@@ -93,6 +93,7 @@ export interface IStorage {
   getLogsAdmin?(): Promise<LogAdmin[]>;
   getLogsAdminByAccount?(contaId: string): Promise<LogAdmin[]>;
   createLogAdmin?(log: InsertLogAdmin): Promise<LogAdmin>;
+  deleteAllLogsAdmin?(): Promise<number>;
   logAdminAction?(actorId: string, action: string, details?: string, context?: { ip?: string; userAgent?: string; contaId?: string }): Promise<void>;
 
   // Métodos para Subscriptions
@@ -204,6 +205,7 @@ export interface IStorage {
   // Employee Packages - Pacotes de funcionários
   createEmployeePackage?(data: any): Promise<any>;
   getEmployeePackages?(userId: string): Promise<any[]>;
+  updateEmployeePackageStatus?(packageId: number, status: string, dataCancelamento?: string): Promise<any>;
 
   // Cupons e Promoções
   getCupons?(): Promise<any[]>;

@@ -2590,6 +2590,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/logs-admin", getUserId, async (req, res) => {
+    try {
+      const effectiveUserId = req.headers["effective-user-id"] as string;
+      const contaId = req.query.conta_id as string;
+
+      if (!contaId || contaId !== effectiveUserId) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      if (!storage.deleteAllLogsAdmin) {
+        return res.status(501).json({ error: "Método deleteAllLogsAdmin não implementado" });
+      }
+
+      await storage.deleteAllLogsAdmin(contaId);
+      
+      await storage.logAdminAction?.(
+        effectiveUserId,
+        "LOGS_LIMPOS",
+        "Logs de auditoria foram limpos",
+        { 
+          ip: req.ip,
+          userAgent: req.headers["user-agent"],
+          contaId: effectiveUserId 
+        }
+      );
+
+      res.json({ 
+        success: true, 
+        message: "Logs removidos com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao limpar logs:", error);
+      res.status(500).json({ error: "Erro ao limpar logs" });
+    }
+  });
+
   app.get("/api/produtos", getUserId, async (req, res) => {
     try {
       const effectiveUserId = req.headers["effective-user-id"] as string;
@@ -4591,6 +4627,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       logger.error("Erro ao ativar pacote manualmente", "ADMIN_MANUAL_ACTIVATION", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 🚫 ADMIN: Cancelar pacote de funcionários
+  app.post("/api/admin/employee-packages/:id/cancel", requireAdmin, async (req, res) => {
+    try {
+      const packageId = parseInt(req.params.id);
+
+      if (!packageId) {
+        return res.status(400).json({ error: "ID do pacote inválido" });
+      }
+
+      if (!storage.updateEmployeePackageStatus) {
+        return res.status(501).json({ error: "Método updateEmployeePackageStatus não implementado" });
+      }
+
+      // Buscar o pacote
+      const result = await storage.db.execute(sql`
+        SELECT ep.*, u.max_funcionarios, u.max_funcionarios_base
+        FROM employee_packages ep
+        LEFT JOIN users u ON ep.user_id = u.id
+        WHERE ep.id = ${packageId}
+      `);
+
+      const packageData = result.rows[0];
+
+      if (!packageData) {
+        return res.status(404).json({ error: "Pacote não encontrado" });
+      }
+
+      if (packageData.status === "cancelado") {
+        return res.status(400).json({ error: "Este pacote já está cancelado" });
+      }
+
+      // Atualizar status do pacote
+      const dataCancelamento = new Date().toISOString();
+      await storage.updateEmployeePackageStatus(packageId, "cancelado", dataCancelamento);
+
+      // Reduzir o limite de funcionários do usuário
+      const limiteAtual = packageData.max_funcionarios || 1;
+      const novoLimite = Math.max(packageData.max_funcionarios_base || 1, limiteAtual - packageData.quantity);
+
+      await storage.updateUser(packageData.user_id, {
+        max_funcionarios: novoLimite,
+      });
+
+      // Bloquear funcionários excedentes se necessário
+      if (storage.getFuncionariosByContaId) {
+        const funcionarios = await storage.getFuncionariosByContaId(packageData.user_id);
+        const funcionariosAtivos = funcionarios.filter((f: any) => f.status === 'ativo');
+
+        if (funcionariosAtivos.length > novoLimite) {
+          const funcionariosParaBloquear = funcionariosAtivos
+            .sort((a: any, b: any) => new Date(b.data_criacao || 0).getTime() - new Date(a.data_criacao || 0).getTime())
+            .slice(0, funcionariosAtivos.length - novoLimite);
+
+          for (const funcionario of funcionariosParaBloquear) {
+            await storage.updateFuncionario(funcionario.id, {
+              status: 'bloqueado',
+            });
+          }
+
+          logger.info("Funcionários bloqueados após cancelamento de pacote", "ADMIN_CANCEL_PACKAGE", {
+            userId: packageData.user_id,
+            funcionariosBloqueados: funcionariosParaBloquear.length,
+          });
+        }
+      }
+
+      logger.info("Pacote de funcionários cancelado pelo admin", "ADMIN_CANCEL_PACKAGE", {
+        packageId,
+        userId: packageData.user_id,
+        packageType: packageData.package_type,
+        quantity: packageData.quantity,
+        limiteAnterior: limiteAtual,
+        novoLimite,
+      });
+
+      res.json({
+        success: true,
+        message: "Pacote cancelado com sucesso!",
+        newLimit: novoLimite,
+      });
+    } catch (error: any) {
+      logger.error("Erro ao cancelar pacote", "ADMIN_CANCEL_PACKAGE", { error: error.message });
       res.status(500).json({ error: error.message });
     }
   });

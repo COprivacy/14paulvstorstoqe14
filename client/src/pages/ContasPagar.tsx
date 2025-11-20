@@ -79,16 +79,10 @@ export default function ContasPagar() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    // Corrigir timezone da data de vencimento
-    const dataVencimentoInput = formData.get("data_vencimento") as string;
-    const dataVencimento = dataVencimentoInput 
-      ? new Date(dataVencimentoInput + 'T12:00:00').toISOString().split('T')[0]
-      : null;
-    
     const data = {
       descricao: formData.get("descricao"),
       valor: parseFloat(formData.get("valor") as string),
-      data_vencimento: dataVencimento,
+      data_vencimento: formData.get("data_vencimento") as string,
       categoria: formData.get("categoria"),
       data_cadastro: new Date().toISOString(),
     };
@@ -100,16 +94,10 @@ export default function ContasPagar() {
     if (!editingConta) return;
     const formData = new FormData(e.currentTarget);
     
-    // Corrigir timezone da data de vencimento
-    const dataVencimentoInput = formData.get("data_vencimento") as string;
-    const dataVencimento = dataVencimentoInput 
-      ? new Date(dataVencimentoInput + 'T12:00:00').toISOString().split('T')[0]
-      : null;
-    
     const data = {
       descricao: formData.get("descricao"),
       valor: parseFloat(formData.get("valor") as string),
-      data_vencimento: dataVencimento,
+      data_vencimento: formData.get("data_vencimento") as string,
       categoria: formData.get("categoria"),
     };
     updateMutation.mutate({ id: editingConta.id, data });

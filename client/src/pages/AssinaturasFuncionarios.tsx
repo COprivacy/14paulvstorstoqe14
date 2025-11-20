@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Users, Package, CheckCircle, Clock, XCircle, TrendingUp, RefreshCw, PlayCircle, Search, AlertCircle, Info, ShieldAlert } from "lucide-react";
@@ -131,6 +132,25 @@ export default function AssinaturasFuncionarios() {
       toast({ 
         title: "❌ Erro", 
         description: error.message || "Erro ao reprocessar webhook",
+        variant: "destructive"
+      });
+    },
+  });
+
+  const cancelPackageMutation = useMutation({
+    mutationFn: async (packageId: number) => {
+      const res = await apiRequest("POST", `/api/admin/employee-packages/${packageId}/cancel`);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "✅ Sucesso!", description: "Pacote cancelado com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/employee-packages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "❌ Erro", 
+        description: error.message || "Erro ao cancelar pacote",
         variant: "destructive"
       });
     },
@@ -616,20 +636,65 @@ export default function AssinaturasFuncionarios() {
                           {pkg.data_vencimento ? format(new Date(pkg.data_vencimento), 'dd/MM/yyyy', { locale: ptBR }) : '-'}
                         </TableCell>
                         <TableCell className="text-right">
-                          {pkg.status === 'pendente' && !isManualPayment && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setReprocessPaymentId(pkg.payment_id);
-                                setReprocessDialogOpen(true);
-                              }}
-                              data-testid={`button-reprocess-${pkg.id}`}
-                            >
-                              <RefreshCw className="h-3 w-3 mr-1" />
-                              Reprocessar
-                            </Button>
-                          )}
+                          <div className="flex justify-end gap-2">
+                            {pkg.status === 'pendente' && !isManualPayment && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setReprocessPaymentId(pkg.payment_id);
+                                  setReprocessDialogOpen(true);
+                                }}
+                                data-testid={`button-reprocess-${pkg.id}`}
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Reprocessar
+                              </Button>
+                            )}
+                            {pkg.status === 'ativo' && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                    data-testid={`button-cancel-${pkg.id}`}
+                                  >
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Cancelar
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Cancelar Pacote de Funcionários</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja cancelar este pacote? Esta ação irá:
+                                      <ul className="list-disc list-inside mt-2 space-y-1">
+                                        <li>Reduzir o limite de funcionários do usuário</li>
+                                        <li>Bloquear funcionários excedentes automaticamente</li>
+                                        <li>Marcar o pacote como cancelado</li>
+                                      </ul>
+                                      <p className="mt-2 font-semibold text-destructive">
+                                        Esta ação não pode ser desfeita!
+                                      </p>
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel data-testid="button-cancel-cancel">
+                                      Voltar
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => cancelPackageMutation.mutate(pkg.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      data-testid={`button-confirm-cancel-${pkg.id}`}
+                                    >
+                                      {cancelPackageMutation.isPending ? "Cancelando..." : "Sim, cancelar pacote"}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

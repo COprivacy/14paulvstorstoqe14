@@ -844,6 +844,19 @@ export class PostgresStorage implements IStorage {
     }
   }
 
+  async deleteAllLogsAdmin(contaId: string): Promise<void> {
+    try {
+      await this.db
+        .delete(logsAdmin)
+        .where(eq(logsAdmin.conta_id, contaId));
+      
+      logger.info('[DB] Logs de auditoria limpos', { contaId });
+    } catch (error) {
+      logger.error('[DB] Erro ao limpar logs de auditoria:', { error });
+      throw error;
+    }
+  }
+
   async getSubscriptions(): Promise<Subscription[]> {
     return await this.db.select().from(subscriptions).orderBy(desc(subscriptions.id));
   }
@@ -1728,6 +1741,27 @@ export class PostgresStorage implements IStorage {
     } catch (error) {
       logger.error('[DB] Erro ao buscar pacotes de funcionários:', { error });
       return [];
+    }
+  }
+
+  async updateEmployeePackageStatus(packageId: number, status: string, dataCancelamento?: string): Promise<any> {
+    try {
+      const updateFields: any = { status };
+      if (dataCancelamento) {
+        updateFields.data_cancelamento = dataCancelamento;
+      }
+
+      const result = await this.db
+        .update(employeePackages)
+        .set(updateFields)
+        .where(eq(employeePackages.id, packageId))
+        .returning();
+      
+      logger.info('[DB] Status do pacote de funcionários atualizado', { packageId, status });
+      return result[0];
+    } catch (error) {
+      logger.error('[DB] Erro ao atualizar status do pacote:', { error });
+      throw error;
     }
   }
 

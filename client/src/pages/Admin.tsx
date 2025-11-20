@@ -233,15 +233,28 @@ function AuditLogsSection({ logs, employees }: { logs: AuditLog[]; employees: Us
             </p>
           </div>
         </div>
-        <Button
-          onClick={exportToCSV}
-          size="sm"
-          className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md"
-          data-testid="button-export-logs"
-        >
-          <Download className="h-4 w-4" />
-          Exportar
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => setShowClearLogsDialog(true)}
+            size="sm"
+            variant="destructive"
+            className="gap-2 shadow-md"
+            data-testid="button-clear-logs"
+            disabled={logs.length === 0}
+          >
+            <Trash2 className="h-4 w-4" />
+            Limpar
+          </Button>
+          <Button
+            onClick={exportToCSV}
+            size="sm"
+            className="gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md"
+            data-testid="button-export-logs"
+          >
+            <Download className="h-4 w-4" />
+            Exportar
+          </Button>
+        </div>
       </div>
 
       {/* Filtros Compactos */}
@@ -464,6 +477,7 @@ export default function Admin() {
   const [selectedPlan, setSelectedPlan] = useState<{ plano: 'premium_mensal' | 'premium_anual'; nome: string; preco: string } | null>(null);
   const [showPricingDialog, setShowPricingDialog] = useState(false);
   const [employeePurchaseOpen, setEmployeePurchaseOpen] = useState(false);
+  const [showClearLogsDialog, setShowClearLogsDialog] = useState(false);
 
   const [newEmployee, setNewEmployee] = useState<EmployeeFormData>({
     nome: "",
@@ -831,6 +845,33 @@ export default function Admin() {
     const perms = permissions[userId] || allPermissions[userId] || getDefaultPermissions(); // Use cached or default if not in local state
     savePermissionsMutation.mutate({ userId, perms });
   };
+
+  const clearLogsMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentUser?.id) throw new Error("User not identified");
+      const response = await apiRequest("DELETE", `/api/logs-admin?conta_id=${currentUser.id}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData;
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/logs-admin", currentUser?.id] });
+      toast({
+        title: "Logs limpos",
+        description: "Todos os logs de auditoria foram removidos com sucesso.",
+      });
+      setShowClearLogsDialog(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao limpar logs",
+        description: error instanceof Error ? error.message : "Ocorreu um erro",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSubscribe = (plano: 'mensal' | 'anual') => {
     const planoMap = {
@@ -1477,6 +1518,30 @@ export default function Admin() {
         onOpenChange={setEmployeePurchaseOpen}
         currentLimit={currentUser.max_funcionarios || 1}
       />
+
+      <Dialog open={showClearLogsDialog} onOpenChange={setShowClearLogsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Limpar Logs de Auditoria</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja remover todos os logs de auditoria? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowClearLogsDialog(false)} data-testid="button-cancel-clear-logs">
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => clearLogsMutation.mutate()}
+              disabled={clearLogsMutation.isPending}
+              data-testid="button-confirm-clear-logs"
+            >
+              {clearLogsMutation.isPending ? "Limpando..." : "Limpar Logs"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {selectedPlan && (
         <CheckoutForm
