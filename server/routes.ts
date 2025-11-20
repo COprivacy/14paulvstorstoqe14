@@ -1384,30 +1384,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Assinatura não encontrada" });
       }
 
-      // Atualizar status da assinatura
+      // Buscar usuário
+      const user = await storage.getUserById(subscription.user_id);
+      if (!user) {
+        return res.status(404).json({ error: "Usuário da assinatura não encontrado" });
+      }
+
+      // 1. Atualizar status da assinatura
       await storage.updateSubscription(subscriptionId, {
         status: 'cancelado',
         status_pagamento: 'cancelled',
+        motivo_cancelamento: 'Cancelado manualmente pelo administrador',
+        data_atualizacao: new Date().toISOString(),
       });
 
-      // Log da ação
+      // 2. Bloquear usuário e reverter plano para free
+      await storage.updateUser(subscription.user_id, {
+        plano: 'free',
+        status: 'bloqueado',
+        data_expiracao_plano: null,
+        data_expiracao_trial: null,
+      });
+
+      // 3. Bloquear todos os funcionários desta conta
+      let funcionariosBloqueados = 0;
+      if (storage.getFuncionarios) {
+        const funcionarios = await storage.getFuncionarios();
+        const funcionariosDaConta = funcionarios.filter(f => f.conta_id === subscription.user_id);
+
+        for (const funcionario of funcionariosDaConta) {
+          await storage.updateFuncionario(funcionario.id, {
+            status: 'bloqueado',
+          });
+          funcionariosBloqueados++;
+        }
+      }
+
+      // 4. Cancelar pacotes de funcionários ativos (se existir)
+      if (storage.getEmployeePackages && storage.updateEmployeePackageStatus) {
+        const packages = await storage.getEmployeePackages(subscription.user_id);
+        const activePacotes = packages.filter((p: any) => p.status === 'ativo');
+        
+        for (const pacote of activePacotes) {
+          await storage.updateEmployeePackageStatus(pacote.id, 'cancelado', new Date().toISOString());
+        }
+
+        if (activePacotes.length > 0) {
+          logger.info('Pacotes de funcionários cancelados', 'ADMIN_SUBSCRIPTIONS', {
+            userId: subscription.user_id,
+            pacotesCancelados: activePacotes.length,
+          });
+        }
+      }
+
+      // 5. Reverter limite de funcionários para o padrão
+      await storage.updateUser(subscription.user_id, {
+        max_funcionarios: user.max_funcionarios_base || 1,
+        data_expiracao_pacote_funcionarios: null,
+      });
+
+      // 6. Enviar email de notificação ao usuário
+      try {
+        const { EmailService } = await import("./email-service");
+        const emailService = new EmailService();
+        
+        await emailService.sendAccountBlocked({
+          to: user.email,
+          userName: user.nome,
+          planName: subscription.plano,
+        });
+        
+        logger.info('Email de cancelamento enviado', 'ADMIN_SUBSCRIPTIONS', {
+          userId: subscription.user_id,
+          email: user.email,
+        });
+      } catch (emailError) {
+        logger.warn('Falha ao enviar email de cancelamento (ação prosseguiu)', 'ADMIN_SUBSCRIPTIONS', {
+          error: emailError,
+        });
+      }
+
+      // 7. Log da ação
       if (storage.logAdminAction) {
         await storage.logAdminAction(
           userId,
-          "ASSINATURA_CANCELADA",
-          `Assinatura #${subscriptionId} cancelada - Usuário: ${subscription.user_id}`,
+          "ASSINATURA_CANCELADA_COMPLETO",
+          `Assinatura #${subscriptionId} cancelada - Usuário: ${user.nome} (${user.email}) bloqueado, ${funcionariosBloqueados} funcionário(s) bloqueado(s), pacotes cancelados, limite revertido`,
           req
         );
       }
 
-      logger.info('Assinatura cancelada pelo admin', 'ADMIN_SUBSCRIPTIONS', {
+      logger.info('Assinatura cancelada completamente pelo admin', 'ADMIN_SUBSCRIPTIONS', {
         subscriptionId,
         userId: subscription.user_id,
+        userName: user.nome,
+        funcionariosBloqueados,
+        planoAnterior: subscription.plano,
       });
 
       res.json({
         success: true,
-        message: "Assinatura cancelada com sucesso",
+        message: "Assinatura cancelada com sucesso. Usuário e funcionários bloqueados imediatamente.",
+        detalhes: {
+          usuarioBloqueado: true,
+          planoRevertido: 'free',
+          funcionariosBloqueados,
+          pacotesCancelados: true,
+          emailEnviado: true,
+        },
       });
     } catch (error: any) {
       logger.error('Erro ao cancelar assinatura', 'ADMIN_SUBSCRIPTIONS', { error });

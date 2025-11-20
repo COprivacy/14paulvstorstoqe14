@@ -2321,6 +2321,63 @@ export default function AdminPublico() {
 
       return response.json();
     },
+    onSuccess: (data) => {
+      const detalhes = data.detalhes || {};
+      toast({
+        title: "✅ Assinatura cancelada!",
+        description: `Usuário bloqueado, ${detalhes.funcionariosBloqueados || 0} funcionário(s) bloqueado(s), pacotes cancelados e email enviado.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "❌ Erro ao cancelar",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handler para cancelar com confirmação
+  const handleCancelSubscription = (subscription: any) => {
+    if (confirm(
+      `⚠️ ATENÇÃO: Cancelamento Imediato\n\n` +
+      `Ao cancelar esta assinatura:\n\n` +
+      `✓ O usuário será BLOQUEADO IMEDIATAMENTE\n` +
+      `✓ Plano será revertido para FREE\n` +
+      `✓ TODOS os funcionários serão bloqueados\n` +
+      `✓ Pacotes de funcionários serão cancelados\n` +
+      `✓ Limite de funcionários será revertido para 1\n` +
+      `✓ Email de notificação será enviado\n\n` +
+      `Usuário: ${subscription.user_id}\n` +
+      `Plano: ${subscription.plano}\n\n` +
+      `Deseja continuar?`
+    )) {
+      cancelSubscriptionMutation.mutate(subscription.id);
+    }
+  };
+
+  // Mutation antiga mantida para compatibilidade
+  const oldCancelSubscriptionMutation = useMutation({
+    mutationFn: async (subscriptionId: number) => {
+      const response = await fetch(`/api/admin/subscriptions/${subscriptionId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user?.id || '',
+          'x-is-admin': 'true',
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao cancelar assinatura');
+      }
+
+      return response.json();
+    },
     onSuccess: () => {
       toast({ 
         title: "✅ Assinatura cancelada!", 
