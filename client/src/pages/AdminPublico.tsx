@@ -2358,43 +2358,6 @@ export default function AdminPublico() {
     }
   };
 
-  // Mutation antiga mantida para compatibilidade
-  const oldCancelSubscriptionMutation = useMutation({
-    mutationFn: async (subscriptionId: number) => {
-      const response = await fetch(`/api/admin/subscriptions/${subscriptionId}/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': user?.id || '',
-          'x-is-admin': 'true',
-        },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Erro ao cancelar assinatura');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({ 
-        title: "✅ Assinatura cancelada!", 
-        description: "A assinatura foi cancelada com sucesso" 
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-    },
-    onError: (error: Error) => {
-      toast({ 
-        title: "❌ Erro", 
-        description: error.message || "Erro ao cancelar assinatura",
-        variant: "destructive"
-      });
-    },
-  });
-
   const { data: subscriptions = [], isLoading: isLoadingSubscriptions, error: subscriptionsError } = useQuery<Subscription[]>({
     queryKey: ["/api/subscriptions"],
     retry: 1,
@@ -2517,10 +2480,6 @@ export default function AdminPublico() {
     }
     
     subscriptionReprocessMutation.mutate(subscriptionReprocessPaymentId);
-  };
-
-  const handleCancelSubscription = (subscriptionId: number) => {
-    cancelSubscriptionMutation.mutate(subscriptionId);
   };
 
   const handleViewSubscriptionDetails = async (paymentId: string) => {
