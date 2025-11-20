@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, queryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
@@ -1119,6 +1119,9 @@ export default function Admin() {
                       placeholder="Senha para primeiro acesso"
                       data-testid="input-employee-password"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Mínimo 8 caracteres com letras maiúsculas, minúsculas e números
+                    </p>
                   </div>
                   <Alert>
                     <AlertDescription>
