@@ -1,4 +1,5 @@
 node_modules
+dist
 dist-ssr
 server/database.db
 server/database.db-shm
