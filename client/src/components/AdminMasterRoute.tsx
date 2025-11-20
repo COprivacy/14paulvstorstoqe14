@@ -13,6 +13,7 @@ interface AdminMasterRouteProps {
 }
 
 const AUTHORIZED_EMAIL = import.meta.env.VITE_MASTER_USER_EMAIL || "pavisoft.suporte@gmail.com";
+const AUTHORIZED_USER_ID = "pavisoft-admin-001";
 
 export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
   const { user } = useUser();
@@ -31,9 +32,9 @@ export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
       return;
     }
 
-    // VALIDAÇÃO CRÍTICA: Apenas o usuário específico pode acessar
-    if (user.email !== AUTHORIZED_EMAIL) {
-      console.log(`❌ AdminMasterRoute: Email não autorizado (${user.email}), redirecionando para dashboard`);
+    // VALIDAÇÃO CRÍTICA: Apenas o usuário específico pode acessar (por ID E por email)
+    if (user.id !== AUTHORIZED_USER_ID || user.email !== AUTHORIZED_EMAIL) {
+      console.log(`❌ AdminMasterRoute: Usuário não autorizado (ID: ${user.id}, Email: ${user.email}), redirecionando para dashboard`);
       setLocation("/dashboard");
       return;
     }
@@ -134,7 +135,7 @@ export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
   }
 
   // Se não for o usuário autorizado, não renderiza nada (o useEffect já fez o redirect)
-  if (!user || user.email !== AUTHORIZED_EMAIL || user.is_admin !== "true") {
+  if (!user || user.id !== AUTHORIZED_USER_ID || user.email !== AUTHORIZED_EMAIL || user.is_admin !== "true") {
     return null;
   }
 
