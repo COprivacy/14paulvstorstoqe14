@@ -36,3 +36,43 @@ services:
       - key: PUBLIC_ADMIN_PASSWORD
         sync: false
     autoDeploy: true
+services:
+  - type: web
+    name: pavisoft-sistemas
+    runtime: node
+    region: oregon
+    plan: starter
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
+      - key: ASAAS_API_KEY
+        sync: false
+      - key: MASTER_USER_EMAIL
+        value: admin@pavisoft.com
+      - key: MASTER_USER_PASSWORD
+        sync: false
+      - key: MASTER_ADMIN_PASSWORD
+        sync: false
+      - key: PUBLIC_ADMIN_PASSWORD
+        sync: false
