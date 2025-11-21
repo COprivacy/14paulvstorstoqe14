@@ -1,0 +1,38 @@
+
+services:
+  - type: web
+    name: pavisoft-sistemas
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        sync: false
+      - key: MASTER_USER_EMAIL
+        sync: false
+      - key: MASTER_USER_PASSWORD
+        sync: false
+      - key: MASTER_ADMIN_PASSWORD
+        sync: false
+      - key: PUBLIC_ADMIN_PASSWORD
+        sync: false
+    autoDeploy: true
