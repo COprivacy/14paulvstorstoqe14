@@ -239,6 +239,7 @@ app.use((req, res, next) => {
   if (isDevelopment) {
     await setupVite(app, server);
   } else {
+    // Em produção, servir arquivos estáticos
     serveStatic(app);
   }
 
