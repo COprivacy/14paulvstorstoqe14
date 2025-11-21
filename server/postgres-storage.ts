@@ -102,12 +102,20 @@ function getUTCNow(): string {
 
 neonConfig.webSocketConstructor = ws;
 
+// Verificar se DATABASE_URL está configurada
+if (!process.env.DATABASE_URL) {
+  console.error('❌ ERRO: Variável de ambiente DATABASE_URL não está configurada!');
+  console.error('📝 Configure a variável DATABASE_URL com a string de conexão do PostgreSQL.');
+  console.error('📝 Exemplo: postgresql://usuario:senha@host:porta/database');
+  throw new Error('DATABASE_URL não está configurada. Configure esta variável de ambiente antes de continuar.');
+}
+
 // Log de debug (sem expor a senha)
-const dbUrl = process.env.DATABASE_URL!;
+const dbUrl = process.env.DATABASE_URL;
 const maskedUrl = dbUrl.replace(/:([^@]+)@/, ':****@');
 console.log(`🔌 Conectando ao PostgreSQL: ${maskedUrl}`);
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 export class PostgresStorage implements IStorage {
   private db;
