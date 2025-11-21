@@ -43,6 +43,7 @@ Crie um arquivo .zip contendo:
 No painel do Discloud, configure as seguintes variáveis:
 
 ```env
+PORT=8080
 DATABASE_URL=seu_url_postgresql_aqui
 NODE_ENV=production
 GMAIL_USER=seu_email_smtp
@@ -50,6 +51,8 @@ GMAIL_APP_PASSWORD=sua_senha_app
 MERCADOPAGO_ACCESS_TOKEN=seu_token_aqui
 ASAAS_API_KEY=sua_chave_api_aqui
 ```
+
+⚠️ **IMPORTANTE:** A variável `PORT=8080` é obrigatória para o Discloud!
 
 ### 4. Upload no Discloud
 
@@ -74,7 +77,7 @@ RAM=512
 AUTORESTART=true
 APT=tools
 VERSION=latest
-START=PORT=8080 npx tsx server/index.ts
+START=npx tsx server/index.ts
 BUILD=npm install
 ```
 
@@ -101,8 +104,12 @@ BUILD=npm install
 - **Solução**: Certifique-se que `package.json` está no zip e o BUILD está correto
 
 ### Site não carrega
-- **Causa**: Porta incorreta
-- **Solução**: Verifique se está usando `PORT=8080` no comando START
+- **Causa**: Porta incorreta ou variável PORT não configurada
+- **Solução**: Configure a variável de ambiente `PORT=8080` no painel do Discloud
+
+### Erro: "Cannot find module '/home/node/PORT=8080'"
+- **Causa**: Variável de ambiente PORT definida incorretamente no comando START
+- **Solução**: Remova `PORT=8080` do comando START e adicione como variável de ambiente no painel
 
 ### Erro de conexão com banco
 - **Causa**: Variáveis de ambiente não configuradas

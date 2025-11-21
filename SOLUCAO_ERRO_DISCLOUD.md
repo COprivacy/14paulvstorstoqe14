@@ -15,8 +15,13 @@ Mudei a abordagem para **executar o TypeScript diretamente** usando `tsx`, elimi
 1. **discloud.config atualizado:**
 ```ini
 MAIN=server/index.ts          # Antes: dist/index.js
-START=PORT=8080 npx tsx server/index.ts  # Executa TypeScript diretamente
+START=npx tsx server/index.ts # Executa TypeScript diretamente (sem PORT no comando)
 BUILD=npm install             # Antes: npm install && npm run build
+```
+
+2. **Variável de ambiente PORT:**
+```
+PORT=8080  # Configure no painel do Discloud (NÃO no comando START)
 ```
 
 2. **Arquivos a incluir no ZIP mudaram:**
@@ -48,6 +53,7 @@ Compress-Archive -Path discloud.config,package.json,package-lock.json,server,cli
 
 No painel do Discloud, adicione:
 ```env
+PORT=8080
 DATABASE_URL=sua_url_postgresql_aqui
 NODE_ENV=production
 GMAIL_USER=seu_email_smtp
@@ -55,6 +61,8 @@ GMAIL_APP_PASSWORD=sua_senha_app
 MERCADOPAGO_ACCESS_TOKEN=seu_token
 ASAAS_API_KEY=sua_chave
 ```
+
+⚠️ **CRÍTICO:** A variável `PORT=8080` DEVE estar nas variáveis de ambiente, NÃO no comando START!
 
 ## ⚠️ IMPORTANTE
 
@@ -78,9 +86,20 @@ ASAAS_API_KEY=sua_chave
 |---------|---------------------|-------------------|
 | Arquivo principal | `dist/index.js` | `server/index.ts` |
 | Comando START | `node dist/index.js` | `npx tsx server/index.ts` |
+| Variável PORT | No comando START | Nas variáveis de ambiente |
 | Build necessário? | Sim (`npm run build`) | Não |
 | Incluir `dist/`? | Sim | Não |
 | Incluir `server/`? | Opcional | Obrigatório |
+
+## ⚠️ Erros Comuns e Soluções
+
+### Erro 1: "Cannot find module '/home/node/dist/index.js'"
+**Causa:** Tentando executar arquivo compilado que não existe  
+**Solução:** Use `tsx` para executar TypeScript diretamente
+
+### Erro 2: "Cannot find module '/home/node/PORT=8080'"
+**Causa:** Variável PORT definida no comando START  
+**Solução:** Mova `PORT=8080` para as variáveis de ambiente do painel
 
 ## 🔧 Por que essa solução funciona?
 
