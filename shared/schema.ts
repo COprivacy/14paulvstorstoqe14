@@ -46,6 +46,32 @@ export const produtos = pgTable("produtos", {
   vencimento: text("vencimento"),
 });
 
+// Declarar clientes e fornecedores ANTES de vendas e compras para evitar TDZ
+export const clientes = pgTable("clientes", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  nome: text("nome").notNull(),
+  cpf_cnpj: text("cpf_cnpj"),
+  telefone: text("telefone"),
+  email: text("email"),
+  endereco: text("endereco"),
+  observacoes: text("observacoes"),
+  percentual_desconto: real("percentual_desconto"),
+  data_cadastro: text("data_cadastro").notNull(),
+});
+
+export const fornecedores = pgTable("fornecedores", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  nome: text("nome").notNull(),
+  cnpj: text("cnpj"),
+  telefone: text("telefone"),
+  email: text("email"),
+  endereco: text("endereco"),
+  observacoes: text("observacoes"),
+  data_cadastro: text("data_cadastro").notNull(),
+});
+
 export const bloqueiosEstoque = pgTable("bloqueios_estoque", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   produto_id: integer("produto_id").notNull().references(() => produtos.id, { onDelete: 'cascade' }),
@@ -67,31 +93,6 @@ export const vendas = pgTable("vendas", {
   forma_pagamento: text("forma_pagamento"),
   orcamento_id: integer("orcamento_id"),
   vendedor: text("vendedor"),
-});
-
-export const fornecedores = pgTable("fornecedores", {
-  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  nome: text("nome").notNull(),
-  cnpj: text("cnpj"),
-  telefone: text("telefone"),
-  email: text("email"),
-  endereco: text("endereco"),
-  observacoes: text("observacoes"),
-  data_cadastro: text("data_cadastro").notNull(),
-});
-
-export const clientes = pgTable("clientes", {
-  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
-  nome: text("nome").notNull(),
-  cpf_cnpj: text("cpf_cnpj"),
-  telefone: text("telefone"),
-  email: text("email"),
-  endereco: text("endereco"),
-  observacoes: text("observacoes"),
-  percentual_desconto: real("percentual_desconto"),
-  data_cadastro: text("data_cadastro").notNull(),
 });
 
 export const compras = pgTable("compras", {
