@@ -32,16 +32,10 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
-    port: parseInt(process.env.PORT || '8080', 10),
-    host: '0.0.0.0',
     strictPort: false,
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
-  },
-  preview: {
-    port: parseInt(process.env.PORT || '8080', 10),
-    host: '0.0.0.0',
   },
 });
