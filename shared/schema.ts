@@ -36,7 +36,7 @@ export const systemOwner = pgTable("system_owner", {
 
 export const produtos = pgTable("produtos", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  user_id: text("user_id").notNull(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   nome: text("nome").notNull(),
   categoria: text("categoria").notNull(),
   preco: real("preco").notNull(),
@@ -48,22 +48,22 @@ export const produtos = pgTable("produtos", {
 
 export const bloqueiosEstoque = pgTable("bloqueios_estoque", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  produto_id: integer("produto_id").notNull(),
+  produto_id: integer("produto_id").notNull().references(() => produtos.id, { onDelete: 'cascade' }),
   orcamento_id: integer("orcamento_id").notNull(),
-  user_id: text("user_id").notNull(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   quantidade_bloqueada: integer("quantidade_bloqueada").notNull(),
   data_bloqueio: text("data_bloqueio").notNull(),
 });
 
 export const vendas = pgTable("vendas", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  user_id: text("user_id").notNull(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   produto: text("produto").notNull(),
   quantidade_vendida: integer("quantidade_vendida").notNull().default(0),
   valor_total: real("valor_total").notNull().default(0),
   data: text("data").notNull(),
   itens: text("itens"),
-  cliente_id: integer("cliente_id"),
+  cliente_id: integer("cliente_id").references(() => clientes.id, { onDelete: 'set null' }),
   forma_pagamento: text("forma_pagamento"),
   orcamento_id: integer("orcamento_id"),
   vendedor: text("vendedor"),
@@ -71,7 +71,7 @@ export const vendas = pgTable("vendas", {
 
 export const fornecedores = pgTable("fornecedores", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  user_id: text("user_id").notNull(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   nome: text("nome").notNull(),
   cnpj: text("cnpj"),
   telefone: text("telefone"),
@@ -83,7 +83,7 @@ export const fornecedores = pgTable("fornecedores", {
 
 export const clientes = pgTable("clientes", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  user_id: text("user_id").notNull(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   nome: text("nome").notNull(),
   cpf_cnpj: text("cpf_cnpj"),
   telefone: text("telefone"),
@@ -96,9 +96,9 @@ export const clientes = pgTable("clientes", {
 
 export const compras = pgTable("compras", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  user_id: text("user_id").notNull(),
-  fornecedor_id: integer("fornecedor_id").notNull(),
-  produto_id: integer("produto_id").notNull(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  fornecedor_id: integer("fornecedor_id").notNull().references(() => fornecedores.id, { onDelete: 'restrict' }),
+  produto_id: integer("produto_id").notNull().references(() => produtos.id, { onDelete: 'restrict' }),
   quantidade: integer("quantidade").notNull(),
   valor_unitario: real("valor_unitario").notNull(),
   valor_total: real("valor_total").notNull(),

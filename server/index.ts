@@ -208,8 +208,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Verificar e corrigir schema automaticamente antes de iniciar
-  await autoFixDatabaseSchema();
+  // SEGURANÇA: Apenas executar auto-fix em desenvolvimento
+  // Em produção, usar migrations controladas
+  if (process.env.NODE_ENV === 'development') {
+    await autoFixDatabaseSchema();
+  } else {
+    logger.info('[STARTUP] Auto-fix desabilitado em produção - use migrations', 'SECURITY');
+  }
 
   const server = await registerRoutes(app);
 
