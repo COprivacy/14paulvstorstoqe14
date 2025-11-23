@@ -2,6 +2,16 @@ import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
 
+// Assumindo que você tenha um logger configurado.
+// Se não, você pode remover as chamadas de logger e usar apenas console.warn/error.
+// Exemplo de mock logger:
+const logger = {
+  warn: (message: string, context: string, data?: any) => console.warn(`[${context}] ${message}`, data),
+  info: (message: string, context: string, data?: any) => console.info(`[${context}] ${message}`, data),
+  error: (message: string, context: string, data?: any) => console.error(`[${context}] ${message}`, data),
+};
+
+
 interface EmailConfig {
   from: string;
   to: string;
@@ -31,18 +41,26 @@ export class EmailService {
       secure: false,
       auth: {
         user: process.env.SMTP_USER || 'atendimento.pavisoft@gmail.com',
-        pass: process.env.SMTP_PASS || 'bwks idip qyen kbnd',
+        pass: process.env.SMTP_PASS || 'bwks idip qyen kbnd', // Lembre-se de usar Senha de App para Gmail
       },
     });
 
     // Verificar conexão SMTP ao inicializar
     this.transporter.verify((error, success) => {
-      if (error) {
-        console.error('❌ Erro ao conectar com servidor SMTP:', error);
-      } else {
-        console.log('✅ Servidor SMTP pronto para enviar emails');
-      }
-    });
+          if (error) {
+            console.warn("⚠️ SMTP não configurado corretamente. Configure as credenciais nas variáveis de ambiente.");
+            logger.warn('SMTP não configurado', 'EMAIL_SERVICE', {
+              host: this.transporter.options.host,
+              port: this.transporter.options.port,
+              secure: this.transporter.options.secure,
+              user: this.transporter.options.auth?.user,
+              error: error.message
+            });
+          } else {
+            console.log("✅ Servidor SMTP pronto para enviar emails");
+            logger.info('SMTP configurado com sucesso', 'EMAIL_SERVICE');
+          }
+        });
   }
 
   // Template base para todos os emails
@@ -882,7 +900,7 @@ export class EmailService {
             Caso tenha dúvidas ou precise de suporte para realizar o pagamento, nossa equipe está à disposição.
           </p>
 
-          <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin: 32px 0 0 0;">
+          <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin-top: 8px;">
             Entre em contato: <a href="mailto:atendimento.pavisoft@gmail.com" style="color: #3b82f6; text-decoration: none; font-weight: 600;">atendimento.pavisoft@gmail.com</a>
           </p>
         </td>
