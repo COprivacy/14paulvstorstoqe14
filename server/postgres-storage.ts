@@ -797,11 +797,6 @@ export class PostgresStorage implements IStorage {
     return result;
   }
 
-  async deleteAllLogsAdmin(): Promise<number> {
-    const result = await this.db.delete(logsAdmin).returning();
-    return result.length;
-  }
-
   async getLogsAdminByAccount(contaId: string): Promise<LogAdmin[]> {
     const funcionariosIds = await this.db
       .select({ id: funcionarios.id })
