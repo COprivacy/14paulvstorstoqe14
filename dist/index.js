@@ -10821,7 +10821,7 @@ app.use((req, res, next) => {
   });
   if (process.env.NODE_ENV === "production") {
     app.use((req, res, next) => {
-      if (req.headers["x-forwarded-proto"] !== "https") {
+      if (req.protocol !== 'https') {  // ← Agora usa req.protocol (respeita trust proxy)
         return res.redirect(301, `https://${req.headers.host}${req.url}`);
       }
       next();
