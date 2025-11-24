@@ -350,6 +350,78 @@ export default function TestSuite() {
             </ul>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🔒 Teste 9: Segurança
+            </CardTitle>
+            <CardDescription>
+              Valida configurações de segurança
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li>✓ Headers de segurança</li>
+              <li>✓ Senhas com hash bcrypt</li>
+              <li>✓ Variáveis de ambiente</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              ⚡ Teste 10: Performance
+            </CardTitle>
+            <CardDescription>
+              Mede velocidade e uso de recursos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li>✓ Velocidade de queries</li>
+              <li>✓ Uso de memória</li>
+              <li>✓ Total de registros</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🔗 Teste 11: Relacionamentos
+            </CardTitle>
+            <CardDescription>
+              Verifica integridade de dados
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li>✓ Produtos órfãos</li>
+              <li>✓ Vendas órfãs</li>
+              <li>✓ CPF/CNPJ duplicados</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              💾 Teste 12: Backups
+            </CardTitle>
+            <CardDescription>
+              Valida sistema de backups
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm">
+              <li>✓ Provider de backup</li>
+              <li>✓ Backups automáticos</li>
+              <li>✓ Point-in-time recovery</li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Resultados Detalhados */}
