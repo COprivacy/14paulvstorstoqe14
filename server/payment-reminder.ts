@@ -23,7 +23,18 @@ export class PaymentReminderService {
    */
   async checkAndSendReminders(): Promise<void> {
     try {
-      const subscriptions = await storage.getSubscriptions();
+      let subscriptions;
+      try {
+        subscriptions = await storage.getSubscriptions();
+      } catch (error: any) {
+        // Se falhar ao buscar subscriptions (ex: coluna cupom_codigo não existe), logar e retornar
+        if (error.message?.includes('cupom_codigo') || error.code === '42703') {
+          logger.error('[PAYMENT_REMINDER] Tabela subscriptions precisa de migração de cupons. Execute a migração primeiro.', 'PAYMENT_REMINDER');
+          return;
+        }
+        throw error;
+      }
+      
       const users = await storage.getUsers();
       const now = new Date();
 
