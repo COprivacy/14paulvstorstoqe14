@@ -856,15 +856,17 @@ export class PostgresStorage implements IStorage {
         // Deletar apenas logs de uma conta específica
         result = await this.db
           .delete(logsAdmin)
-          .where(eq(logsAdmin.conta_id, contaId));
+          .where(eq(logsAdmin.conta_id, contaId))
+          .returning();
       } else {
         // Deletar todos os logs (master admin)
         result = await this.db
-          .delete(logsAdmin);
+          .delete(logsAdmin)
+          .returning();
       }
       
-      // Drizzle retorna um objeto com rowCount em alguns drivers
-      const deletedCount = (result as any).rowCount || 0;
+      // Contar os registros deletados
+      const deletedCount = result.length;
       
       logger.info('[DB] Logs de auditoria limpos', { contaId: contaId || 'todos', deletedCount });
       

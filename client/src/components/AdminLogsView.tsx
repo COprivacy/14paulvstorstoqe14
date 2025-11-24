@@ -74,10 +74,16 @@ export function AdminLogsView({ isPublicAdmin = false }: AdminLogsViewProps) {
 
       const user = JSON.parse(userStr);
       
-      const response = await fetch(endpoint, {
+      // Adicionar cache-busting para forçar nova requisição
+      const cacheBuster = `&t=${Date.now()}`;
+      const fullEndpoint = endpoint + cacheBuster;
+      
+      const response = await fetch(fullEndpoint, {
         headers: {
           'x-user-id': user.id,
           'x-is-admin': 'true',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
         },
       });
 
