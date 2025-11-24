@@ -16,7 +16,7 @@ const AUTHORIZED_EMAIL = import.meta.env.VITE_MASTER_USER_EMAIL || "pavisoft.sup
 const AUTHORIZED_USER_ID = "pavisoft-admin-001";
 
 export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
-  const { user } = useUser();
+  const { user, isLoading: isUserLoading } = useUser();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -25,6 +25,12 @@ export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
+    // Aguardar carregamento do usuário antes de verificar
+    if (isUserLoading) {
+      console.log("⏳ AdminMasterRoute: Carregando dados do usuário...");
+      return;
+    }
+
     // Verifica autenticação do usuário
     if (!user) {
       console.log("❌ AdminMasterRoute: Nenhum usuário logado, redirecionando para login");
@@ -53,14 +59,7 @@ export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
     }
     
     setIsCheckingAuth(false);
-
-    // Cleanup: Remover autenticação quando sair da página
-    return () => {
-      console.log("🔄 AdminMasterRoute: Limpando autenticação ao sair da página");
-      sessionStorage.removeItem("admin_master_auth");
-      setIsAuthenticated(false);
-    };
-  }, [user, setLocation]);
+  }, [user, isUserLoading, setLocation]);
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
