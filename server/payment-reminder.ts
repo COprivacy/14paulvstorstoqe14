@@ -27,12 +27,14 @@ export class PaymentReminderService {
       try {
         subscriptions = await storage.getSubscriptions();
       } catch (error: any) {
-        // Se falhar ao buscar subscriptions (ex: coluna cupom_codigo não existe), logar e retornar
-        if (error.message?.includes('cupom_codigo') || error.code === '42703') {
-          logger.error('[PAYMENT_REMINDER] Tabela subscriptions precisa de migração de cupons. Execute a migração primeiro.', 'PAYMENT_REMINDER');
-          return;
+        // Se falhar ao buscar subscriptions (ex: coluna cupom_codigo não existe), logar e continuar sem cupons
+        if (error.message?.includes('cupom_codigo') || error.code === '42703' || error.message?.includes('column') || error.message?.includes('does not exist')) {
+          logger.warn('[PAYMENT_REMINDER] Colunas de cupom não disponíveis na tabela subscriptions. Sistema funcionará sem cupons.', 'PAYMENT_REMINDER');
+          // Retornar array vazio para não quebrar o sistema
+          subscriptions = [];
+        } else {
+          throw error;
         }
-        throw error;
       }
 
       const users = await storage.getUsers();
