@@ -34,7 +34,7 @@ export class PaymentReminderService {
         }
         throw error;
       }
-      
+
       const users = await storage.getUsers();
       const now = new Date();
 
@@ -77,19 +77,19 @@ export class PaymentReminderService {
         // Apenas usuários trial ou free
         if (user.plano === 'trial' || user.plano === 'free') {
           const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
-          
+
           if (expirationDate) {
             const daysUntilExpiration = this.getDaysDifference(now, new Date(expirationDate));
-            
+
             // Avisos antes do vencimento do trial
             if (this.config.daysBeforeExpiration.includes(daysUntilExpiration)) {
               await this.sendTrialExpirationWarning(user, daysUntilExpiration);
             }
-            
+
             // Trial expirado - converter para free e bloquear
             if (daysUntilExpiration < 0) {
               const daysExpired = Math.abs(daysUntilExpiration);
-              
+
               // Bloquear após 0 dias de expiração (imediato)
               if (daysExpired >= 0 && user.status !== 'bloqueado') {
                 await this.blockExpiredTrialUser(user);
@@ -129,12 +129,12 @@ export class PaymentReminderService {
 
     const now = new Date();
     const daysSinceCreation = this.getDaysDifference(new Date(subscription.data_criacao), now);
-    
+
     // Calcular prazo limite se não existir
     const prazoLimite = subscription.prazo_limite_pagamento 
       ? new Date(subscription.prazo_limite_pagamento)
       : new Date(new Date(subscription.data_criacao).getTime() + 7 * 24 * 60 * 60 * 1000);
-    
+
     const daysUntilDeadline = this.getDaysDifference(now, prazoLimite);
 
     // Enviar lembrete após 2, 5 dias e quando faltar 1 dia para o prazo
