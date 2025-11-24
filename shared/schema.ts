@@ -271,6 +271,9 @@ export const subscriptions = pgTable("subscriptions", {
   prazo_limite_pagamento: text("prazo_limite_pagamento"),
   tentativas_cobranca: integer("tentativas_cobranca").default(0),
   motivo_cancelamento: text("motivo_cancelamento"),
+  cupom_codigo: text("cupom_codigo"),
+  cupom_id: integer("cupom_id"),
+  valor_desconto_cupom: real("valor_desconto_cupom"),
   data_criacao: text("data_criacao").notNull(),
   data_atualizacao: text("data_atualizacao"),
 });
