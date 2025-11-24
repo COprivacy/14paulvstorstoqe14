@@ -84,7 +84,7 @@ export default function Ajuda() {
     },
     {
       question: "Como funciona o bloqueio de funcionários?",
-      answer: "Se o pacote de funcionários vencer, apenas os funcionários extras (além do padrão) são bloqueados. O funcionário padrão do sistema continua ativo se o plano principal estiver pago.",
+      answer: "IMPORTANTE: Existem duas situações diferentes:\n\n1) Se o PLANO PRINCIPAL (Trial/Premium) expirar ou for bloqueado por falta de pagamento: TODOS os funcionários (incluindo o padrão e os extras) são bloqueados imediatamente, mesmo que existam pacotes de funcionários ativos. Os pacotes são complementares ao plano base.\n\n2) Se apenas o PACOTE DE FUNCIONÁRIOS vencer (mas o plano principal estiver ativo): apenas os funcionários extras são bloqueados. O funcionário padrão continua ativo se o plano principal estiver pago.",
       category: "admin"
     }
   ];

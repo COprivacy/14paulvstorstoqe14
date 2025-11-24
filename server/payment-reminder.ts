@@ -133,7 +133,7 @@ export class PaymentReminderService {
     const daysSinceCreation = this.getDaysDifference(new Date(subscription.data_criacao), now);
 
     // Calcular prazo limite se não existir
-    const prazoLimite = subscription.prazo_limite_pagamento 
+    const prazoLimite = subscription.prazo_limite_pagamento
       ? new Date(subscription.prazo_limite_pagamento)
       : new Date(new Date(subscription.data_criacao).getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -232,6 +232,64 @@ export class PaymentReminderService {
   }
 
   /**
+   * Bloqueia usuário por falta de pagamento
+   * IMPORTANTE: Quando o plano principal expira/bloqueia, TODOS os funcionários
+   * devem ser bloqueados, mesmo que existam pacotes de funcionários ativos.
+   * Os pacotes de funcionários são complementares ao plano principal.
+   */
+  private async blockUserForNonPayment(subscription: any): Promise<void> {
+    await storage.updateSubscription(subscription.id, {
+      status: "bloqueado",
+    });
+
+    await storage.updateUser(subscription.user_id, {
+      status: "bloqueado",
+    });
+
+    const user = (await storage.getUsers()).find(u => u.id === subscription.user_id);
+    if (user) {
+      // REGRA CRÍTICA: Bloquear TODOS os funcionários quando plano principal bloqueia
+      // Não importa se há pacotes de funcionários ativos - eles são adicionais ao plano base
+      if (storage.getFuncionarios) {
+        const funcionarios = await storage.getFuncionarios();
+        const funcionariosDaConta = funcionarios.filter(f => f.conta_id === user.id);
+
+        for (const funcionario of funcionariosDaConta) {
+          await storage.updateFuncionario(funcionario.id, {
+            status: "bloqueado",
+          });
+
+          logger.warn('Funcionário bloqueado devido ao bloqueio da conta principal', 'PAYMENT_REMINDER', {
+            funcionarioId: funcionario.id,
+            funcionarioNome: funcionario.nome,
+            contaId: user.id,
+            motivo: 'Plano principal bloqueado/expirado'
+          });
+        }
+
+        if (funcionariosDaConta.length > 0) {
+          logger.info(`TODOS os ${funcionariosDaConta.length} funcionário(s) bloqueado(s) junto com a conta principal`, 'PAYMENT_REMINDER', {
+            contaId: user.id,
+            userEmail: user.email,
+            plano: subscription.plano,
+          });
+        }
+      }
+
+      await this.emailService.sendAccountBlocked({
+        to: user.email,
+        userName: user.nome,
+        planName: subscription.plano,
+      });
+    }
+
+    logger.error('Conta e TODOS os funcionários bloqueados por falta de pagamento do plano principal', 'PAYMENT_REMINDER', {
+      subscriptionId: subscription.id,
+      userId: subscription.user_id,
+    });
+  }
+
+  /**
    * Bloqueia assinatura expirada
    */
   private async blockExpiredSubscription(subscription: any): Promise<void> {
@@ -302,17 +360,19 @@ export class PaymentReminderService {
 
   /**
    * Bloqueia usuário trial expirado
+   * IMPORTANTE: Quando o trial expira, TODOS os funcionários devem ser bloqueados,
+   * independente de pacotes de funcionários. O trial é o plano base.
    */
   private async blockExpiredTrialUser(user: any): Promise<void> {
-    // Atualizar usuário para free e bloqueado
     await storage.updateUser(user.id, {
-      plano: 'free',
       status: 'bloqueado',
+      plano: 'free',
       data_expiracao_trial: null,
       data_expiracao_plano: null,
     });
 
-    // Bloquear todos os funcionários desta conta
+    // REGRA CRÍTICA: Bloquear TODOS os funcionários quando trial expira
+    // Pacotes de funcionários são complementares ao plano base - sem plano base ativo, não podem acessar
     if (storage.getFuncionarios) {
       const funcionarios = await storage.getFuncionarios();
       const funcionariosDaConta = funcionarios.filter(f => f.conta_id === user.id);
@@ -321,11 +381,19 @@ export class PaymentReminderService {
         await storage.updateFuncionario(funcionario.id, {
           status: 'bloqueado',
         });
+
+        logger.warn('Funcionário bloqueado devido ao trial expirado da conta principal', 'PAYMENT_REMINDER', {
+          funcionarioId: funcionario.id,
+          funcionarioNome: funcionario.nome,
+          contaId: user.id,
+          motivo: 'Trial expirado'
+        });
       }
 
       if (funcionariosDaConta.length > 0) {
-        logger.info(`${funcionariosDaConta.length} funcionário(s) bloqueado(s) devido ao trial expirado`, 'PAYMENT_REMINDER', {
+        logger.info(`TODOS os ${funcionariosDaConta.length} funcionário(s) bloqueado(s) devido ao trial expirado`, 'PAYMENT_REMINDER', {
           userId: user.id,
+          userEmail: user.email,
         });
       }
     }
@@ -337,7 +405,7 @@ export class PaymentReminderService {
       planName: 'Plano Trial',
     });
 
-    logger.warn('Usuário trial expirado bloqueado', 'PAYMENT_REMINDER', {
+    logger.warn('Usuário trial expirado e TODOS os funcionários bloqueados', 'PAYMENT_REMINDER', {
       userId: user.id,
       userEmail: user.email,
     });

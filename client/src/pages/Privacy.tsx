@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,7 @@ export default function Privacy() {
     } catch (error) {
       const mailtoLink = `mailto:atendimento.pavisoft@gmail.com?subject=${encodeURIComponent(formData.assunto)}&body=${encodeURIComponent(`Nome: ${formData.nome}\nEmail: ${formData.email}\n\nMensagem:\n${formData.mensagem}`)}`;
       window.location.href = mailtoLink;
-      
+
       toast({
         title: "Abrindo seu cliente de email",
         description: "Complete o envio pelo seu aplicativo de email.",
@@ -153,7 +152,7 @@ export default function Privacy() {
                     <Database className="h-6 w-6 text-blue-400" />
                     2. Dados Pessoais Coletados
                   </h2>
-                  
+
                   <h3 className="text-xl font-semibold text-white mb-3">2.1 Dados Cadastrais</h3>
                   <p className="mb-4">Ao criar sua conta no Pavisoft, coletamos:</p>
                   <ul className="list-disc pl-6 space-y-2 mb-4">
@@ -203,7 +202,7 @@ export default function Privacy() {
                     3. Finalidade do Tratamento de Dados
                   </h2>
                   <p className="mb-4">Utilizamos seus dados pessoais para as seguintes finalidades:</p>
-                  
+
                   <h3 className="text-xl font-semibold text-white mb-3">3.1 Fornecimento do Serviço</h3>
                   <ul className="list-disc pl-6 space-y-2 mb-4">
                     <li>Criar e gerenciar sua conta</li>
@@ -252,11 +251,140 @@ export default function Privacy() {
                   </ul>
                 </section>
 
+                {/* 5. Planos e Pagamentos */}
+                <section className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 text-blue-600">5. Planos e Pagamentos</h2>
+                  <div className="space-y-3 text-gray-700">
+                    <p>
+                      5.1. Oferecemos diferentes planos de assinatura (Trial, Free, Premium Mensal e Premium Anual).
+                    </p>
+                    <p>
+                      5.2. O período de trial gratuito é de 7 dias. Após esse período, você pode escolher um plano pago ou continuar no plano gratuito com funcionalidades limitadas.
+                    </p>
+                    <p>
+                      5.3. Os pagamentos são processados através do Mercado Pago.
+                    </p>
+                    <p>
+                      5.4. Você pode cancelar sua assinatura a qualquer momento através das configurações da sua conta.
+                    </p>
+                    <p>
+                      5.5. <strong>Bloqueio por Inadimplência:</strong> Em caso de inadimplência ou expiração do plano principal (Trial, Premium Mensal ou Premium Anual), sua conta será bloqueada até a regularização do pagamento. <strong className="text-red-600">IMPORTANTE: Quando o plano principal é bloqueado ou expira, TODOS os funcionários cadastrados também são bloqueados automaticamente, mesmo que existam pacotes de funcionários ativos.</strong>
+                    </p>
+                    <p>
+                      5.6. <strong>Pacotes de Funcionários:</strong> Os pacotes de funcionários (5, 10, 20 ou 50 funcionários) são complementares ao plano principal e só funcionam se houver um plano base ativo (Trial, Premium Mensal ou Premium Anual). Sem um plano principal ativo, os pacotes de funcionários não concedem acesso ao sistema.
+                    </p>
+                    <p>
+                      5.7. <strong>Expiração de Pacotes de Funcionários:</strong> Quando um pacote de funcionários expira, apenas os funcionários extras (além do limite padrão do seu plano) serão bloqueados. O plano principal e o funcionário padrão continuam ativos se o plano base estiver em dia.
+                    </p>
+                  </div>
+                </section>
+
+                {/* 6. Gestão de Funcionários e Acessos */}
+                <section className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 text-blue-600">6. Gestão de Funcionários e Acessos</h2>
+                  <div className="space-y-3 text-gray-700">
+                    <p>
+                      6.1. <strong>Hierarquia de Planos:</strong> O plano principal (Trial, Free, Premium Mensal ou Premium Anual) é a base do sistema. Pacotes de funcionários são complementares e dependem de um plano base ativo.
+                    </p>
+                    <p>
+                      6.2. <strong>Bloqueio Automático por Expiração do Plano Principal:</strong> 
+                      <ul className="list-disc ml-6 mt-2 space-y-1">
+                        <li>Se o plano principal expirar ou for bloqueado por falta de pagamento, <strong className="text-red-600">TODOS os funcionários (incluindo o padrão e os extras) serão bloqueados imediatamente</strong></li>
+                        <li>Isso ocorre mesmo que existam pacotes de funcionários ativos e pagos</li>
+                        <li>Os pacotes de funcionários são adicionais ao plano base, não substitutos</li>
+                        <li>Para reativar os funcionários, é necessário regularizar o plano principal</li>
+                      </ul>
+                    </p>
+                    <p>
+                      6.3. <strong>Bloqueio por Expiração de Pacote de Funcionários:</strong>
+                      <ul className="list-disc ml-6 mt-2 space-y-1">
+                        <li>Se apenas o pacote de funcionários expirar (mas o plano principal estiver ativo), somente os funcionários extras serão bloqueados</li>
+                        <li>O funcionário padrão incluído no plano base continua ativo</li>
+                        <li>Os funcionários mais recentes são bloqueados primeiro</li>
+                      </ul>
+                    </p>
+                    <p>
+                      6.4. <strong>Responsabilidade do Titular:</strong> O titular da conta é responsável por manter o plano principal ativo para garantir acesso de sua equipe ao sistema.
+                    </p>
+                  </div>
+                </section>
+
+                {/* 7. Responsabilidades do Usuário */}
+                <section className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 text-blue-600">7. Responsabilidades do Usuário</h2>
+                  <div className="space-y-3 text-gray-700">
+                    <p>
+                      7.1. Você concorda em usar o Pavisoft Sistemas de forma lícita e ética.
+                    </p>
+                    <p>
+                      7.2. É sua responsabilidade manter a confidencialidade das suas credenciais de acesso.
+                    </p>
+                    <p>
+                      7.3. Você não deve tentar contornar as medidas de segurança do sistema.
+                    </p>
+                    <p>
+                      7.4. Você é responsável por todos os dados que insere no sistema e por garantir sua precisão.
+                    </p>
+                    <p>
+                      7.5. Você concorda em não utilizar o sistema para atividades ilegais, fraudulentas ou que violem direitos de terceiros.
+                    </p>
+                  </div>
+                </section>
+
+                {/* 8. Limitação de Responsabilidade */}
+                <section className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 text-blue-600">8. Limitação de Responsabilidade</h2>
+                  <div className="space-y-3 text-gray-700">
+                    <p>
+                      8.1. A Pavisoft Sistemas não se responsabiliza por danos diretos ou indiretos decorrentes do uso ou incapacidade de uso do sistema.
+                    </p>
+                    <p>
+                      8.2. Não garantimos que o sistema será ininterrupto, livre de erros ou seguro.
+                    </p>
+                    <p>
+                      8.3. Nossa responsabilidade se limita ao valor pago pelo serviço no período em que ocorreu o dano.
+                    </p>
+                    <p>
+                      8.4. Não nos responsabilizamos por perda de dados ou interrupções causadas por falhas de terceiros (provedores de internet, hospedagem, etc.).
+                    </p>
+                  </div>
+                </section>
+
+                {/* 9. Modificações nos Termos */}
+                <section className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 text-blue-600">9. Modificações nos Termos</h2>
+                  <div className="space-y-3 text-gray-700">
+                    <p>
+                      9.1. Podemos modificar esta Política de Privacidade e os Termos de Uso a qualquer momento.
+                    </p>
+                    <p>
+                      9.2. As alterações entrarão em vigor 30 dias após a notificação aos usuários (por email ou aviso no sistema).
+                    </p>
+                    <p>
+                      9.3. O uso continuado do sistema após a notificação implica na aceitação das novas condições.
+                    </p>
+                  </div>
+                </section>
+
+                {/* 10. Contato */}
+                <section className="mb-8">
+                  <h2 className="text-2xl font-semibold mb-4 text-blue-600">10. Contato</h2>
+                  <div className="space-y-3 text-gray-700">
+                    <p>
+                      10.1. Para dúvidas sobre esta política ou sobre o uso do sistema, entre em contato:
+                    </p>
+                    <ul className="list-disc ml-6 space-y-1">
+                      <li>Email: atendimento.pavisoft@gmail.com</li>
+                      <li>WhatsApp: (98) 98426-7488</li>
+                    </ul>
+                  </div>
+                </section>
+
                 {/* 5. Compartilhamento */}
                 <section>
                   <h2 className="text-2xl font-semibold text-white mb-4">5. Compartilhamento de Dados</h2>
                   <p className="mb-4">Compartilhamos seus dados apenas nas seguintes situações:</p>
-                  
+
                   <h3 className="text-xl font-semibold text-white mb-3">5.1 Prestadores de Serviços</h3>
                   <ul className="list-disc pl-6 space-y-2 mb-4">
                     <li><strong className="text-white">Mercado Pago:</strong> Processamento de pagamentos</li>
@@ -284,7 +412,7 @@ export default function Privacy() {
                     6. Segurança e Proteção de Dados
                   </h2>
                   <p className="mb-4">Implementamos medidas técnicas e organizacionais para proteger seus dados:</p>
-                  
+
                   <h3 className="text-xl font-semibold text-white mb-3">6.1 Medidas Técnicas</h3>
                   <ul className="list-disc pl-6 space-y-2 mb-4">
                     <li>Criptografia de dados sensíveis (senhas, informações de pagamento)</li>
@@ -313,7 +441,7 @@ export default function Privacy() {
                 {/* 7. Armazenamento */}
                 <section>
                   <h2 className="text-2xl font-semibold text-white mb-4">7. Retenção e Armazenamento de Dados</h2>
-                  
+
                   <h3 className="text-xl font-semibold text-white mb-3">7.1 Período de Armazenamento</h3>
                   <p className="mb-4">Mantemos seus dados pessoais pelo seguinte período:</p>
                   <ul className="list-disc pl-6 space-y-2 mb-4">
