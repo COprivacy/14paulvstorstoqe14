@@ -154,7 +154,7 @@ export function AdminLogsView({ isPublicAdmin = false }: AdminLogsViewProps) {
     if (!action) return null;
     const match = action.match(/^[A-Z_]+/);
     return match ? match[0] : action;
-  }).filter(Boolean)));
+  }).filter(Boolean))) as string[];
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
   const paginatedLogs = filteredLogs.slice(

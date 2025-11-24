@@ -3457,24 +3457,7 @@ export default function AdminPublico() {
             // Aba de Logs de Administrador
             <div className="space-y-6">
               <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-blue-600" />
-                      Logs de Administradores
-                    </CardTitle>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setLimparLogsDialogOpen(true)}
-                      data-testid="button-clear-logs"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Limpar Todos os Logs
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <AdminLogsView isPublicAdmin={true} />
                 </CardContent>
               </Card>
