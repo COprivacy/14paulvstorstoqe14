@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,20 @@ export default function TestSuite() {
   const [results, setResults] = useState<TestResult[]>([]);
   const [summary, setSummary] = useState<TestSummary | null>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      console.log("🧪 [TestSuite] Usuário autenticado:", {
+        id: user.id,
+        email: user.email,
+        isAdmin: user.is_admin
+      });
+    } else {
+      console.log("⚠️ [TestSuite] Nenhum usuário no localStorage");
+    }
+  }, []);
 
   const runTests = async () => {
     setIsRunning(true);

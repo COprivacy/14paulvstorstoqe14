@@ -25,29 +25,41 @@ export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    // Aguardar carregamento do usuário antes de verificar
+    // Aguardar carregamento do usuário antes de qualquer verificação
     if (isUserLoading) {
       console.log("⏳ AdminMasterRoute: Carregando dados do usuário...");
+      setIsCheckingAuth(true);
       return;
     }
 
-    // Verifica autenticação do usuário
+    // Após carregar, verificar se o usuário existe
     if (!user) {
       console.log("❌ AdminMasterRoute: Nenhum usuário logado, redirecionando para login");
       setLocation("/login");
+      setIsCheckingAuth(false);
       return;
     }
+
+    console.log("🔍 AdminMasterRoute: Verificando credenciais do usuário", {
+      userId: user.id,
+      email: user.email,
+      isAdmin: user.is_admin,
+      expectedId: AUTHORIZED_USER_ID,
+      expectedEmail: AUTHORIZED_EMAIL
+    });
 
     // VALIDAÇÃO CRÍTICA: Apenas o usuário específico pode acessar (por ID E por email)
     if (user.id !== AUTHORIZED_USER_ID || user.email !== AUTHORIZED_EMAIL) {
       console.log(`❌ AdminMasterRoute: Usuário não autorizado (ID: ${user.id}, Email: ${user.email}), redirecionando para dashboard`);
       setLocation("/dashboard");
+      setIsCheckingAuth(false);
       return;
     }
 
     if (user.is_admin !== "true") {
       console.log(`❌ AdminMasterRoute: Usuário não é admin (${user.email}), redirecionando para dashboard`);
       setLocation("/dashboard");
+      setIsCheckingAuth(false);
       return;
     }
 
@@ -56,6 +68,8 @@ export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
     if (sessionAuth === "true") {
       console.log("✅ AdminMasterRoute: Sessão admin_master já autenticada");
       setIsAuthenticated(true);
+    } else {
+      console.log("🔐 AdminMasterRoute: Sessão não autenticada, aguardando senha");
     }
     
     setIsCheckingAuth(false);
@@ -128,15 +142,25 @@ export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
     }
   };
 
-  // Mostra loading enquanto verifica autenticação
-  if (isCheckingAuth) {
-    return null;
+  // Mostra loading enquanto verifica autenticação ou carrega dados do usuário
+  if (isCheckingAuth || isUserLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-muted-foreground">Verificando permissões...</p>
+        </div>
+      </div>
+    );
   }
 
   // Se não for o usuário autorizado, não renderiza nada (o useEffect já fez o redirect)
   if (!user || user.id !== AUTHORIZED_USER_ID || user.email !== AUTHORIZED_EMAIL || user.is_admin !== "true") {
+    console.log("⚠️ AdminMasterRoute: Renderização bloqueada - credenciais inválidas");
     return null;
   }
+
+  console.log("✅ AdminMasterRoute: Renderizando conteúdo protegido");
 
   if (!isAuthenticated) {
     return (
