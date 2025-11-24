@@ -848,13 +848,27 @@ export class PostgresStorage implements IStorage {
     }
   }
 
-  async deleteAllLogsAdmin(contaId: string): Promise<void> {
+  async deleteAllLogsAdmin(contaId?: string): Promise<number> {
     try {
-      await this.db
-        .delete(logsAdmin)
-        .where(eq(logsAdmin.conta_id, contaId));
+      let result;
       
-      logger.info('[DB] Logs de auditoria limpos', { contaId });
+      if (contaId) {
+        // Deletar apenas logs de uma conta específica
+        result = await this.db
+          .delete(logsAdmin)
+          .where(eq(logsAdmin.conta_id, contaId));
+      } else {
+        // Deletar todos os logs (master admin)
+        result = await this.db
+          .delete(logsAdmin);
+      }
+      
+      // Drizzle retorna um objeto com rowCount em alguns drivers
+      const deletedCount = (result as any).rowCount || 0;
+      
+      logger.info('[DB] Logs de auditoria limpos', { contaId: contaId || 'todos', deletedCount });
+      
+      return deletedCount;
     } catch (error) {
       logger.error('[DB] Erro ao limpar logs de auditoria:', { error });
       throw error;

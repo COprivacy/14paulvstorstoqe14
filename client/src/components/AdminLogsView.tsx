@@ -40,6 +40,15 @@ export function AdminLogsView({ isPublicAdmin = false }: AdminLogsViewProps) {
 
   useEffect(() => {
     fetchAdminLogs();
+
+    // Escutar evento de limpeza de logs para recarregar
+    const handleLogsCleared = () => {
+      console.log('🔄 Evento de limpeza de logs detectado, recarregando...');
+      fetchAdminLogs();
+    };
+
+    window.addEventListener('logs-cleared', handleLogsCleared);
+    return () => window.removeEventListener('logs-cleared', handleLogsCleared);
   }, []);
 
   useEffect(() => {

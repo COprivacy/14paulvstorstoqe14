@@ -2258,6 +2258,10 @@ export default function AdminPublico() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/all-logs'] });
+      
+      // Disparar evento para o AdminLogsView recarregar
+      window.dispatchEvent(new CustomEvent('logs-cleared'));
+      
       toast({
         title: "✅ Logs limpos com sucesso",
         description: `${data.deletedCount} registro(s) removido(s)`,
