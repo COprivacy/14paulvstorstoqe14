@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PlayCircle, CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { PlayCircle, CheckCircle, XCircle, AlertTriangle, Loader2, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -28,15 +27,17 @@ export default function TestSuite() {
   const [results, setResults] = useState<TestResult[]>([]);
   const [summary, setSummary] = useState<TestSummary | null>(null);
   const { toast } = useToast();
+  const [user, setUser] = useState<any>(null); // State to store user information
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");
     if (userStr) {
-      const user = JSON.parse(userStr);
+      const parsedUser = JSON.parse(userStr);
+      setUser(parsedUser); // Store user info in state
       console.log("🧪 [TestSuite] Usuário autenticado:", {
-        id: user.id,
-        email: user.email,
-        isAdmin: user.is_admin
+        id: parsedUser.id,
+        email: parsedUser.email,
+        isAdmin: parsedUser.is_admin
       });
     } else {
       console.log("⚠️ [TestSuite] Nenhum usuário no localStorage");
@@ -107,24 +108,55 @@ export default function TestSuite() {
             Execute testes completos do sistema para validar funcionalidades
           </p>
         </div>
-        <Button
-          onClick={runTests}
-          disabled={isRunning}
-          size="lg"
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          {isRunning ? (
-            <>
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              Executando...
-            </>
-          ) : (
-            <>
-              <PlayCircle className="h-5 w-5 mr-2" />
-              Executar Todos os Testes
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={runTests}
+            disabled={isRunning}
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isRunning ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Executando...
+              </>
+            ) : (
+              <>
+                <PlayCircle className="h-5 w-5 mr-2" />
+                Executar Todos os Testes
+              </>
+            )}
+          </Button>
+
+          <Button
+            onClick={async () => {
+              try {
+                const res = await fetch('/api/admin/force-block-employees/929cc121-fa29-4a09-b996-2e28a4ec84f7', {
+                  method: 'POST',
+                  headers: {
+                    'x-user-id': user?.id || '',
+                    'x-is-admin': 'true',
+                  },
+                });
+                const data = await res.json();
+                if (data.success) {
+                  alert(`✅ ${data.funcionariosBloqueados} funcionário(s) bloqueado(s) com sucesso!`);
+                  runTests(); // Re-executar testes para verificar
+                } else {
+                  alert(`❌ Erro: ${data.error || data.message}`);
+                }
+              } catch (error) {
+                alert(`❌ Erro ao bloquear funcionários: ${error}`);
+              }
+            }}
+            variant="destructive"
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            <Shield className="h-5 w-5 mr-2" />
+            Bloquear Funcionários (claudete@gmail.com)
+          </Button>
+        </div>
       </div>
 
       {/* Resumo dos Testes */}

@@ -1411,6 +1411,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // 3. Bloquear todos os funcionários desta conta
+      // REGRA CRÍTICA: Quando o plano principal é bloqueado/cancelado,
+      // TODOS os funcionários devem ser bloqueados, independente de pacotes ativos
       let funcionariosBloqueados = 0;
       if (storage.getFuncionarios) {
         const funcionarios = await storage.getFuncionarios();
@@ -1421,6 +1423,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: 'bloqueado',
           });
           funcionariosBloqueados++;
+
+          logger.warn('[PAYMENT_CANCEL] Funcionário bloqueado devido ao cancelamento da conta principal', {
+            funcionarioId: funcionario.id,
+            funcionarioNome: funcionario.nome,
+            contaId: subscription.user_id,
+            motivo: 'Plano principal cancelado'
+          });
+        }
+
+        if (funcionariosBloqueados > 0) {
+          logger.info(`[PAYMENT_CANCEL] TODOS os ${funcionariosBloqueados} funcionário(s) bloqueado(s)`, {
+            contaId: subscription.user_id,
+            userEmail: user.email,
+          });
         }
       }
 
@@ -5798,6 +5814,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+  // Endpoint para forçar bloqueio de funcionários de uma conta
+  app.post("/api/admin/force-block-employees/:userId", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+
+      // Buscar o usuário
+      const users = await storage.getUsers();
+      const user = users.find(u => u.id === userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+
+      // Verificar se o usuário está bloqueado
+      if (user.status !== 'bloqueado') {
+        return res.status(400).json({ 
+          error: "Usuário não está bloqueado",
+          message: "Apenas funcionários de contas bloqueadas podem ser bloqueados em massa"
+        });
+      }
+
+      // Bloquear todos os funcionários desta conta
+      let funcionariosBloqueados = 0;
+      if (storage.getFuncionarios) {
+        const funcionarios = await storage.getFuncionarios();
+        const funcionariosDaConta = funcionarios.filter(f => f.conta_id === userId);
+
+        for (const funcionario of funcionariosDaConta) {
+          if (funcionario.status !== 'bloqueado') {
+            await storage.updateFuncionario(funcionario.id, {
+              status: 'bloqueado',
+            });
+            funcionariosBloqueados++;
+
+            logger.info('[ADMIN_ACTION] Funcionário bloqueado manualmente', {
+              funcionarioId: funcionario.id,
+              funcionarioNome: funcionario.nome,
+              contaId: userId,
+              motivo: 'Conta principal bloqueada'
+            });
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `${funcionariosBloqueados} funcionário(s) bloqueado(s) com sucesso`,
+        userId,
+        funcionariosBloqueados,
+        userEmail: user.email
+      });
+
+    } catch (error: any) {
+      console.error("Erro ao bloquear funcionários:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // Verificar status de bloqueio do usuário
   app.get("/api/user/check-blocked", async (req, res) => {

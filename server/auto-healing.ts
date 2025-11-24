@@ -1,4 +1,3 @@
-
 import { storage } from './storage';
 import { logger } from './logger';
 import { drizzle } from 'drizzle-orm/neon-serverless';
@@ -62,6 +61,7 @@ class AutoHealingService {
   async runHealthChecks() {
     logger.info('Iniciando verificações de saúde', 'AUTO_HEALING');
     this.healthChecks = [];
+    let autoFixCount = 0; // Contador para correções automáticas
 
     // 1. Verificar conexão com banco de dados
     await this.checkDatabaseConnection();
@@ -79,12 +79,14 @@ class AutoHealingService {
     await this.checkDataIntegrity();
 
     // 6. Verificar módulos do sistema
-    await this.checkSystemModules();
+    const moduleChecks = await this.checkSystemModules();
+    this.healthChecks.push(...moduleChecks); // Adiciona os resultados das verificações de módulo
 
     // Registrar resumo
     const critical = this.healthChecks.filter(h => h.status === 'critical').length;
     const degraded = this.healthChecks.filter(h => h.status === 'degraded').length;
     const autoFixed = this.healthChecks.filter(h => h.autoFixed).length;
+
 
     logger.info('Verificações de saúde concluídas', 'AUTO_HEALING', {
       total: this.healthChecks.length,
@@ -149,7 +151,7 @@ class AutoHealingService {
 
       if (missingTables.length > 0) {
         this.addHealthCheck('database_schema', 'critical', `Tabelas faltando: ${missingTables.join(', ')}`);
-        
+
         // Tentar recriar tabelas automaticamente
         const fixResult = await this.autoFixDatabaseSchema(missingTables);
         if (fixResult.success) {
@@ -201,7 +203,7 @@ class AutoHealingService {
 
       if (memPercent > 95) {
         this.addHealthCheck('memory_usage', 'critical', `Memória crítica: ${memPercent.toFixed(1)}% (${memUsedMB}MB/${memTotalMB}MB)`);
-        
+
         // Tentar liberar memória
         const fixResult = await this.autoFixMemoryUsage();
         if (fixResult.success) {
@@ -227,7 +229,7 @@ class AutoHealingService {
 
       if (usersWithoutPlan.length > 0) {
         this.addHealthCheck('data_integrity_plans', 'degraded', `${usersWithoutPlan.length} usuários sem plano definido`);
-        
+
         // Corrigir automaticamente
         const fixResult = await this.autoFixUserPlans(usersWithoutPlan);
         if (fixResult.success) {
@@ -255,7 +257,10 @@ class AutoHealingService {
   }
 
   // 6. Verificar módulos do sistema
-  private async checkSystemModules(): Promise<void> {
+  private async checkSystemModules(): Promise<HealthCheck[]> {
+    const checks: HealthCheck[] = [];
+    let autoFixCount = 0; // Contador para correções automáticas dentro deste método
+
     // Módulo de Estoque
     try {
       const produtos = await storage.getProdutos();
@@ -266,12 +271,30 @@ class AutoHealingService {
       });
 
       if (produtosVencidos.length > 10) {
-        this.addHealthCheck('module_estoque', 'degraded', `${produtosVencidos.length} produtos vencidos no estoque`);
+        checks.push({
+          service: 'module_estoque',
+          status: 'degraded',
+          message: `${produtosVencidos.length} produtos vencidos no estoque`,
+          timestamp: new Date().toISOString(),
+          autoFixed: false
+        });
       } else {
-        this.addHealthCheck('module_estoque', 'healthy', `Estoque OK: ${produtosAtivos.length} produtos ativos`);
+        checks.push({
+          service: 'module_estoque',
+          status: 'healthy',
+          message: `Estoque OK: ${produtosAtivos.length} produtos ativos`,
+          timestamp: new Date().toISOString(),
+          autoFixed: false
+        });
       }
     } catch (error: any) {
-      this.addHealthCheck('module_estoque', 'critical', `Módulo de Estoque com erro: ${error.message}`);
+      checks.push({
+        service: 'module_estoque',
+        status: 'critical',
+        message: `Módulo de Estoque com erro: ${error.message}`,
+        timestamp: new Date().toISOString(),
+        autoFixed: false
+      });
     }
 
     // Módulo Financeiro
@@ -283,12 +306,30 @@ class AutoHealingService {
       });
 
       if (contasVencidas.length > 5) {
-        this.addHealthCheck('module_financeiro', 'degraded', `${contasVencidas.length} contas a pagar vencidas`);
+        checks.push({
+          service: 'module_financeiro',
+          status: 'degraded',
+          message: `${contasVencidas.length} contas a pagar vencidas`,
+          timestamp: new Date().toISOString(),
+          autoFixed: false
+        });
       } else {
-        this.addHealthCheck('module_financeiro', 'healthy', `Financeiro OK: ${contas.length} contas cadastradas`);
+        checks.push({
+          service: 'module_financeiro',
+          status: 'healthy',
+          message: `Financeiro OK: ${contas.length} contas cadastradas`,
+          timestamp: new Date().toISOString(),
+          autoFixed: false
+        });
       }
     } catch (error: any) {
-      this.addHealthCheck('module_financeiro', 'critical', `Módulo Financeiro com erro: ${error.message}`);
+      checks.push({
+        service: 'module_financeiro',
+        status: 'critical',
+        message: `Módulo Financeiro com erro: ${error.message}`,
+        timestamp: new Date().toISOString(),
+        autoFixed: false
+      });
     }
 
     // Módulo PDV/Vendas
@@ -297,9 +338,21 @@ class AutoHealingService {
       const hoje = new Date().toISOString().split('T')[0];
       const vendasHoje = vendas.filter(v => v.data?.startsWith(hoje));
 
-      this.addHealthCheck('module_pdv', 'healthy', `PDV operacional: ${vendasHoje.length} vendas hoje`);
+      checks.push({
+        service: 'module_pdv',
+        status: 'healthy',
+        message: `PDV operacional: ${vendasHoje.length} vendas hoje`,
+        timestamp: new Date().toISOString(),
+        autoFixed: false
+      });
     } catch (error: any) {
-      this.addHealthCheck('module_pdv', 'critical', `Módulo PDV com erro: ${error.message}`);
+      checks.push({
+        service: 'module_pdv',
+        status: 'critical',
+        message: `Módulo PDV com erro: ${error.message}`,
+        timestamp: new Date().toISOString(),
+        autoFixed: false
+      });
     }
 
     // Módulo Admin
@@ -309,12 +362,30 @@ class AutoHealingService {
       const funcionarios = await storage.getFuncionarios?.() || [];
 
       if (admins.length === 0) {
-        this.addHealthCheck('module_admin', 'critical', 'Nenhum administrador cadastrado');
+        checks.push({
+          service: 'module_admin',
+          status: 'critical',
+          message: 'Nenhum administrador cadastrado',
+          timestamp: new Date().toISOString(),
+          autoFixed: false
+        });
       } else {
-        this.addHealthCheck('module_admin', 'healthy', `Admin OK: ${admins.length} admins, ${funcionarios.length} funcionários`);
+        checks.push({
+          service: 'module_admin',
+          status: 'healthy',
+          message: `Admin OK: ${admins.length} admins, ${funcionarios.length} funcionários`,
+          timestamp: new Date().toISOString(),
+          autoFixed: false
+        });
       }
     } catch (error: any) {
-      this.addHealthCheck('module_admin', 'critical', `Módulo Admin com erro: ${error.message}`);
+      checks.push({
+        service: 'module_admin',
+        status: 'critical',
+        message: `Módulo Admin com erro: ${error.message}`,
+        timestamp: new Date().toISOString(),
+        autoFixed: false
+      });
     }
 
     // Módulo de Caixa
@@ -324,16 +395,122 @@ class AutoHealingService {
         const caixasAbertos = caixas.filter((c: any) => c.status === 'aberto');
 
         if (caixasAbertos.length > 50) {
-          this.addHealthCheck('module_caixa', 'degraded', `Muitos caixas abertos: ${caixasAbertos.length}`);
+          checks.push({
+            service: 'module_caixa',
+            status: 'degraded',
+            message: `Muitos caixas abertos: ${caixasAbertos.length}`,
+            timestamp: new Date().toISOString(),
+            autoFixed: false
+          });
         } else {
-          this.addHealthCheck('module_caixa', 'healthy', `Caixa OK: ${caixasAbertos.length} caixas abertos`);
+          checks.push({
+            service: 'module_caixa',
+            status: 'healthy',
+            message: `Caixa OK: ${caixasAbertos.length} caixas abertos`,
+            timestamp: new Date().toISOString(),
+            autoFixed: false
+          });
         }
       } else {
-        this.addHealthCheck('module_caixa', 'healthy', 'Módulo de Caixa disponível');
+        checks.push({
+          service: 'module_caixa',
+          status: 'healthy',
+          message: 'Módulo de Caixa disponível',
+          timestamp: new Date().toISOString(),
+          autoFixed: false
+        });
       }
     } catch (error: any) {
-      this.addHealthCheck('module_caixa', 'critical', `Módulo Caixa com erro: ${error.message}`);
+      checks.push({
+        service: 'module_caixa',
+        status: 'critical',
+        message: `Módulo Caixa com erro: ${error.message}`,
+        timestamp: new Date().toISOString(),
+        autoFixed: false
+      });
     }
+
+    // Verificar contas bloqueadas com planos ativos
+    try {
+      const users = await storage.getUsers();
+      const blockedWithActivePlan = users.filter(
+        u => u.status === 'bloqueado' && u.plano && u.plano !== 'free'
+      );
+
+      if (blockedWithActivePlan.length > 0) {
+        checks.push({
+          service: 'account_status',
+          status: 'degraded',
+          message: `${blockedWithActivePlan.length} conta(s) bloqueada(s) com plano ativo`,
+          timestamp: new Date().toISOString(),
+          autoFixed: false
+        });
+      }
+    } catch (error: any) {
+      logger.error('[AUTO_HEALING] Erro ao verificar contas bloqueadas', { error });
+    }
+
+    // Verificar funcionários ativos em contas bloqueadas
+    try {
+      if (storage.getFuncionarios) {
+        const users = await storage.getUsers();
+        const blockedUsers = users.filter(u => u.status === 'bloqueado');
+        const funcionarios = await storage.getFuncionarios();
+
+        let inconsistenciasEncontradas = 0;
+        let funcionariosCorrigidos = 0;
+
+        for (const user of blockedUsers) {
+          const funcionariosDaConta = funcionarios.filter(
+            f => f.conta_id === user.id && f.status === 'ativo'
+          );
+
+          if (funcionariosDaConta.length > 0) {
+            inconsistenciasEncontradas += funcionariosDaConta.length;
+
+            // Auto-fix: Bloquear funcionários automaticamente
+            for (const funcionario of funcionariosDaConta) {
+              try {
+                await storage.updateFuncionario(funcionario.id, {
+                  status: 'bloqueado',
+                });
+                funcionariosCorrigidos++;
+
+                logger.warn('[AUTO_HEALING] Funcionário bloqueado automaticamente', {
+                  funcionarioId: funcionario.id,
+                  funcionarioNome: funcionario.nome,
+                  contaId: user.id,
+                  contaEmail: user.email,
+                  motivo: 'Conta principal bloqueada (auto-healing)'
+                });
+              } catch (error: any) {
+                logger.error('[AUTO_HEALING] Erro ao bloquear funcionário', {
+                  funcionarioId: funcionario.id,
+                  error: error.message
+                });
+              }
+            }
+          }
+        }
+
+        if (inconsistenciasEncontradas > 0) {
+          checks.push({
+            service: 'employee_status_in_blocked_accounts',
+            status: funcionariosCorrigidos === inconsistenciasEncontradas ? 'healthy' : 'critical',
+            message: `${inconsistenciasEncontradas} funcionário(s) encontrado(s) em contas bloqueadas. ${funcionariosCorrigidos} corrigido(s) automaticamente.`,
+            timestamp: new Date().toISOString(),
+            autoFixed: funcionariosCorrigidos === inconsistenciasEncontradas,
+          });
+
+          autoFixCount += funcionariosCorrigidos;
+        }
+      }
+    } catch (error: any) {
+      logger.error('[AUTO_HEALING] Erro ao verificar funcionários em contas bloqueadas', { error: error.message });
+    }
+
+
+    return checks;
   }
 
   // AUTO-FIXES (Correções Automáticas)
@@ -341,10 +518,10 @@ class AutoHealingService {
   private async autoFixDatabaseConnection(): Promise<AutoFixResult> {
     try {
       logger.info('Tentando reconectar ao banco de dados...', 'AUTO_HEALING');
-      
+
       // Aguardar 2 segundos e tentar novamente
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       const pool = new Pool({ connectionString: process.env.DATABASE_URL });
       const db = drizzle(pool);
       await db.execute(sql`SELECT 1`);
@@ -369,10 +546,10 @@ class AutoHealingService {
   private async autoFixDatabaseSchema(missingTables: string[]): Promise<AutoFixResult> {
     try {
       logger.warn('⚠️ Tentando recriar tabelas faltantes...', 'AUTO_HEALING', { tables: missingTables });
-      
+
       // Aqui você poderia executar migrations automaticamente
       // Por segurança, apenas logar o problema para correção manual
-      
+
       return {
         success: false,
         message: 'Schema requer correção manual',
@@ -390,18 +567,18 @@ class AutoHealingService {
   private async autoFixMemoryUsage(): Promise<AutoFixResult> {
     try {
       logger.info('Executando garbage collection...', 'AUTO_HEALING');
-      
+
       if (global.gc) {
         global.gc();
         logger.info('✅ Garbage collection executado', 'AUTO_HEALING');
-        
+
         return {
           success: true,
           message: 'Memória liberada automaticamente',
           action: 'memory_gc'
         };
       }
-      
+
       return {
         success: false,
         message: 'GC não disponível (execute com --expose-gc)',
@@ -419,13 +596,13 @@ class AutoHealingService {
   private async autoFixUserPlans(users: any[]): Promise<AutoFixResult> {
     try {
       logger.info('Corrigindo usuários sem plano...', 'AUTO_HEALING', { count: users.length });
-      
+
       for (const user of users) {
         await storage.updateUser(user.id, { plano: 'free' });
       }
-      
+
       logger.info('✅ Planos corrigidos automaticamente', 'AUTO_HEALING', { count: users.length });
-      
+
       return {
         success: true,
         message: `${users.length} usuários corrigidos para plano free`,
