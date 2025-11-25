@@ -1,0 +1,2868 @@
+2025-Nov-25 18:52:41.086331
+Starting deployment of c-oprivacy/-controlede-estoque:main-wwk80k0wcc0cgooww8004c8c to localhost.
+2025-Nov-25 18:52:41.558528
+Preparing container with helper image: ghcr.io/coollabsio/coolify-helper:1.0.12
+2025-Nov-25 18:52:41.709549
+[CMD]: docker stop --time=30 awkgs0swgowww8g0ckow0kww
+2025-Nov-25 18:52:41.709549
+Error response from daemon: No such container: awkgs0swgowww8g0ckow0kww
+2025-Nov-25 18:52:41.850558
+[CMD]: docker rm -f awkgs0swgowww8g0ckow0kww
+2025-Nov-25 18:52:41.850558
+Error response from daemon: No such container: awkgs0swgowww8g0ckow0kww
+2025-Nov-25 18:52:42.122542
+[CMD]: docker run -d --network coolify --name awkgs0swgowww8g0ckow0kww  --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/coollabsio/coolify-helper:1.0.12
+2025-Nov-25 18:52:42.122542
+82e5d3d3a8bdd76661313fcc5a32a7cb05133c9e5b836dd047dc9929647f3bcc
+2025-Nov-25 18:52:43.434909
+[CMD]: docker exec awkgs0swgowww8g0ckow0kww bash -c 'GIT_SSH_COMMAND="ssh -o ConnectTimeout=30 -p 22 -o Port=22 -o LogLevel=ERROR -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git ls-remote https://github.com/COprivacy/ControledeEstoque refs/heads/main'
+2025-Nov-25 18:52:43.434909
+111485bba415fddb2da73fc630fe27c66d638f5c	refs/heads/main
+2025-Nov-25 18:52:43.452257
+----------------------------------------
+2025-Nov-25 18:52:43.459166
+Importing COprivacy/ControledeEstoque:main (commit sha 111485bba415fddb2da73fc630fe27c66d638f5c) to /artifacts/awkgs0swgowww8g0ckow0kww.
+2025-Nov-25 18:52:43.669811
+[CMD]: docker exec awkgs0swgowww8g0ckow0kww bash -c 'git clone --depth=1 --recurse-submodules --shallow-submodules -b 'main' 'https://github.com/COprivacy/ControledeEstoque' '/artifacts/awkgs0swgowww8g0ckow0kww' && cd '/artifacts/awkgs0swgowww8g0ckow0kww' && if [ -f .gitmodules ]; then sed -i "s#git@\(.*\):#https://\1/#g" '/artifacts/awkgs0swgowww8g0ckow0kww'/.gitmodules || true && git submodule sync && GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git submodule update --init --recursive --depth=1; fi && cd '/artifacts/awkgs0swgowww8g0ckow0kww' && GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git lfs pull'
+2025-Nov-25 18:52:43.669811
+Cloning into '/artifacts/awkgs0swgowww8g0ckow0kww'...
+2025-Nov-25 18:52:48.304626
+Updating files:  90% (553/613)
+2025-Nov-25 18:52:48.367778
+Updating files:  91% (558/613)
+2025-Nov-25 18:52:48.380603
+Updating files:  92% (564/613)
+2025-Nov-25 18:52:48.393329
+Updating files:  93% (571/613)
+2025-Nov-25 18:52:48.404394
+Updating files:  94% (577/613)
+Updating files:  95% (583/613)
+2025-Nov-25 18:52:48.414402
+Updating files:  96% (589/613)
+2025-Nov-25 18:52:48.427469
+Updating files:  97% (595/613)
+Updating files:  98% (601/613)
+Updating files:  99% (607/613)
+2025-Nov-25 18:52:48.437491
+Updating files: 100% (613/613)
+Updating files: 100% (613/613), done.
+2025-Nov-25 18:52:49.359829
+[CMD]: docker exec awkgs0swgowww8g0ckow0kww bash -c 'cd /artifacts/awkgs0swgowww8g0ckow0kww && git log -1 111485bba415fddb2da73fc630fe27c66d638f5c --pretty=%B'
+2025-Nov-25 18:52:49.359829
+Assistant checkpoint
+2025-Nov-25 18:52:49.374882
+Assistant generated file changes:
+2025-Nov-25 18:52:49.374882
+- DEPLOY_COOLIFY.md: Criar guia completo de deploy no Coolify
+2025-Nov-25 18:52:49.374882
+2025-Nov-25 18:52:49.374882
+---
+2025-Nov-25 18:52:49.374882
+2025-Nov-25 18:52:49.374882
+User prompt:
+2025-Nov-25 18:52:49.374882
+2025-Nov-25 18:52:49.374882
+diz que não é possivel editar kkkk como que vou colocar o codigo então né
+2025-Nov-25 18:52:49.374882
+2025-Nov-25 18:52:49.374882
+Replit-Commit-Author: Assistant
+2025-Nov-25 18:52:49.374882
+Replit-Commit-Session-Id: 6a963889-9823-42a0-88e1-b5a7615636cc
+2025-Nov-25 18:52:49.374882
+Replit-Commit-Event-Id: fb461d7b-d60b-45dc-a7c0-f714124eef32
+2025-Nov-25 18:52:54.354196
+[CMD]: docker exec awkgs0swgowww8g0ckow0kww bash -c 'test -f /artifacts/awkgs0swgowww8g0ckow0kww/Dockerfile && echo 'exists' || echo 'not found''
+2025-Nov-25 18:52:54.354196
+exists
+2025-Nov-25 18:52:54.656523
+[CMD]: docker exec awkgs0swgowww8g0ckow0kww bash -c 'cat /artifacts/awkgs0swgowww8g0ckow0kww/Dockerfile'
+2025-Nov-25 18:52:54.656523
+# syntax = docker/dockerfile:1
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Adjust NODE_VERSION as desired
+2025-Nov-25 18:52:54.656523
+ARG NODE_VERSION=20.18.0
+2025-Nov-25 18:52:54.656523
+FROM node:${NODE_VERSION}-slim AS base
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+LABEL fly_launch_runtime="Node.js"
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Node.js app lives here
+2025-Nov-25 18:52:54.656523
+WORKDIR /app
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Set production environment
+2025-Nov-25 18:52:54.656523
+ENV NODE_ENV="production"
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Throw-away build stage to reduce size of final image
+2025-Nov-25 18:52:54.656523
+FROM base AS build
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Install packages needed to build node modules
+2025-Nov-25 18:52:54.656523
+RUN apt-get update -qq && \
+2025-Nov-25 18:52:54.656523
+apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3 && \
+2025-Nov-25 18:52:54.656523
+rm -rf /var/lib/apt/lists/*
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Install node modules
+2025-Nov-25 18:52:54.656523
+COPY package-lock.json package.json ./
+2025-Nov-25 18:52:54.656523
+RUN npm ci --include=dev
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Copy application code
+2025-Nov-25 18:52:54.656523
+COPY . .
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Build application
+2025-Nov-25 18:52:54.656523
+RUN npm run build
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Remove development dependencies
+2025-Nov-25 18:52:54.656523
+RUN npm prune --omit=dev
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Final stage for app image
+2025-Nov-25 18:52:54.656523
+FROM base
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Install wget for healthcheck
+2025-Nov-25 18:52:54.656523
+RUN apt-get update -qq && \
+2025-Nov-25 18:52:54.656523
+apt-get install --no-install-recommends -y wget && \
+2025-Nov-25 18:52:54.656523
+rm -rf /var/lib/apt/lists/*
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Copy built application
+2025-Nov-25 18:52:54.656523
+COPY --from=build /app /app
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Expose port
+2025-Nov-25 18:52:54.656523
+EXPOSE 5000
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Health check endpoint
+2025-Nov-25 18:52:54.656523
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+2025-Nov-25 18:52:54.656523
+CMD wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1
+2025-Nov-25 18:52:54.656523
+2025-Nov-25 18:52:54.656523
+# Start the server
+2025-Nov-25 18:52:54.656523
+CMD [ "npm", "run", "start" ]
+2025-Nov-25 18:52:54.846316
+Added 54 ARG declarations to Dockerfile for service app (multi-stage build, added to 3 stages).
+2025-Nov-25 18:52:54.853426
+Pulling & building required images.
+2025-Nov-25 18:52:54.890499
+Creating build-time .env file in /artifacts (outside Docker context).
+2025-Nov-25 18:52:55.341072
+[CMD]: docker exec awkgs0swgowww8g0ckow0kww bash -c 'cat /artifacts/build-time.env'
+2025-Nov-25 18:52:55.341072
+SOURCE_COMMIT='111485bba415fddb2da73fc630fe27c66d638f5c'
+2025-Nov-25 18:52:55.341072
+COOLIFY_URL=''
+2025-Nov-25 18:52:55.341072
+COOLIFY_FQDN=''
+2025-Nov-25 18:52:55.341072
+SERVICE_NAME_APP='app'
+2025-Nov-25 18:52:55.341072
+SERVICE_URL_APP='http://dgkskkggcooocss008cco4ks.151.244.242.242.sslip.io'
+2025-Nov-25 18:52:55.341072
+SERVICE_FQDN_APP='dgkskkggcooocss008cco4ks.151.244.242.242.sslip.io'
+2025-Nov-25 18:52:55.341072
+ASAAS_API_KEY=""
+2025-Nov-25 18:52:55.341072
+DATABASE_URL=""
+2025-Nov-25 18:52:55.341072
+MASTER_ADMIN_PASSWORD=""
+2025-Nov-25 18:52:55.341072
+MASTER_USER_EMAIL=""
+2025-Nov-25 18:52:55.341072
+MASTER_USER_PASSWORD=""
+2025-Nov-25 18:52:55.341072
+MERCADOPAGO_ACCESS_TOKEN=""
+2025-Nov-25 18:52:55.341072
+PORT="5000"
+2025-Nov-25 18:52:55.341072
+PUBLIC_ADMIN_PASSWORD=""
+2025-Nov-25 18:52:55.341072
+SMTP_FROM=""
+2025-Nov-25 18:52:55.341072
+SMTP_HOST=""
+2025-Nov-25 18:52:55.341072
+SMTP_PASSWORD=""
+2025-Nov-25 18:52:55.341072
+SMTP_PORT=""
+2025-Nov-25 18:52:55.341072
+SMTP_USER=""
+2025-Nov-25 18:52:55.355539
+Adding build arguments to Docker Compose build command.
+2025-Nov-25 18:52:56.213586
+[CMD]: docker exec awkgs0swgowww8g0ckow0kww bash -c 'SOURCE_COMMIT=111485bba415fddb2da73fc630fe27c66d638f5c COOLIFY_BRANCH=main COOLIFY_RESOURCE_UUID=uo4kwkgs8gks8w88g000go04 COOLIFY_CONTAINER_NAME=uo4kwkgs8gks8w88g000go04-185238709109  docker compose --env-file /artifacts/build-time.env --project-name uo4kwkgs8gks8w88g000go04 --project-directory /artifacts/awkgs0swgowww8g0ckow0kww -f /artifacts/awkgs0swgowww8g0ckow0kww/docker-compose.yml build --pull --build-arg SOURCE_COMMIT --build-arg COOLIFY_URL --build-arg COOLIFY_FQDN --build-arg SERVICE_FQDN_APP --build-arg SERVICE_URL_APP --build-arg ASAAS_API_KEY --build-arg DATABASE_URL --build-arg MASTER_ADMIN_PASSWORD --build-arg MASTER_USER_EMAIL --build-arg MASTER_USER_PASSWORD --build-arg MERCADOPAGO_ACCESS_TOKEN --build-arg PORT --build-arg PUBLIC_ADMIN_PASSWORD --build-arg SMTP_FROM --build-arg SMTP_HOST --build-arg SMTP_PASSWORD --build-arg SMTP_PORT --build-arg SMTP_USER --build-arg COOLIFY_BUILD_SECRETS_HASH=7e9dde4408c1bcc22931283e130f3b1f9d848060f785024653061708cf1d897d'
+2025-Nov-25 18:52:56.213586
+#1 [internal] load local bake definitions
+2025-Nov-25 18:52:56.371576
+#1 reading from stdin 1.22kB done
+2025-Nov-25 18:52:56.371576
+#1 DONE 0.0s
+2025-Nov-25 18:52:56.812158
+2025-Nov-25 18:52:56.820169
+#2 [internal] load build definition from Dockerfile
+2025-Nov-25 18:52:56.820169
+#2 transferring dockerfile: 2.33kB 0.0s done
+2025-Nov-25 18:52:56.820169
+#2 DONE 0.0s
+2025-Nov-25 18:52:56.820169
+2025-Nov-25 18:52:56.820169
+#3 resolve image config for docker-image://docker.io/docker/dockerfile:1
+2025-Nov-25 18:52:58.358487
+#3 DONE 1.7s
+2025-Nov-25 18:52:58.540044
+#4 docker-image://docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6
+2025-Nov-25 18:52:58.540044
+#4 resolve docker.io/docker/dockerfile:1@sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6 0.1s done
+2025-Nov-25 18:52:58.540044
+#4 sha256:b6afd42430b15f2d2a4c5a02b919e98a525b785b1aaff16747d2f623364e39b6 8.40kB / 8.40kB done
+2025-Nov-25 18:52:58.540044
+#4 sha256:62b0eac4b38b65f257ba2525a1bc87978b5e339d6133b5daef1bde40fe7aa10f 850B / 850B done
+2025-Nov-25 18:52:58.540044
+#4 sha256:6742480c08d7878bbb82a5f5b55d7cb17c5dea60d2068cb2bd37994f3a5c680e 1.33kB / 1.33kB done
+2025-Nov-25 18:52:58.540044
+#4 sha256:77246a01651da592b7bae79e0e20ed3b4f2e4c00a1b54b7c921c91ae3fa9ef07 0B / 13.57MB 0.1s
+2025-Nov-25 18:52:58.841111
+#4 sha256:77246a01651da592b7bae79e0e20ed3b4f2e4c00a1b54b7c921c91ae3fa9ef07 2.10MB / 13.57MB 0.3s
+2025-Nov-25 18:52:58.936010
+#4 sha256:77246a01651da592b7bae79e0e20ed3b4f2e4c00a1b54b7c921c91ae3fa9ef07 5.00MB / 13.57MB 0.5s
+2025-Nov-25 18:52:59.075302
+#4 sha256:77246a01651da592b7bae79e0e20ed3b4f2e4c00a1b54b7c921c91ae3fa9ef07 7.34MB / 13.57MB 0.6s
+2025-Nov-25 18:52:59.163748
+#4 sha256:77246a01651da592b7bae79e0e20ed3b4f2e4c00a1b54b7c921c91ae3fa9ef07 11.54MB / 13.57MB 0.7s
+2025-Nov-25 18:52:59.304995
+#4 sha256:77246a01651da592b7bae79e0e20ed3b4f2e4c00a1b54b7c921c91ae3fa9ef07 13.57MB / 13.57MB 0.7s done
+2025-Nov-25 18:52:59.304995
+#4 extracting sha256:77246a01651da592b7bae79e0e20ed3b4f2e4c00a1b54b7c921c91ae3fa9ef07 0.1s
+2025-Nov-25 18:52:59.950987
+#4 extracting sha256:77246a01651da592b7bae79e0e20ed3b4f2e4c00a1b54b7c921c91ae3fa9ef07 0.6s done
+2025-Nov-25 18:52:59.950987
+#4 DONE 1.5s
+2025-Nov-25 18:53:00.162004
+#2 [internal] load build definition from Dockerfile
+2025-Nov-25 18:53:00.162004
+#2 transferring dockerfile: 2.33kB 0.0s done
+2025-Nov-25 18:53:00.162004
+#2 DONE 0.0s
+2025-Nov-25 18:53:00.162004
+2025-Nov-25 18:53:00.162004
+#5 [internal] load build definition from Dockerfile
+2025-Nov-25 18:53:00.162004
+#5 DONE 0.0s
+2025-Nov-25 18:53:00.162004
+2025-Nov-25 18:53:00.162004
+#6 [internal] load metadata for docker.io/library/node:20.18.0-slim
+2025-Nov-25 18:53:01.484181
+#6 DONE 1.5s
+2025-Nov-25 18:53:01.596723
+#7 [internal] load .dockerignore
+2025-Nov-25 18:53:01.596723
+#7 transferring context: 294B done
+2025-Nov-25 18:53:01.596723
+#7 DONE 0.0s
+2025-Nov-25 18:53:01.822333
+#8 [base 1/2] FROM docker.io/library/node:20.18.0-slim@sha256:28fbbb764069c698ead61d6a739a7615e8f0e07a4b8fe1473ceca70c1c3d6aaa
+2025-Nov-25 18:53:01.822333
+#8 resolve docker.io/library/node:20.18.0-slim@sha256:28fbbb764069c698ead61d6a739a7615e8f0e07a4b8fe1473ceca70c1c3d6aaa 0.0s done
+2025-Nov-25 18:53:01.822333
+#8 sha256:126e1b242ff4c00860503fe13920a07cd33fb6e6c5f86c582548b7344bb0b73c 0B / 3.31kB 0.1s
+2025-Nov-25 18:53:01.822333
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 0B / 40.76MB 0.1s
+2025-Nov-25 18:53:01.822333
+#8 sha256:28fbbb764069c698ead61d6a739a7615e8f0e07a4b8fe1473ceca70c1c3d6aaa 6.49kB / 6.49kB done
+2025-Nov-25 18:53:01.822333
+#8 sha256:d03fb171820643298e01a9fa30a5bb51b10abb7620c543e2a9755c69771fddc1 1.93kB / 1.93kB done
+2025-Nov-25 18:53:01.822333
+#8 sha256:9925db94a540a445aa028fda657b475f09ef335f27de5287afb6eb4ce654ed45 6.77kB / 6.77kB done
+2025-Nov-25 18:53:01.822333
+#8 sha256:2d429b9e73a6cf90a5bb85105c8118b30a1b2deedeae3ea9587055ffcb80eb45 0B / 29.13MB 0.1s
+2025-Nov-25 18:53:02.129194
+#8 ...
+2025-Nov-25 18:53:02.129194
+2025-Nov-25 18:53:02.129194
+#9 [internal] load build context
+2025-Nov-25 18:53:02.129194
+#9 transferring context: 3.79MB 0.3s done
+2025-Nov-25 18:53:02.129194
+#9 DONE 0.3s
+2025-Nov-25 18:53:02.129194
+2025-Nov-25 18:53:02.129194
+#8 [base 1/2] FROM docker.io/library/node:20.18.0-slim@sha256:28fbbb764069c698ead61d6a739a7615e8f0e07a4b8fe1473ceca70c1c3d6aaa
+2025-Nov-25 18:53:02.343334
+#8 sha256:2d429b9e73a6cf90a5bb85105c8118b30a1b2deedeae3ea9587055ffcb80eb45 11.53MB / 29.13MB 0.6s
+2025-Nov-25 18:53:02.441049
+#8 sha256:2d429b9e73a6cf90a5bb85105c8118b30a1b2deedeae3ea9587055ffcb80eb45 18.87MB / 29.13MB 0.7s
+2025-Nov-25 18:53:02.680440
+#8 sha256:126e1b242ff4c00860503fe13920a07cd33fb6e6c5f86c582548b7344bb0b73c 3.31kB / 3.31kB 0.7s done
+2025-Nov-25 18:53:02.680440
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 3.15MB / 40.76MB 0.9s
+2025-Nov-25 18:53:02.680440
+#8 sha256:2d429b9e73a6cf90a5bb85105c8118b30a1b2deedeae3ea9587055ffcb80eb45 29.13MB / 29.13MB 0.9s
+2025-Nov-25 18:53:02.680440
+#8 sha256:c12a3eabad5091fb18cd95b10e09a45c86a1256ebd46b64300f50096d503305e 0B / 1.71MB 0.9s
+2025-Nov-25 18:53:02.826471
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 10.49MB / 40.76MB 1.1s
+2025-Nov-25 18:53:02.826471
+#8 sha256:2d429b9e73a6cf90a5bb85105c8118b30a1b2deedeae3ea9587055ffcb80eb45 29.13MB / 29.13MB 0.9s done
+2025-Nov-25 18:53:02.826471
+#8 sha256:1513d70a5880982b71dce8ee5754a6327f655ea41dff11a786ba52c5fc71eb85 0B / 448B 1.1s
+2025-Nov-25 18:53:02.922510
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 12.95MB / 40.76MB 1.2s
+2025-Nov-25 18:53:03.078482
+#8 sha256:c12a3eabad5091fb18cd95b10e09a45c86a1256ebd46b64300f50096d503305e 1.05MB / 1.71MB 1.3s
+2025-Nov-25 18:53:03.078482
+#8 extracting sha256:2d429b9e73a6cf90a5bb85105c8118b30a1b2deedeae3ea9587055ffcb80eb45
+2025-Nov-25 18:53:03.226696
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 25.17MB / 40.76MB 1.5s
+2025-Nov-25 18:53:03.226696
+#8 sha256:c12a3eabad5091fb18cd95b10e09a45c86a1256ebd46b64300f50096d503305e 1.71MB / 1.71MB 1.3s done
+2025-Nov-25 18:53:03.226696
+#8 sha256:1513d70a5880982b71dce8ee5754a6327f655ea41dff11a786ba52c5fc71eb85 448B / 448B 1.5s done
+2025-Nov-25 18:53:03.410903
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 27.26MB / 40.76MB 1.6s
+2025-Nov-25 18:53:03.553078
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 36.70MB / 40.76MB 1.8s
+2025-Nov-25 18:53:03.728151
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 38.80MB / 40.76MB 1.9s
+2025-Nov-25 18:53:03.949108
+#8 sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 40.76MB / 40.76MB 2.1s done
+2025-Nov-25 18:53:07.906146
+#8 extracting sha256:2d429b9e73a6cf90a5bb85105c8118b30a1b2deedeae3ea9587055ffcb80eb45 4.8s done
+2025-Nov-25 18:53:07.906146
+#8 extracting sha256:126e1b242ff4c00860503fe13920a07cd33fb6e6c5f86c582548b7344bb0b73c done
+2025-Nov-25 18:53:08.041068
+#8 extracting sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 0.1s
+2025-Nov-25 18:53:10.764636
+#8 extracting sha256:c93105b35e167b45467e5b86e220e65e83f7ac848a296d207c1b30e3c56dfea4 2.7s done
+2025-Nov-25 18:53:10.764636
+#8 extracting sha256:c12a3eabad5091fb18cd95b10e09a45c86a1256ebd46b64300f50096d503305e
+2025-Nov-25 18:53:11.006617
+#8 extracting sha256:c12a3eabad5091fb18cd95b10e09a45c86a1256ebd46b64300f50096d503305e 0.2s done
+2025-Nov-25 18:53:11.006617
+#8 extracting sha256:1513d70a5880982b71dce8ee5754a6327f655ea41dff11a786ba52c5fc71eb85 done
+2025-Nov-25 18:53:11.116419
+#8 DONE 9.4s
+2025-Nov-25 18:53:11.116419
+2025-Nov-25 18:53:11.116419
+#10 [base 2/2] WORKDIR /app
+2025-Nov-25 18:53:11.116419
+#10 DONE 0.1s
+2025-Nov-25 18:53:11.307475
+#11 [stage-2 1/2] RUN apt-get update -qq &&     apt-get install --no-install-recommends -y wget &&     rm -rf /var/lib/apt/lists/*
+2025-Nov-25 18:53:20.779812
+#11 9.661 Reading package lists...
+2025-Nov-25 18:53:21.230140
+#11 ...
+2025-Nov-25 18:53:21.230140
+2025-Nov-25 18:53:21.230140
+#12 [build 1/6] RUN apt-get update -qq &&     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3 &&     rm -rf /var/lib/apt/lists/*
+2025-Nov-25 18:53:21.230140
+#12 9.662 Reading package lists...
+2025-Nov-25 18:53:22.868766
+2025-Nov-25 18:53:23.073214
+#12 11.80 Building dependency tree...
+2025-Nov-25 18:53:23.073214
+#12 ...
+2025-Nov-25 18:53:23.073214
+2025-Nov-25 18:53:23.073214
+#11 [stage-2 1/2] RUN apt-get update -qq &&     apt-get install --no-install-recommends -y wget &&     rm -rf /var/lib/apt/lists/*
+2025-Nov-25 18:53:23.073214
+#11 9.661 Reading package lists...
+2025-Nov-25 18:53:23.073214
+#11 11.80 Building dependency tree...
+2025-Nov-25 18:53:23.392811
+2025-Nov-25 18:53:23.554216
+#11 12.28 Reading state information...
+2025-Nov-25 18:53:23.823112
+#11 12.71 The following additional packages will be installed:
+2025-Nov-25 18:53:23.950532
+#11 12.71   libpsl5
+2025-Nov-25 18:53:23.950532
+#11 12.71 Recommended packages:
+2025-Nov-25 18:53:23.950532
+#11 12.71   publicsuffix ca-certificates
+2025-Nov-25 18:53:24.189899
+#11 12.84 The following NEW packages will be installed:
+2025-Nov-25 18:53:24.189899
+#11 12.84   libpsl5 wget
+2025-Nov-25 18:53:24.189899
+#11 12.91 0 upgraded, 2 newly installed, 0 to remove and 33 not upgraded.
+2025-Nov-25 18:53:24.189899
+#11 12.91 Need to get 996 kB of archives.
+2025-Nov-25 18:53:24.189899
+#11 12.91 After this operation, 3704 kB of additional disk space will be used.
+2025-Nov-25 18:53:24.201651
+#11 12.91 Get:1 http://deb.debian.org/debian bookworm/main amd64 libpsl5 amd64 0.21.2-1 [58.7 kB]
+2025-Nov-25 18:53:24.201651
+#11 12.92 Get:2 http://deb.debian.org/debian bookworm/main amd64 wget amd64 1.21.3-1+deb12u1 [937 kB]
+2025-Nov-25 18:53:24.579128
+#11 13.46 debconf: delaying package configuration, since apt-utils is not installed
+2025-Nov-25 18:53:24.707313
+#11 13.59 Fetched 996 kB in 0s (14.9 MB/s)
+2025-Nov-25 18:53:24.805829
+#11 13.65 Selecting previously unselected package libpsl5:amd64.
+2025-Nov-25 18:53:24.830355
+#11 13.65 (Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+2025-Nov-25 18:53:24.990301
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6089 files and directories currently installed.)
+2025-Nov-25 18:53:24.990301
+#11 13.73 Preparing to unpack .../libpsl5_0.21.2-1_amd64.deb ...
+2025-Nov-25 18:53:24.990301
+#11 13.74 Unpacking libpsl5:amd64 (0.21.2-1) ...
+2025-Nov-25 18:53:24.990301
+#11 13.87 Selecting previously unselected package wget.
+2025-Nov-25 18:53:25.151292
+#11 13.88 Preparing to unpack .../wget_1.21.3-1+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:25.151292
+#11 13.88 Unpacking wget (1.21.3-1+deb12u1) ...
+2025-Nov-25 18:53:25.386961
+#11 14.27 Setting up libpsl5:amd64 (0.21.2-1) ...
+2025-Nov-25 18:53:25.560100
+#11 14.28 Setting up wget (1.21.3-1+deb12u1) ...
+2025-Nov-25 18:53:25.560100
+#11 14.29 Processing triggers for libc-bin (2.36-9+deb12u9) ...
+2025-Nov-25 18:53:25.560100
+#11 DONE 14.4s
+2025-Nov-25 18:53:25.560100
+2025-Nov-25 18:53:25.560100
+#12 [build 1/6] RUN apt-get update -qq &&     apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3 &&     rm -rf /var/lib/apt/lists/*
+2025-Nov-25 18:53:25.560100
+#12 11.80 Building dependency tree...
+2025-Nov-25 18:53:25.560100
+#12 12.28 Reading state information...
+2025-Nov-25 18:53:25.560100
+#12 12.83 The following additional packages will be installed:
+2025-Nov-25 18:53:25.560100
+#12 12.83   binutils binutils-common binutils-x86-64-linux-gnu bzip2 cpp cpp-12 dpkg-dev
+2025-Nov-25 18:53:25.560100
+#12 12.83   g++ g++-12 gcc gcc-12 gcc-12-base gyp libasan8 libatomic1 libbinutils
+2025-Nov-25 18:53:25.560100
+#12 12.83   libbrotli1 libc-ares2 libc-bin libc-dev-bin libc6 libc6-dev libcc1-0
+2025-Nov-25 18:53:25.560100
+#12 12.83   libcrypt-dev libctf-nobfd0 libctf0 libdpkg-perl libexpat1 libgcc-12-dev
+2025-Nov-25 18:53:25.560100
+#12 12.83   libgcc-s1 libgdbm-compat4 libgdbm6 libgomp1 libgprofng0 libgssapi-krb5-2
+2025-Nov-25 18:53:25.560100
+#12 12.83   libicu72 libisl23 libitm1 libjansson4 libjs-events libjs-inherits
+2025-Nov-25 18:53:25.560100
+#12 12.83   libk5crypto3 libkeyutils1 libkrb5-3 libkrb5support0 liblsan0 liblzma5
+2025-Nov-25 18:53:25.560100
+#12 12.83   libmpc3 libmpfr6 libncursesw6 libnghttp2-14 libnode-dev libnode108
+2025-Nov-25 18:53:25.560100
+#12 12.83   libnsl-dev libnsl2 libperl5.36 libpkgconf3 libpython3-stdlib
+2025-Nov-25 18:53:25.560100
+#12 12.83   libpython3.11-minimal libpython3.11-stdlib libquadmath0 libreadline8
+2025-Nov-25 18:53:25.560100
+#12 12.83   libsqlite3-0 libssl-dev libssl3 libstdc++-12-dev libstdc++6 libtirpc-common
+2025-Nov-25 18:53:25.560100
+#12 12.83   libtirpc-dev libtirpc3 libtsan2 libubsan1 libuv1 libuv1-dev linux-libc-dev
+2025-Nov-25 18:53:25.560100
+#12 12.83   make media-types node-abbrev node-acorn node-agent-base node-ansi-regex
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-ansi-styles node-aproba node-are-we-there-yet node-balanced-match
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-brace-expansion node-busboy node-chownr node-cjs-module-lexer
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-clone node-color-convert node-color-name node-console-control-strings
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-core-util-is node-data-uri-to-buffer node-debug node-defaults
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-delegates node-encoding node-events node-fancy-log node-fetch
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-fs.realpath node-gauge node-glob node-graceful-fs node-has-unicode
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-https-proxy-agent node-iconv-lite node-inflight node-inherits
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-isarray node-isexe node-jsonparse node-lru-cache node-minimatch
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-minipass node-mkdirp node-ms node-nopt node-npmlog node-once node-osenv
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-process-nextick-args node-readable-stream node-rimraf node-safe-buffer
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-semver node-set-blocking node-signal-exit node-slice-ansi
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-string-decoder node-string-width node-strip-ansi node-tar
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-time-stamp node-undici node-util-deprecate node-wcwidth.js node-which
+2025-Nov-25 18:53:25.560100
+#12 12.83   node-wide-align node-wrappy node-xtend node-yallist nodejs patch perl
+2025-Nov-25 18:53:25.560100
+#12 12.83   perl-base perl-modules-5.36 pkgconf pkgconf-bin python3 python3-minimal
+2025-Nov-25 18:53:25.560100
+#12 12.83   python3-pkg-resources python3-six python3.11 python3.11-minimal
+2025-Nov-25 18:53:25.560100
+#12 12.83   readline-common rpcsvc-proto xz-utils
+2025-Nov-25 18:53:25.560100
+#12 12.84 Suggested packages:
+2025-Nov-25 18:53:25.560100
+#12 12.84   binutils-doc bzip2-doc cpp-doc gcc-12-locales cpp-12-doc debian-keyring
+2025-Nov-25 18:53:25.560100
+#12 12.84   g++-multilib g++-12-multilib gcc-12-doc gcc-multilib manpages-dev autoconf
+2025-Nov-25 18:53:25.560100
+#12 12.84   automake libtool flex bison gdb gcc-doc gcc-12-multilib glibc-doc libc-l10n
+2025-Nov-25 18:53:25.560100
+#12 12.84   locales libnss-nis libnss-nisplus gnupg | sq | sqop | pgpainless-cli
+2025-Nov-25 18:53:25.560100
+#12 12.84   sensible-utils git bzr gdbm-l10n krb5-doc krb5-user libssl-doc
+2025-Nov-25 18:53:25.560100
+#12 12.84   libstdc++-12-doc make-doc npm ed diffutils-doc perl-doc
+2025-Nov-25 18:53:25.560100
+#12 12.84   libterm-readline-gnu-perl | libterm-readline-perl-perl
+2025-Nov-25 18:53:25.560100
+#12 12.84   libtap-harness-archive-perl python3-doc python3-tk python3-venv
+2025-Nov-25 18:53:25.560100
+#12 12.84   python3-setuptools python3.11-venv python3.11-doc binfmt-support
+2025-Nov-25 18:53:25.560100
+#12 12.84   readline-doc
+2025-Nov-25 18:53:25.560100
+#12 12.84 Recommended packages:
+2025-Nov-25 18:53:25.560100
+#12 12.84   fakeroot gnupg | sq | sqop | pgpainless-cli libalgorithm-merge-perl manpages
+2025-Nov-25 18:53:25.560100
+#12 12.84   manpages-dev libc-devtools libfile-fcntllock-perl liblocale-gettext-perl
+2025-Nov-25 18:53:25.560100
+#12 12.84   javascript-common krb5-locales libgpm2 ca-certificates nodejs-doc netbase
+2025-Nov-25 18:53:26.426533
+#12 15.31 The following NEW packages will be installed:
+2025-Nov-25 18:53:26.441764
+2025-Nov-25 18:53:26.545482
+#12 15.31   binutils binutils-common binutils-x86-64-linux-gnu build-essential bzip2 cpp
+2025-Nov-25 18:53:26.545482
+#12 15.31   cpp-12 dpkg-dev g++ g++-12 gcc gcc-12 gyp libasan8 libatomic1 libbinutils
+2025-Nov-25 18:53:26.545482
+#12 15.31   libbrotli1 libc-ares2 libc-dev-bin libc6-dev libcc1-0 libcrypt-dev
+2025-Nov-25 18:53:26.545482
+#12 15.31   libctf-nobfd0 libctf0 libdpkg-perl libexpat1 libgcc-12-dev libgdbm-compat4
+2025-Nov-25 18:53:26.545482
+#12 15.31   libgdbm6 libgomp1 libgprofng0 libgssapi-krb5-2 libicu72 libisl23 libitm1
+2025-Nov-25 18:53:26.545482
+#12 15.31   libjansson4 libjs-events libjs-inherits libk5crypto3 libkeyutils1 libkrb5-3
+2025-Nov-25 18:53:26.545482
+#12 15.31   libkrb5support0 liblsan0 libmpc3 libmpfr6 libncursesw6 libnghttp2-14
+2025-Nov-25 18:53:26.545482
+#12 15.31   libnode-dev libnode108 libnsl-dev libnsl2 libperl5.36 libpkgconf3
+2025-Nov-25 18:53:26.545482
+#12 15.31   libpython3-stdlib libpython3.11-minimal libpython3.11-stdlib libquadmath0
+2025-Nov-25 18:53:26.545482
+#12 15.31   libreadline8 libsqlite3-0 libssl-dev libssl3 libstdc++-12-dev
+2025-Nov-25 18:53:26.545482
+#12 15.31   libtirpc-common libtirpc-dev libtirpc3 libtsan2 libubsan1 libuv1 libuv1-dev
+2025-Nov-25 18:53:26.545482
+#12 15.31   linux-libc-dev make media-types node-abbrev node-acorn node-agent-base
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-ansi-regex node-ansi-styles node-aproba node-are-we-there-yet
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-balanced-match node-brace-expansion node-busboy node-chownr
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-cjs-module-lexer node-clone node-color-convert node-color-name
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-console-control-strings node-core-util-is node-data-uri-to-buffer
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-debug node-defaults node-delegates node-encoding node-events
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-fancy-log node-fetch node-fs.realpath node-gauge node-glob
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-graceful-fs node-gyp node-has-unicode node-https-proxy-agent
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-iconv-lite node-inflight node-inherits node-isarray node-isexe
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-jsonparse node-lru-cache node-minimatch node-minipass node-mkdirp
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-ms node-nopt node-npmlog node-once node-osenv node-process-nextick-args
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-readable-stream node-rimraf node-safe-buffer node-semver
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-set-blocking node-signal-exit node-slice-ansi node-string-decoder
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-string-width node-strip-ansi node-tar node-time-stamp node-undici
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-util-deprecate node-wcwidth.js node-which node-wide-align node-wrappy
+2025-Nov-25 18:53:26.545482
+#12 15.31   node-xtend node-yallist nodejs patch perl perl-modules-5.36 pkg-config
+2025-Nov-25 18:53:26.545482
+#12 15.32   pkgconf pkgconf-bin python-is-python3 python3 python3-minimal
+2025-Nov-25 18:53:26.545482
+#12 15.32   python3-pkg-resources python3-six python3.11 python3.11-minimal
+2025-Nov-25 18:53:26.545482
+#12 15.32   readline-common rpcsvc-proto xz-utils
+2025-Nov-25 18:53:26.545482
+#12 15.32 The following packages will be upgraded:
+2025-Nov-25 18:53:26.545482
+#12 15.32   gcc-12-base libc-bin libc6 libgcc-s1 liblzma5 libstdc++6 perl-base
+2025-Nov-25 18:53:26.545482
+#12 15.38 7 upgraded, 157 newly installed, 0 to remove and 26 not upgraded.
+2025-Nov-25 18:53:26.545482
+#12 15.38 Need to get 115 MB of archives.
+2025-Nov-25 18:53:26.545482
+#12 15.38 After this operation, 472 MB of additional disk space will be used.
+2025-Nov-25 18:53:26.545482
+#12 15.38 Get:1 http://deb.debian.org/debian bookworm/main amd64 perl-base amd64 5.36.0-7+deb12u3 [1608 kB]
+2025-Nov-25 18:53:26.545482
+#12 15.42 Get:2 http://deb.debian.org/debian bookworm/main amd64 gcc-12-base amd64 12.2.0-14+deb12u1 [37.6 kB]
+2025-Nov-25 18:53:26.652047
+#12 15.43 Get:3 http://deb.debian.org/debian bookworm/main amd64 libgcc-s1 amd64 12.2.0-14+deb12u1 [49.9 kB]
+2025-Nov-25 18:53:26.679257
+#12 15.44 Get:4 http://deb.debian.org/debian bookworm/main amd64 libstdc++6 amd64 12.2.0-14+deb12u1 [613 kB]
+2025-Nov-25 18:53:26.679257
+#12 15.47 Get:5 http://deb.debian.org/debian bookworm/main amd64 libc6 amd64 2.36-9+deb12u13 [2758 kB]
+2025-Nov-25 18:53:26.679257
+#12 15.53 Get:6 http://deb.debian.org/debian bookworm/main amd64 libc-bin amd64 2.36-9+deb12u13 [609 kB]
+2025-Nov-25 18:53:26.761236
+#12 15.57 Get:7 http://deb.debian.org/debian bookworm/main amd64 perl-modules-5.36 all 5.36.0-7+deb12u3 [2815 kB]
+2025-Nov-25 18:53:26.761236
+#12 15.64 Get:8 http://deb.debian.org/debian bookworm/main amd64 libgdbm6 amd64 1.23-3 [72.2 kB]
+2025-Nov-25 18:53:26.883592
+#12 15.65 Get:9 http://deb.debian.org/debian bookworm/main amd64 libgdbm-compat4 amd64 1.23-3 [48.2 kB]
+2025-Nov-25 18:53:26.883592
+#12 15.66 Get:10 http://deb.debian.org/debian bookworm/main amd64 libperl5.36 amd64 5.36.0-7+deb12u3 [4196 kB]
+2025-Nov-25 18:53:26.883592
+#12 15.76 Get:11 http://deb.debian.org/debian bookworm/main amd64 perl amd64 5.36.0-7+deb12u3 [239 kB]
+2025-Nov-25 18:53:26.996418
+#12 15.78 Get:12 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl3 amd64 3.0.17-1~deb12u3 [2028 kB]
+2025-Nov-25 18:53:26.996418
+#12 15.82 Get:13 http://deb.debian.org/debian bookworm/main amd64 libpython3.11-minimal amd64 3.11.2-6+deb12u6 [817 kB]
+2025-Nov-25 18:53:26.996418
+#12 15.84 Get:14 http://deb.debian.org/debian bookworm/main amd64 libexpat1 amd64 2.5.0-1+deb12u2 [99.9 kB]
+2025-Nov-25 18:53:26.996418
+#12 15.84 Get:15 http://deb.debian.org/debian bookworm/main amd64 python3.11-minimal amd64 3.11.2-6+deb12u6 [2064 kB]
+2025-Nov-25 18:53:26.996418
+#12 15.88 Get:16 http://deb.debian.org/debian bookworm/main amd64 python3-minimal amd64 3.11.2-1+b1 [26.3 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.88 Get:17 http://deb.debian.org/debian bookworm/main amd64 media-types all 10.0.0 [26.1 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.89 Get:18 http://deb.debian.org/debian bookworm/main amd64 liblzma5 amd64 5.4.1-1 [205 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.89 Get:19 http://deb.debian.org/debian bookworm/main amd64 libncursesw6 amd64 6.4-4 [134 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.90 Get:20 http://deb.debian.org/debian bookworm/main amd64 libkrb5support0 amd64 1.20.1-2+deb12u4 [33.2 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.91 Get:21 http://deb.debian.org/debian bookworm/main amd64 libk5crypto3 amd64 1.20.1-2+deb12u4 [79.8 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.91 Get:22 http://deb.debian.org/debian bookworm/main amd64 libkeyutils1 amd64 1.6.3-2 [8808 B]
+2025-Nov-25 18:53:27.107310
+#12 15.92 Get:23 http://deb.debian.org/debian bookworm/main amd64 libkrb5-3 amd64 1.20.1-2+deb12u4 [334 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.93 Get:24 http://deb.debian.org/debian bookworm/main amd64 libgssapi-krb5-2 amd64 1.20.1-2+deb12u4 [135 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.94 Get:25 http://deb.debian.org/debian bookworm/main amd64 libtirpc-common all 1.3.3+ds-1 [14.0 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.94 Get:26 http://deb.debian.org/debian bookworm/main amd64 libtirpc3 amd64 1.3.3+ds-1 [85.2 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.94 Get:27 http://deb.debian.org/debian bookworm/main amd64 libnsl2 amd64 1.3.0-2 [39.5 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.95 Get:28 http://deb.debian.org/debian bookworm/main amd64 readline-common all 8.2-1.3 [69.0 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.95 Get:29 http://deb.debian.org/debian bookworm/main amd64 libreadline8 amd64 8.2-1.3 [166 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.96 Get:30 http://deb.debian.org/debian bookworm/main amd64 libsqlite3-0 amd64 3.40.1-2+deb12u2 [839 kB]
+2025-Nov-25 18:53:27.107310
+#12 15.99 Get:31 http://deb.debian.org/debian bookworm/main amd64 libpython3.11-stdlib amd64 3.11.2-6+deb12u6 [1798 kB]
+2025-Nov-25 18:53:27.248481
+#12 16.04 Get:32 http://deb.debian.org/debian bookworm/main amd64 python3.11 amd64 3.11.2-6+deb12u6 [573 kB]
+2025-Nov-25 18:53:27.248481
+#12 16.06 Get:33 http://deb.debian.org/debian bookworm/main amd64 libpython3-stdlib amd64 3.11.2-1+b1 [9312 B]
+2025-Nov-25 18:53:27.248481
+#12 16.06 Get:34 http://deb.debian.org/debian bookworm/main amd64 python3 amd64 3.11.2-1+b1 [26.3 kB]
+2025-Nov-25 18:53:27.248481
+#12 16.06 Get:35 http://deb.debian.org/debian bookworm/main amd64 bzip2 amd64 1.0.8-5+b1 [49.8 kB]
+2025-Nov-25 18:53:27.248481
+#12 16.07 Get:36 http://deb.debian.org/debian bookworm/main amd64 xz-utils amd64 5.4.1-1 [471 kB]
+2025-Nov-25 18:53:27.248481
+#12 16.08 Get:37 http://deb.debian.org/debian bookworm/main amd64 binutils-common amd64 2.40-2 [2487 kB]
+2025-Nov-25 18:53:27.248481
+#12 16.13 Get:38 http://deb.debian.org/debian bookworm/main amd64 libbinutils amd64 2.40-2 [572 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.15 Get:39 http://deb.debian.org/debian bookworm/main amd64 libctf-nobfd0 amd64 2.40-2 [153 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.15 Get:40 http://deb.debian.org/debian bookworm/main amd64 libctf0 amd64 2.40-2 [89.8 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.16 Get:41 http://deb.debian.org/debian bookworm/main amd64 libgprofng0 amd64 2.40-2 [812 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.17 Get:42 http://deb.debian.org/debian bookworm/main amd64 libjansson4 amd64 2.14-2 [40.8 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.17 Get:43 http://deb.debian.org/debian bookworm/main amd64 binutils-x86-64-linux-gnu amd64 2.40-2 [2246 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.22 Get:44 http://deb.debian.org/debian bookworm/main amd64 binutils amd64 2.40-2 [65.0 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.22 Get:45 http://deb.debian.org/debian bookworm/main amd64 libc-dev-bin amd64 2.36-9+deb12u13 [47.4 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.22 Get:46 http://deb.debian.org/debian-security bookworm-security/main amd64 linux-libc-dev amd64 6.1.158-1 [2204 kB]
+2025-Nov-25 18:53:27.398045
+#12 16.28 Get:47 http://deb.debian.org/debian bookworm/main amd64 libcrypt-dev amd64 1:4.4.33-2 [118 kB]
+2025-Nov-25 18:53:27.504799
+#12 16.28 Get:48 http://deb.debian.org/debian bookworm/main amd64 libtirpc-dev amd64 1.3.3+ds-1 [191 kB]
+2025-Nov-25 18:53:27.504799
+#12 16.29 Get:49 http://deb.debian.org/debian bookworm/main amd64 libnsl-dev amd64 1.3.0-2 [66.4 kB]
+2025-Nov-25 18:53:27.504799
+#12 16.30 Get:50 http://deb.debian.org/debian bookworm/main amd64 rpcsvc-proto amd64 1.4.3-1 [63.3 kB]
+2025-Nov-25 18:53:27.504799
+#12 16.30 Get:51 http://deb.debian.org/debian bookworm/main amd64 libc6-dev amd64 2.36-9+deb12u13 [1904 kB]
+2025-Nov-25 18:53:27.504799
+#12 16.35 Get:52 http://deb.debian.org/debian bookworm/main amd64 libisl23 amd64 0.25-1.1 [683 kB]
+2025-Nov-25 18:53:27.504799
+#12 16.37 Get:53 http://deb.debian.org/debian bookworm/main amd64 libmpfr6 amd64 4.2.0-1 [701 kB]
+2025-Nov-25 18:53:27.534415
+#12 16.39 Get:54 http://deb.debian.org/debian bookworm/main amd64 libmpc3 amd64 1.3.1-1 [51.5 kB]
+2025-Nov-25 18:53:27.534415
+#12 16.39 Get:55 http://deb.debian.org/debian bookworm/main amd64 cpp-12 amd64 12.2.0-14+deb12u1 [9768 kB]
+2025-Nov-25 18:53:27.656546
+#12 16.54 Get:56 http://deb.debian.org/debian bookworm/main amd64 cpp amd64 4:12.2.0-3 [6836 B]
+2025-Nov-25 18:53:27.673430
+2025-Nov-25 18:53:27.756298
+#12 16.54 Get:57 http://deb.debian.org/debian bookworm/main amd64 libcc1-0 amd64 12.2.0-14+deb12u1 [41.7 kB]
+2025-Nov-25 18:53:27.756298
+#12 16.54 Get:58 http://deb.debian.org/debian bookworm/main amd64 libgomp1 amd64 12.2.0-14+deb12u1 [116 kB]
+2025-Nov-25 18:53:27.756298
+#12 16.55 Get:59 http://deb.debian.org/debian bookworm/main amd64 libitm1 amd64 12.2.0-14+deb12u1 [26.1 kB]
+2025-Nov-25 18:53:27.756298
+#12 16.55 Get:60 http://deb.debian.org/debian bookworm/main amd64 libatomic1 amd64 12.2.0-14+deb12u1 [9376 B]
+2025-Nov-25 18:53:27.756298
+#12 16.56 Get:61 http://deb.debian.org/debian bookworm/main amd64 libasan8 amd64 12.2.0-14+deb12u1 [2193 kB]
+2025-Nov-25 18:53:27.756298
+#12 16.59 Get:62 http://deb.debian.org/debian bookworm/main amd64 liblsan0 amd64 12.2.0-14+deb12u1 [969 kB]
+2025-Nov-25 18:53:27.756298
+#12 16.60 Get:63 http://deb.debian.org/debian bookworm/main amd64 libtsan2 amd64 12.2.0-14+deb12u1 [2197 kB]
+2025-Nov-25 18:53:27.756298
+#12 16.63 Get:64 http://deb.debian.org/debian bookworm/main amd64 libubsan1 amd64 12.2.0-14+deb12u1 [883 kB]
+2025-Nov-25 18:53:27.756298
+#12 16.64 Get:65 http://deb.debian.org/debian bookworm/main amd64 libquadmath0 amd64 12.2.0-14+deb12u1 [145 kB]
+2025-Nov-25 18:53:27.946222
+#12 16.65 Get:66 http://deb.debian.org/debian bookworm/main amd64 libgcc-12-dev amd64 12.2.0-14+deb12u1 [2437 kB]
+2025-Nov-25 18:53:27.946222
+#12 16.68 Get:67 http://deb.debian.org/debian bookworm/main amd64 gcc-12 amd64 12.2.0-14+deb12u1 [19.3 MB]
+2025-Nov-25 18:53:28.116379
+#12 17.00 Get:68 http://deb.debian.org/debian bookworm/main amd64 gcc amd64 4:12.2.0-3 [5216 B]
+2025-Nov-25 18:53:28.274801
+#12 17.00 Get:69 http://deb.debian.org/debian bookworm/main amd64 libstdc++-12-dev amd64 12.2.0-14+deb12u1 [2047 kB]
+2025-Nov-25 18:53:28.288468
+#12 17.03 Get:70 http://deb.debian.org/debian bookworm/main amd64 g++-12 amd64 12.2.0-14+deb12u1 [10.7 MB]
+2025-Nov-25 18:53:28.288468
+#12 17.16 Get:71 http://deb.debian.org/debian bookworm/main amd64 g++ amd64 4:12.2.0-3 [1356 B]
+2025-Nov-25 18:53:28.462228
+#12 17.16 Get:72 http://deb.debian.org/debian bookworm/main amd64 make amd64 4.3-4.1 [396 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.17 Get:73 http://deb.debian.org/debian bookworm/main amd64 libdpkg-perl all 1.21.22 [603 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.19 Get:74 http://deb.debian.org/debian bookworm/main amd64 patch amd64 2.7.6-7 [128 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.19 Get:75 http://deb.debian.org/debian bookworm/main amd64 dpkg-dev all 1.21.22 [1353 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.20 Get:76 http://deb.debian.org/debian bookworm/main amd64 build-essential amd64 12.9 [7704 B]
+2025-Nov-25 18:53:28.462228
+#12 17.21 Get:77 http://deb.debian.org/debian bookworm/main amd64 python3-pkg-resources all 66.1.1-1+deb12u2 [297 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.21 Get:78 http://deb.debian.org/debian bookworm/main amd64 python3-six all 1.16.0-4 [17.5 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.22 Get:79 http://deb.debian.org/debian bookworm/main amd64 gyp all 0.1+20220404git9ecf45e-2 [237 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.22 Get:80 http://deb.debian.org/debian bookworm/main amd64 libbrotli1 amd64 1.0.9-2+b6 [275 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.23 Get:81 http://deb.debian.org/debian bookworm/main amd64 libc-ares2 amd64 1.18.1-3 [102 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.24 Get:82 http://deb.debian.org/debian bookworm/main amd64 libicu72 amd64 72.1-3+deb12u1 [9376 kB]
+2025-Nov-25 18:53:28.462228
+#12 17.35 Get:83 http://deb.debian.org/debian bookworm/main amd64 libjs-events all 3.3.0+~3.0.0-3 [11.3 kB]
+2025-Nov-25 18:53:28.610948
+#12 17.35 Get:84 http://deb.debian.org/debian bookworm/main amd64 libjs-inherits all 2.0.4-6 [3548 B]
+2025-Nov-25 18:53:28.624753
+#12 17.35 Get:85 http://deb.debian.org/debian bookworm/main amd64 libnghttp2-14 amd64 1.52.0-1+deb12u2 [73.0 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.35 Get:86 http://deb.debian.org/debian-security bookworm-security/main amd64 libssl-dev amd64 3.0.17-1~deb12u3 [2441 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.37 Get:87 http://deb.debian.org/debian bookworm/main amd64 libuv1 amd64 1.44.2-1+deb12u1 [136 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.37 Get:88 http://deb.debian.org/debian bookworm/main amd64 libuv1-dev amd64 1.44.2-1+deb12u1 [172 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.37 Get:89 http://deb.debian.org/debian bookworm/main amd64 node-xtend all 4.0.2-3 [3932 B]
+2025-Nov-25 18:53:28.624753
+#12 17.38 Get:90 http://deb.debian.org/debian bookworm/main amd64 nodejs amd64 18.20.4+dfsg-1~deb12u1 [319 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.38 Get:91 http://deb.debian.org/debian bookworm/main amd64 node-acorn all 8.8.1+ds+~cs25.17.7-2 [128 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.38 Get:92 http://deb.debian.org/debian bookworm/main amd64 node-cjs-module-lexer all 1.2.2+dfsg-5 [30.1 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.38 Get:93 http://deb.debian.org/debian bookworm/main amd64 node-busboy all 1.6.0+~cs2.6.0-2 [16.9 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.38 Get:94 http://deb.debian.org/debian bookworm/main amd64 node-undici all 5.15.0+dfsg1+~cs20.10.9.3-1+deb12u4 [285 kB]
+2025-Nov-25 18:53:28.624753
+#12 17.39 Get:95 http://deb.debian.org/debian bookworm/main amd64 libnode108 amd64 18.20.4+dfsg-1~deb12u1 [10.6 MB]
+2025-Nov-25 18:53:28.624753
+#12 17.49 Get:96 http://deb.debian.org/debian bookworm/main amd64 libnode-dev amd64 18.20.4+dfsg-1~deb12u1 [511 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.51 Get:97 http://deb.debian.org/debian bookworm/main amd64 libpkgconf3 amd64 1.8.1-1 [36.1 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.51 Get:98 http://deb.debian.org/debian bookworm/main amd64 node-abbrev all 1.1.1+~1.1.2-1 [5692 B]
+2025-Nov-25 18:53:28.718607
+#12 17.51 Get:99 http://deb.debian.org/debian bookworm/main amd64 node-ms all 2.1.3+~cs0.7.31-3 [5648 B]
+2025-Nov-25 18:53:28.718607
+#12 17.51 Get:100 http://deb.debian.org/debian bookworm/main amd64 node-debug all 4.3.4+~cs4.1.7-1 [18.1 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.51 Get:101 http://deb.debian.org/debian bookworm/main amd64 node-yallist all 4.0.0+~4.0.1-1 [8172 B]
+2025-Nov-25 18:53:28.718607
+#12 17.51 Get:102 http://deb.debian.org/debian bookworm/main amd64 node-lru-cache all 7.14.1-1 [26.3 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.52 Get:103 http://deb.debian.org/debian bookworm/main amd64 node-semver all 7.3.5+~7.3.9-2 [42.1 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.52 Get:104 http://deb.debian.org/debian bookworm/main amd64 node-agent-base all 6.0.2+~cs5.4.2-2 [17.3 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.52 Get:105 http://deb.debian.org/debian bookworm/main amd64 node-ansi-regex all 5.0.1-1 [4912 B]
+2025-Nov-25 18:53:28.718607
+#12 17.52 Get:106 http://deb.debian.org/debian bookworm/main amd64 node-color-name all 1.1.4+~1.1.1-2 [5920 B]
+2025-Nov-25 18:53:28.718607
+#12 17.53 Get:107 http://deb.debian.org/debian bookworm/main amd64 node-color-convert all 2.0.1+~cs2.0.0-2 [13.1 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.54 Get:108 http://deb.debian.org/debian bookworm/main amd64 node-ansi-styles all 6.2.1-2 [8640 B]
+2025-Nov-25 18:53:28.718607
+#12 17.54 Get:109 http://deb.debian.org/debian bookworm/main amd64 node-aproba all 2.0.0-3 [5844 B]
+2025-Nov-25 18:53:28.718607
+#12 17.54 Get:110 http://deb.debian.org/debian bookworm/main amd64 node-delegates all 1.0.0-3 [4528 B]
+2025-Nov-25 18:53:28.718607
+#12 17.54 Get:111 http://deb.debian.org/debian bookworm/main amd64 node-inherits all 2.0.4-6 [4548 B]
+2025-Nov-25 18:53:28.718607
+#12 17.54 Get:112 http://deb.debian.org/debian bookworm/main amd64 node-core-util-is all 1.0.3-1 [4072 B]
+2025-Nov-25 18:53:28.718607
+#12 17.55 Get:113 http://deb.debian.org/debian bookworm/main amd64 node-safe-buffer all 5.2.1+~cs2.1.2-3 [15.5 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.55 Get:114 http://deb.debian.org/debian bookworm/main amd64 node-string-decoder all 1.3.0-6 [7180 B]
+2025-Nov-25 18:53:28.718607
+#12 17.55 Get:115 http://deb.debian.org/debian bookworm/main amd64 node-process-nextick-args all 2.0.1-3 [3816 B]
+2025-Nov-25 18:53:28.718607
+#12 17.55 Get:116 http://deb.debian.org/debian bookworm/main amd64 node-util-deprecate all 1.0.2-3 [4436 B]
+2025-Nov-25 18:53:28.718607
+#12 17.56 Get:117 http://deb.debian.org/debian bookworm/main amd64 node-isarray all 2.0.5-4 [4040 B]
+2025-Nov-25 18:53:28.718607
+#12 17.56 Get:118 http://deb.debian.org/debian bookworm/main amd64 node-readable-stream all 3.6.0+~cs3.0.0-4 [32.0 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.56 Get:119 http://deb.debian.org/debian bookworm/main amd64 node-are-we-there-yet all 3.0.1+~1.1.0-1 [10.0 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.56 Get:120 http://deb.debian.org/debian bookworm/main amd64 node-balanced-match all 2.0.0-1 [4872 B]
+2025-Nov-25 18:53:28.718607
+#12 17.57 Get:121 http://deb.debian.org/debian bookworm/main amd64 node-brace-expansion all 2.0.1-2 [7320 B]
+2025-Nov-25 18:53:28.718607
+#12 17.57 Get:122 http://deb.debian.org/debian bookworm/main amd64 node-chownr all 2.0.0-2 [4424 B]
+2025-Nov-25 18:53:28.718607
+#12 17.57 Get:123 http://deb.debian.org/debian bookworm/main amd64 node-clone all 2.1.2-4 [8280 B]
+2025-Nov-25 18:53:28.718607
+#12 17.58 Get:124 http://deb.debian.org/debian bookworm/main amd64 node-console-control-strings all 1.1.0-3 [5564 B]
+2025-Nov-25 18:53:28.718607
+#12 17.58 Get:125 http://deb.debian.org/debian bookworm/main amd64 node-data-uri-to-buffer all 4.0.0-3 [5540 B]
+2025-Nov-25 18:53:28.718607
+#12 17.58 Get:126 http://deb.debian.org/debian bookworm/main amd64 node-defaults all 1.0.4+~1.0.3-1 [4400 B]
+2025-Nov-25 18:53:28.718607
+#12 17.59 Get:127 http://deb.debian.org/debian bookworm/main amd64 node-iconv-lite all 0.6.3-3 [115 kB]
+2025-Nov-25 18:53:28.718607
+#12 17.59 Get:128 http://deb.debian.org/debian bookworm/main amd64 node-encoding all 0.1.13-2 [4400 B]
+2025-Nov-25 18:53:28.718607
+#12 17.60 Get:129 http://deb.debian.org/debian bookworm/main amd64 node-events all 3.3.0+~3.0.0-3 [5888 B]
+2025-Nov-25 18:53:28.824639
+#12 17.60 Get:130 http://deb.debian.org/debian bookworm/main amd64 node-time-stamp all 2.2.0-2 [6016 B]
+2025-Nov-25 18:53:28.824639
+#12 17.60 Get:131 http://deb.debian.org/debian bookworm/main amd64 node-fancy-log all 1.3.3+~cs1.3.1-2 [7940 B]
+2025-Nov-25 18:53:28.824639
+#12 17.61 Get:132 http://deb.debian.org/debian bookworm/main amd64 node-fetch all 3.3.0+~cs11.4.11-2 [212 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.62 Get:133 http://deb.debian.org/debian bookworm/main amd64 node-fs.realpath all 1.0.0-3 [6172 B]
+2025-Nov-25 18:53:28.824639
+#12 17.63 Get:134 http://deb.debian.org/debian bookworm/main amd64 node-has-unicode all 2.0.1-5 [3992 B]
+2025-Nov-25 18:53:28.824639
+#12 17.63 Get:135 http://deb.debian.org/debian bookworm/main amd64 node-signal-exit all 3.0.7+~3.0.1-1 [7600 B]
+2025-Nov-25 18:53:28.824639
+#12 17.64 Get:136 http://deb.debian.org/debian bookworm/main amd64 node-slice-ansi all 5.0.0+~cs9.0.0-5 [8788 B]
+2025-Nov-25 18:53:28.824639
+#12 17.64 Get:137 http://deb.debian.org/debian bookworm/main amd64 node-strip-ansi all 6.0.1-2 [4120 B]
+2025-Nov-25 18:53:28.824639
+#12 17.64 Get:138 http://deb.debian.org/debian bookworm/main amd64 node-wcwidth.js all 1.0.2-2 [7088 B]
+2025-Nov-25 18:53:28.824639
+#12 17.65 Get:139 http://deb.debian.org/debian bookworm/main amd64 node-string-width all 4.2.3+~cs13.2.3-1 [10.7 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.65 Get:140 http://deb.debian.org/debian bookworm/main amd64 node-wide-align all 1.1.3-4 [4244 B]
+2025-Nov-25 18:53:28.824639
+#12 17.65 Get:141 http://deb.debian.org/debian bookworm/main amd64 node-gauge all 4.0.4-1 [19.6 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.66 Get:142 http://deb.debian.org/debian bookworm/main amd64 node-wrappy all 1.0.2-3 [3776 B]
+2025-Nov-25 18:53:28.824639
+#12 17.66 Get:143 http://deb.debian.org/debian bookworm/main amd64 node-once all 1.4.0-7 [4492 B]
+2025-Nov-25 18:53:28.824639
+#12 17.66 Get:144 http://deb.debian.org/debian bookworm/main amd64 node-inflight all 1.0.6-2 [3952 B]
+2025-Nov-25 18:53:28.824639
+#12 17.66 Get:145 http://deb.debian.org/debian bookworm/main amd64 node-minimatch all 5.1.1+~5.1.2-1 [18.6 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.67 Get:146 http://deb.debian.org/debian bookworm/main amd64 node-glob all 8.0.3+~cs8.4.15-1 [133 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.67 Get:147 http://deb.debian.org/debian bookworm/main amd64 node-graceful-fs all 4.2.10-1 [14.4 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.68 Get:148 http://deb.debian.org/debian bookworm/main amd64 node-https-proxy-agent all 5.0.1+~cs8.0.0-3 [16.1 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.68 Get:149 http://deb.debian.org/debian bookworm/main amd64 node-mkdirp all 1.0.4+~1.0.2-4 [11.6 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.68 Get:150 http://deb.debian.org/debian bookworm/main amd64 node-nopt all 5.0.0-4 [12.1 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.68 Get:151 http://deb.debian.org/debian bookworm/main amd64 node-set-blocking all 2.0.0-2 [4248 B]
+2025-Nov-25 18:53:28.824639
+#12 17.69 Get:152 http://deb.debian.org/debian bookworm/main amd64 node-npmlog all 7.0.1+~4.1.4-1 [11.4 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.69 Get:153 http://deb.debian.org/debian bookworm/main amd64 node-osenv all 0.1.5+~0.1.1-1 [5884 B]
+2025-Nov-25 18:53:28.824639
+#12 17.69 Get:154 http://deb.debian.org/debian bookworm/main amd64 node-rimraf all 3.0.2-2 [11.1 kB]
+2025-Nov-25 18:53:28.824639
+#12 17.70 Get:155 http://deb.debian.org/debian bookworm/main amd64 node-jsonparse all 1.3.1-10 [8020 B]
+2025-Nov-25 18:53:28.824639
+#12 17.70 Get:156 http://deb.debian.org/debian bookworm/main amd64 node-minipass all 3.3.6+~cs9.4.19-1+deb12u1 [43.1 kB]
+2025-Nov-25 18:53:29.008096
+#12 17.71 Get:157 http://deb.debian.org/debian bookworm/main amd64 node-tar all 6.1.13+~cs7.0.5-1 [51.1 kB]
+2025-Nov-25 18:53:29.008096
+#12 17.72 Get:158 http://deb.debian.org/debian bookworm/main amd64 node-isexe all 2.0.0+~2.0.1-5 [6084 B]
+2025-Nov-25 18:53:29.008096
+#12 17.72 Get:159 http://deb.debian.org/debian bookworm/main amd64 node-which all 2.0.2+~cs1.3.2-3 [8368 B]
+2025-Nov-25 18:53:29.008096
+#12 17.72 Get:160 http://deb.debian.org/debian bookworm/main amd64 node-gyp all 9.3.0-2 [57.9 kB]
+2025-Nov-25 18:53:29.008096
+#12 17.73 Get:161 http://deb.debian.org/debian bookworm/main amd64 pkgconf-bin amd64 1.8.1-1 [29.5 kB]
+2025-Nov-25 18:53:29.008096
+#12 17.73 Get:162 http://deb.debian.org/debian bookworm/main amd64 pkgconf amd64 1.8.1-1 [25.9 kB]
+2025-Nov-25 18:53:29.008096
+#12 17.74 Get:163 http://deb.debian.org/debian bookworm/main amd64 pkg-config amd64 1.8.1-1 [13.7 kB]
+2025-Nov-25 18:53:29.008096
+#12 17.74 Get:164 http://deb.debian.org/debian bookworm/main amd64 python-is-python3 all 3.11.2-1+deb12u1 [3216 B]
+2025-Nov-25 18:53:29.554318
+#12 18.44 debconf: delaying package configuration, since apt-utils is not installed
+2025-Nov-25 18:53:29.657523
+#12 18.49 Fetched 115 MB in 2s (48.1 MB/s)
+2025-Nov-25 18:53:29.688416
+#12 18.53 (Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+2025-Nov-25 18:53:29.784356
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6089 files and directories currently installed.)
+2025-Nov-25 18:53:29.784356
+#12 18.58 Preparing to unpack .../perl-base_5.36.0-7+deb12u3_amd64.deb ...
+2025-Nov-25 18:53:29.784356
+#12 18.66 Unpacking perl-base (5.36.0-7+deb12u3) over (5.36.0-7+deb12u1) ...
+2025-Nov-25 18:53:32.777947
+#12 21.66 Setting up perl-base (5.36.0-7+deb12u3) ...
+2025-Nov-25 18:53:32.812976
+2025-Nov-25 18:53:32.886764
+#12 21.77 (Reading database ...
+2025-Nov-25 18:53:33.019206
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6089 files and directories currently installed.)
+2025-Nov-25 18:53:33.019206
+#12 21.82 Preparing to unpack .../gcc-12-base_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:33.019206
+#12 21.84 Unpacking gcc-12-base:amd64 (12.2.0-14+deb12u1) over (12.2.0-14) ...
+2025-Nov-25 18:53:33.019206
+#12 21.90 Setting up gcc-12-base:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:33.139651
+#12 22.01 (Reading database ...
+2025-Nov-25 18:53:33.364564
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6089 files and directories currently installed.)
+2025-Nov-25 18:53:33.364564
+#12 22.07 Preparing to unpack .../libgcc-s1_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:33.364564
+#12 22.09 Unpacking libgcc-s1:amd64 (12.2.0-14+deb12u1) over (12.2.0-14) ...
+2025-Nov-25 18:53:33.478652
+#12 22.27 Setting up libgcc-s1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:33.611619
+#12 22.45 (Reading database ...
+2025-Nov-25 18:53:33.748479
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6089 files and directories currently installed.)
+2025-Nov-25 18:53:33.748479
+#12 22.49 Preparing to unpack .../libstdc++6_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:33.748479
+#12 22.62 Unpacking libstdc++6:amd64 (12.2.0-14+deb12u1) over (12.2.0-14) ...
+2025-Nov-25 18:53:34.069167
+#12 22.95 Setting up libstdc++6:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:34.246455
+#12 23.00 (Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6089 files and directories currently installed.)
+2025-Nov-25 18:53:34.265648
+#12 23.01 Preparing to unpack .../libc6_2.36-9+deb12u13_amd64.deb ...
+2025-Nov-25 18:53:34.265648
+#12 23.13 debconf: unable to initialize frontend: Dialog
+2025-Nov-25 18:53:34.474829
+2025-Nov-25 18:53:34.494058
+#12 23.13 debconf: (TERM is not set, so the dialog frontend is not usable.)
+2025-Nov-25 18:53:34.494058
+#12 23.13 debconf: falling back to frontend: Readline
+2025-Nov-25 18:53:34.494058
+#12 23.14 debconf: unable to initialize frontend: Readline
+2025-Nov-25 18:53:34.494058
+#12 23.14 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC contains: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.36.0 /usr/local/share/perl/5.36.0 /usr/lib/x86_64-linux-gnu/perl5/5.36 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.36 /usr/share/perl/5.36 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 7.)
+2025-Nov-25 18:53:34.494058
+#12 23.14 debconf: falling back to frontend: Teletype
+2025-Nov-25 18:53:34.494058
+#12 23.21 Unpacking libc6:amd64 (2.36-9+deb12u13) over (2.36-9+deb12u9) ...
+2025-Nov-25 18:53:35.797361
+#12 24.68 Setting up libc6:amd64 (2.36-9+deb12u13) ...
+2025-Nov-25 18:53:36.269109
+#12 25.15 debconf: unable to initialize frontend: Dialog
+2025-Nov-25 18:53:36.269109
+#12 25.15 debconf: (TERM is not set, so the dialog frontend is not usable.)
+2025-Nov-25 18:53:36.420257
+#12 25.15 debconf: falling back to frontend: Readline
+2025-Nov-25 18:53:36.420257
+#12 25.15 debconf: unable to initialize frontend: Readline
+2025-Nov-25 18:53:36.420257
+#12 25.15 debconf: (Can't locate Term/ReadLine.pm in @INC (you may need to install the Term::ReadLine module) (@INC contains: /etc/perl /usr/local/lib/x86_64-linux-gnu/perl/5.36.0 /usr/local/share/perl/5.36.0 /usr/lib/x86_64-linux-gnu/perl5/5.36 /usr/share/perl5 /usr/lib/x86_64-linux-gnu/perl-base /usr/lib/x86_64-linux-gnu/perl/5.36 /usr/share/perl/5.36 /usr/local/lib/site_perl) at /usr/share/perl5/Debconf/FrontEnd/Readline.pm line 7.)
+2025-Nov-25 18:53:36.420257
+#12 25.15 debconf: falling back to frontend: Teletype
+2025-Nov-25 18:53:37.456014
+#12 26.33 (Reading database ... 
+(Reading database ... 5%
+2025-Nov-25 18:53:37.669272
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6089 files and directories currently installed.)
+2025-Nov-25 18:53:37.669272
+#12 26.38 Preparing to unpack .../libc-bin_2.36-9+deb12u13_amd64.deb ...
+2025-Nov-25 18:53:37.669272
+#12 26.40 Unpacking libc-bin (2.36-9+deb12u13) over (2.36-9+deb12u9) ...
+2025-Nov-25 18:53:38.192278
+#12 27.06 Setting up libc-bin (2.36-9+deb12u13) ...
+2025-Nov-25 18:53:38.474065
+#12 27.35 Selecting previously unselected package perl-modules-5.36.
+2025-Nov-25 18:53:38.671602
+#12 27.36 (Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 6089 files and directories currently installed.)
+2025-Nov-25 18:53:38.722993
+#12 27.39 Preparing to unpack .../0-perl-modules-5.36_5.36.0-7+deb12u3_all.deb ...
+2025-Nov-25 18:53:38.722993
+#12 27.40 Unpacking perl-modules-5.36 (5.36.0-7+deb12u3) ...
+2025-Nov-25 18:53:40.354299
+#12 29.24 Selecting previously unselected package libgdbm6:amd64.
+2025-Nov-25 18:53:40.503256
+#12 29.24 Preparing to unpack .../1-libgdbm6_1.23-3_amd64.deb ...
+2025-Nov-25 18:53:40.503256
+#12 29.25 Unpacking libgdbm6:amd64 (1.23-3) ...
+2025-Nov-25 18:53:40.503256
+#12 29.31 Selecting previously unselected package libgdbm-compat4:amd64.
+2025-Nov-25 18:53:40.503256
+#12 29.32 Preparing to unpack .../2-libgdbm-compat4_1.23-3_amd64.deb ...
+2025-Nov-25 18:53:40.503256
+#12 29.32 Unpacking libgdbm-compat4:amd64 (1.23-3) ...
+2025-Nov-25 18:53:40.503256
+#12 29.38 Selecting previously unselected package libperl5.36:amd64.
+2025-Nov-25 18:53:40.671477
+#12 29.39 Preparing to unpack .../3-libperl5.36_5.36.0-7+deb12u3_amd64.deb ...
+2025-Nov-25 18:53:40.671477
+#12 29.40 Unpacking libperl5.36:amd64 (5.36.0-7+deb12u3) ...
+2025-Nov-25 18:53:42.447265
+#12 31.33 Selecting previously unselected package perl.
+2025-Nov-25 18:53:42.563348
+#12 31.34 Preparing to unpack .../4-perl_5.36.0-7+deb12u3_amd64.deb ...
+2025-Nov-25 18:53:42.563348
+#12 31.36 Unpacking perl (5.36.0-7+deb12u3) ...
+2025-Nov-25 18:53:42.563348
+#12 31.45 Selecting previously unselected package libssl3:amd64.
+2025-Nov-25 18:53:42.721576
+#12 31.45 Preparing to unpack .../5-libssl3_3.0.17-1~deb12u3_amd64.deb ...
+2025-Nov-25 18:53:42.736650
+#12 31.45 Unpacking libssl3:amd64 (3.0.17-1~deb12u3) ...
+2025-Nov-25 18:53:42.877510
+#12 31.76 Selecting previously unselected package libpython3.11-minimal:amd64.
+2025-Nov-25 18:53:43.034222
+#12 31.76 Preparing to unpack .../6-libpython3.11-minimal_3.11.2-6+deb12u6_amd64.deb ...
+2025-Nov-25 18:53:43.052555
+#12 31.77 Unpacking libpython3.11-minimal:amd64 (3.11.2-6+deb12u6) ...
+2025-Nov-25 18:53:43.097238
+#12 31.98 Selecting previously unselected package libexpat1:amd64.
+2025-Nov-25 18:53:43.321284
+#12 31.98 Preparing to unpack .../7-libexpat1_2.5.0-1+deb12u2_amd64.deb ...
+2025-Nov-25 18:53:43.321284
+#12 31.99 Unpacking libexpat1:amd64 (2.5.0-1+deb12u2) ...
+2025-Nov-25 18:53:43.321284
+#12 32.04 Selecting previously unselected package python3.11-minimal.
+2025-Nov-25 18:53:43.321284
+#12 32.04 Preparing to unpack .../8-python3.11-minimal_3.11.2-6+deb12u6_amd64.deb ...
+2025-Nov-25 18:53:43.321284
+#12 32.05 Unpacking python3.11-minimal (3.11.2-6+deb12u6) ...
+2025-Nov-25 18:53:43.552516
+#12 32.43 Setting up libssl3:amd64 (3.0.17-1~deb12u3) ...
+2025-Nov-25 18:53:43.567904
+2025-Nov-25 18:53:43.739219
+#12 32.45 Setting up libpython3.11-minimal:amd64 (3.11.2-6+deb12u6) ...
+2025-Nov-25 18:53:43.757169
+#12 32.47 Setting up libexpat1:amd64 (2.5.0-1+deb12u2) ...
+2025-Nov-25 18:53:43.757169
+#12 32.47 Setting up python3.11-minimal (3.11.2-6+deb12u6) ...
+2025-Nov-25 18:53:44.766572
+#12 33.65 Selecting previously unselected package python3-minimal.
+2025-Nov-25 18:53:44.766572
+#12 33.65 (Reading database ... 
+(Reading database ... 5%
+2025-Nov-25 18:53:44.868220
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 8421 files and directories currently installed.)
+2025-Nov-25 18:53:44.886561
+#12 33.67 Preparing to unpack .../python3-minimal_3.11.2-1+b1_amd64.deb ...
+2025-Nov-25 18:53:44.886561
+#12 33.68 Unpacking python3-minimal (3.11.2-1+b1) ...
+2025-Nov-25 18:53:44.886561
+#12 33.71 Selecting previously unselected package media-types.
+2025-Nov-25 18:53:44.886561
+#12 33.71 Preparing to unpack .../media-types_10.0.0_all.deb ...
+2025-Nov-25 18:53:44.886561
+#12 33.71 Unpacking media-types (10.0.0) ...
+2025-Nov-25 18:53:44.886561
+#12 33.74 Preparing to unpack .../liblzma5_5.4.1-1_amd64.deb ...
+2025-Nov-25 18:53:44.886561
+#12 33.75 Unpacking liblzma5:amd64 (5.4.1-1) over (5.4.1-0.2) ...
+2025-Nov-25 18:53:44.993306
+#12 33.82 Setting up liblzma5:amd64 (5.4.1-1) ...
+2025-Nov-25 18:53:45.039928
+#12 33.87 Selecting previously unselected package libncursesw6:amd64.
+2025-Nov-25 18:53:45.039928
+#12 33.87 (Reading database ... 
+(Reading database ... 5%
+2025-Nov-25 18:53:45.200935
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 8449 files and directories currently installed.)
+2025-Nov-25 18:53:45.200935
+#12 33.92 Preparing to unpack .../00-libncursesw6_6.4-4_amd64.deb ...
+2025-Nov-25 18:53:45.280626
+#12 33.92 Unpacking libncursesw6:amd64 (6.4-4) ...
+2025-Nov-25 18:53:45.280626
+#12 34.09 Selecting previously unselected package libkrb5support0:amd64.
+2025-Nov-25 18:53:45.367770
+#12 34.09 Preparing to unpack .../01-libkrb5support0_1.20.1-2+deb12u4_amd64.deb ...
+2025-Nov-25 18:53:45.367770
+#12 34.10 Unpacking libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+2025-Nov-25 18:53:45.367770
+#12 34.22 Selecting previously unselected package libk5crypto3:amd64.
+2025-Nov-25 18:53:45.491491
+#12 34.23 Preparing to unpack .../02-libk5crypto3_1.20.1-2+deb12u4_amd64.deb ...
+2025-Nov-25 18:53:45.547099
+#12 34.23 Unpacking libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+2025-Nov-25 18:53:45.547099
+#12 34.38 Selecting previously unselected package libkeyutils1:amd64.
+2025-Nov-25 18:53:45.620336
+#12 34.38 Preparing to unpack .../03-libkeyutils1_1.6.3-2_amd64.deb ...
+2025-Nov-25 18:53:45.620336
+#12 34.39 Unpacking libkeyutils1:amd64 (1.6.3-2) ...
+2025-Nov-25 18:53:45.620336
+#12 34.47 Selecting previously unselected package libkrb5-3:amd64.
+2025-Nov-25 18:53:45.620336
+#12 34.47 Preparing to unpack .../04-libkrb5-3_1.20.1-2+deb12u4_amd64.deb ...
+2025-Nov-25 18:53:45.620336
+#12 34.48 Unpacking libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+2025-Nov-25 18:53:45.747410
+2025-Nov-25 18:53:45.819297
+#12 34.70 Selecting previously unselected package libgssapi-krb5-2:amd64.
+2025-Nov-25 18:53:45.943165
+#12 34.71 Preparing to unpack .../05-libgssapi-krb5-2_1.20.1-2+deb12u4_amd64.deb ...
+2025-Nov-25 18:53:45.965129
+#12 34.72 Unpacking libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+2025-Nov-25 18:53:45.965129
+#12 34.78 Selecting previously unselected package libtirpc-common.
+2025-Nov-25 18:53:45.965129
+#12 34.78 Preparing to unpack .../06-libtirpc-common_1.3.3+ds-1_all.deb ...
+2025-Nov-25 18:53:45.965129
+#12 34.79 Unpacking libtirpc-common (1.3.3+ds-1) ...
+2025-Nov-25 18:53:45.965129
+#12 34.82 Selecting previously unselected package libtirpc3:amd64.
+2025-Nov-25 18:53:46.044264
+#12 34.83 Preparing to unpack .../07-libtirpc3_1.3.3+ds-1_amd64.deb ...
+2025-Nov-25 18:53:46.044264
+#12 34.83 Unpacking libtirpc3:amd64 (1.3.3+ds-1) ...
+2025-Nov-25 18:53:46.044264
+#12 34.89 Selecting previously unselected package libnsl2:amd64.
+2025-Nov-25 18:53:46.044264
+#12 34.89 Preparing to unpack .../08-libnsl2_1.3.0-2_amd64.deb ...
+2025-Nov-25 18:53:46.044264
+#12 34.89 Unpacking libnsl2:amd64 (1.3.0-2) ...
+2025-Nov-25 18:53:46.044264
+#12 34.93 Selecting previously unselected package readline-common.
+2025-Nov-25 18:53:46.044264
+#12 34.93 Preparing to unpack .../09-readline-common_8.2-1.3_all.deb ...
+2025-Nov-25 18:53:46.145175
+#12 34.93 Unpacking readline-common (8.2-1.3) ...
+2025-Nov-25 18:53:46.145175
+#12 34.98 Selecting previously unselected package libreadline8:amd64.
+2025-Nov-25 18:53:46.145175
+#12 34.98 Preparing to unpack .../10-libreadline8_8.2-1.3_amd64.deb ...
+2025-Nov-25 18:53:46.145175
+#12 34.98 Unpacking libreadline8:amd64 (8.2-1.3) ...
+2025-Nov-25 18:53:46.145175
+#12 35.03 Selecting previously unselected package libsqlite3-0:amd64.
+2025-Nov-25 18:53:46.258061
+#12 35.03 Preparing to unpack .../11-libsqlite3-0_3.40.1-2+deb12u2_amd64.deb ...
+2025-Nov-25 18:53:46.258061
+#12 35.03 Unpacking libsqlite3-0:amd64 (3.40.1-2+deb12u2) ...
+2025-Nov-25 18:53:46.258061
+#12 35.14 Selecting previously unselected package libpython3.11-stdlib:amd64.
+2025-Nov-25 18:53:46.424522
+#12 35.14 Preparing to unpack .../12-libpython3.11-stdlib_3.11.2-6+deb12u6_amd64.deb ...
+2025-Nov-25 18:53:46.492476
+#12 35.15 Unpacking libpython3.11-stdlib:amd64 (3.11.2-6+deb12u6) ...
+2025-Nov-25 18:53:47.011309
+#12 35.89 Selecting previously unselected package python3.11.
+2025-Nov-25 18:53:47.124030
+#12 35.90 Preparing to unpack .../13-python3.11_3.11.2-6+deb12u6_amd64.deb ...
+2025-Nov-25 18:53:47.124030
+#12 35.90 Unpacking python3.11 (3.11.2-6+deb12u6) ...
+2025-Nov-25 18:53:47.124030
+#12 35.98 Selecting previously unselected package libpython3-stdlib:amd64.
+2025-Nov-25 18:53:47.124030
+#12 35.98 Preparing to unpack .../14-libpython3-stdlib_3.11.2-1+b1_amd64.deb ...
+2025-Nov-25 18:53:47.124030
+#12 35.98 Unpacking libpython3-stdlib:amd64 (3.11.2-1+b1) ...
+2025-Nov-25 18:53:47.124030
+#12 36.01 Setting up python3-minimal (3.11.2-1+b1) ...
+2025-Nov-25 18:53:47.485138
+#12 36.37 Selecting previously unselected package python3.
+2025-Nov-25 18:53:47.485138
+#12 36.37 (Reading database ... 
+(Reading database ... 5%
+(Reading database ... 10%
+(Reading database ... 15%
+(Reading database ... 20%
+(Reading database ... 25%
+(Reading database ... 30%
+(Reading database ... 35%
+2025-Nov-25 18:53:47.667051
+(Reading database ... 40%
+(Reading database ... 45%
+(Reading database ... 50%
+(Reading database ... 55%
+(Reading database ... 60%
+(Reading database ... 65%
+(Reading database ... 70%
+(Reading database ... 75%
+(Reading database ... 80%
+(Reading database ... 85%
+(Reading database ... 90%
+(Reading database ... 95%
+(Reading database ... 100%
+(Reading database ... 8929 files and directories currently installed.)
+2025-Nov-25 18:53:47.687157
+#12 36.39 Preparing to unpack .../000-python3_3.11.2-1+b1_amd64.deb ...
+2025-Nov-25 18:53:47.687157
+#12 36.40 Unpacking python3 (3.11.2-1+b1) ...
+2025-Nov-25 18:53:47.687157
+#12 36.42 Selecting previously unselected package bzip2.
+2025-Nov-25 18:53:47.687157
+#12 36.42 Preparing to unpack .../001-bzip2_1.0.8-5+b1_amd64.deb ...
+2025-Nov-25 18:53:47.687157
+#12 36.43 Unpacking bzip2 (1.0.8-5+b1) ...
+2025-Nov-25 18:53:47.687157
+#12 36.46 Selecting previously unselected package xz-utils.
+2025-Nov-25 18:53:47.687157
+#12 36.46 Preparing to unpack .../002-xz-utils_5.4.1-1_amd64.deb ...
+2025-Nov-25 18:53:47.687157
+#12 36.46 Unpacking xz-utils (5.4.1-1) ...
+2025-Nov-25 18:53:47.687157
+#12 36.55 Selecting previously unselected package binutils-common:amd64.
+2025-Nov-25 18:53:47.687157
+#12 36.55 Preparing to unpack .../003-binutils-common_2.40-2_amd64.deb ...
+2025-Nov-25 18:53:47.821286
+#12 36.55 Unpacking binutils-common:amd64 (2.40-2) ...
+2025-Nov-25 18:53:47.955693
+#12 36.84 Selecting previously unselected package libbinutils:amd64.
+2025-Nov-25 18:53:48.087567
+#12 36.85 Preparing to unpack .../004-libbinutils_2.40-2_amd64.deb ...
+2025-Nov-25 18:53:48.087567
+#12 36.85 Unpacking libbinutils:amd64 (2.40-2) ...
+2025-Nov-25 18:53:48.087567
+#12 36.97 Selecting previously unselected package libctf-nobfd0:amd64.
+2025-Nov-25 18:53:48.246311
+#12 36.97 Preparing to unpack .../005-libctf-nobfd0_2.40-2_amd64.deb ...
+2025-Nov-25 18:53:48.246311
+#12 36.98 Unpacking libctf-nobfd0:amd64 (2.40-2) ...
+2025-Nov-25 18:53:48.246311
+#12 37.05 Selecting previously unselected package libctf0:amd64.
+2025-Nov-25 18:53:48.246311
+#12 37.06 Preparing to unpack .../006-libctf0_2.40-2_amd64.deb ...
+2025-Nov-25 18:53:48.246311
+#12 37.07 Unpacking libctf0:amd64 (2.40-2) ...
+2025-Nov-25 18:53:48.246311
+#12 37.13 Selecting previously unselected package libgprofng0:amd64.
+2025-Nov-25 18:53:48.406073
+#12 37.14 Preparing to unpack .../007-libgprofng0_2.40-2_amd64.deb ...
+2025-Nov-25 18:53:48.406073
+#12 37.14 Unpacking libgprofng0:amd64 (2.40-2) ...
+2025-Nov-25 18:53:48.449774
+#12 37.29 Selecting previously unselected package libjansson4:amd64.
+2025-Nov-25 18:53:48.513138
+#12 37.29 Preparing to unpack .../008-libjansson4_2.14-2_amd64.deb ...
+2025-Nov-25 18:53:48.513138
+#12 37.30 Unpacking libjansson4:amd64 (2.14-2) ...
+2025-Nov-25 18:53:48.513138
+#12 37.39 Selecting previously unselected package binutils-x86-64-linux-gnu.
+2025-Nov-25 18:53:48.676495
+#12 37.40 Preparing to unpack .../009-binutils-x86-64-linux-gnu_2.40-2_amd64.deb ...
+2025-Nov-25 18:53:48.676495
+#12 37.41 Unpacking binutils-x86-64-linux-gnu (2.40-2) ...
+2025-Nov-25 18:53:50.180599
+#12 39.06 Selecting previously unselected package binutils.
+2025-Nov-25 18:53:50.289535
+#12 39.07 Preparing to unpack .../010-binutils_2.40-2_amd64.deb ...
+2025-Nov-25 18:53:50.289535
+#12 39.07 Unpacking binutils (2.40-2) ...
+2025-Nov-25 18:53:50.289535
+#12 39.15 Selecting previously unselected package libc-dev-bin.
+2025-Nov-25 18:53:50.289535
+#12 39.16 Preparing to unpack .../011-libc-dev-bin_2.36-9+deb12u13_amd64.deb ...
+2025-Nov-25 18:53:50.289535
+#12 39.17 Unpacking libc-dev-bin (2.36-9+deb12u13) ...
+2025-Nov-25 18:53:50.518176
+#12 39.24 Selecting previously unselected package linux-libc-dev:amd64.
+2025-Nov-25 18:53:50.518176
+#12 39.24 Preparing to unpack .../012-linux-libc-dev_6.1.158-1_amd64.deb ...
+2025-Nov-25 18:53:50.518176
+#12 39.25 Unpacking linux-libc-dev:amd64 (6.1.158-1) ...
+2025-Nov-25 18:53:51.521565
+#12 40.40 Selecting previously unselected package libcrypt-dev:amd64.
+2025-Nov-25 18:53:51.693898
+#12 40.41 Preparing to unpack .../013-libcrypt-dev_1%3a4.4.33-2_amd64.deb ...
+2025-Nov-25 18:53:51.693898
+#12 40.44 Unpacking libcrypt-dev:amd64 (1:4.4.33-2) ...
+2025-Nov-25 18:53:51.693898
+#12 40.58 Selecting previously unselected package libtirpc-dev:amd64.
+2025-Nov-25 18:53:51.859237
+#12 40.58 Preparing to unpack .../014-libtirpc-dev_1.3.3+ds-1_amd64.deb ...
+2025-Nov-25 18:53:51.859237
+#12 40.59 Unpacking libtirpc-dev:amd64 (1.3.3+ds-1) ...
+2025-Nov-25 18:53:51.896455
+#12 40.76 Selecting previously unselected package libnsl-dev:amd64.
+2025-Nov-25 18:53:52.003521
+#12 40.76 Preparing to unpack .../015-libnsl-dev_1.3.0-2_amd64.deb ...
+2025-Nov-25 18:53:52.003521
+#12 40.77 Unpacking libnsl-dev:amd64 (1.3.0-2) ...
+2025-Nov-25 18:53:52.003521
+#12 40.89 Selecting previously unselected package rpcsvc-proto.
+2025-Nov-25 18:53:52.137202
+#12 40.89 Preparing to unpack .../016-rpcsvc-proto_1.4.3-1_amd64.deb ...
+2025-Nov-25 18:53:52.137202
+#12 40.90 Unpacking rpcsvc-proto (1.4.3-1) ...
+2025-Nov-25 18:53:52.137202
+#12 41.02 Selecting previously unselected package libc6-dev:amd64.
+2025-Nov-25 18:53:52.300049
+#12 41.02 Preparing to unpack .../017-libc6-dev_2.36-9+deb12u13_amd64.deb ...
+2025-Nov-25 18:53:52.300049
+#12 41.03 Unpacking libc6-dev:amd64 (2.36-9+deb12u13) ...
+2025-Nov-25 18:53:52.774849
+#12 41.66 Selecting previously unselected package libisl23:amd64.
+2025-Nov-25 18:53:52.899596
+#12 41.66 Preparing to unpack .../018-libisl23_0.25-1.1_amd64.deb ...
+2025-Nov-25 18:53:52.899596
+#12 41.67 Unpacking libisl23:amd64 (0.25-1.1) ...
+2025-Nov-25 18:53:52.899596
+#12 41.78 Selecting previously unselected package libmpfr6:amd64.
+2025-Nov-25 18:53:53.024750
+#12 41.79 Preparing to unpack .../019-libmpfr6_4.2.0-1_amd64.deb ...
+2025-Nov-25 18:53:53.024750
+#12 41.79 Unpacking libmpfr6:amd64 (4.2.0-1) ...
+2025-Nov-25 18:53:53.024750
+#12 41.87 Selecting previously unselected package libmpc3:amd64.
+2025-Nov-25 18:53:53.024750
+#12 41.87 Preparing to unpack .../020-libmpc3_1.3.1-1_amd64.deb ...
+2025-Nov-25 18:53:53.024750
+#12 41.88 Unpacking libmpc3:amd64 (1.3.1-1) ...
+2025-Nov-25 18:53:53.024750
+#12 41.91 Selecting previously unselected package cpp-12.
+2025-Nov-25 18:53:53.186978
+#12 41.91 Preparing to unpack .../021-cpp-12_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:53.186978
+#12 41.92 Unpacking cpp-12 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:54.569838
+#12 43.45 Selecting previously unselected package cpp.
+2025-Nov-25 18:53:54.697849
+#12 43.46 Preparing to unpack .../022-cpp_4%3a12.2.0-3_amd64.deb ...
+2025-Nov-25 18:53:54.719844
+#12 43.46 Unpacking cpp (4:12.2.0-3) ...
+2025-Nov-25 18:53:54.719844
+#12 43.50 Selecting previously unselected package libcc1-0:amd64.
+2025-Nov-25 18:53:54.719844
+#12 43.50 Preparing to unpack .../023-libcc1-0_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:54.719844
+#12 43.50 Unpacking libcc1-0:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:54.719844
+#12 43.54 Selecting previously unselected package libgomp1:amd64.
+2025-Nov-25 18:53:54.719844
+#12 43.54 Preparing to unpack .../024-libgomp1_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:54.719844
+#12 43.54 Unpacking libgomp1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:54.719844
+#12 43.58 Selecting previously unselected package libitm1:amd64.
+2025-Nov-25 18:53:54.946458
+#12 43.59 Preparing to unpack .../025-libitm1_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:54.946458
+#12 43.59 Unpacking libitm1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:54.946458
+#12 43.63 Selecting previously unselected package libatomic1:amd64.
+2025-Nov-25 18:53:54.946458
+#12 43.63 Preparing to unpack .../026-libatomic1_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:54.946458
+#12 43.64 Unpacking libatomic1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:54.946458
+#12 43.67 Selecting previously unselected package libasan8:amd64.
+2025-Nov-25 18:53:54.946458
+#12 43.68 Preparing to unpack .../027-libasan8_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:54.946458
+#12 43.68 Unpacking libasan8:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:55.410370
+#12 44.29 Selecting previously unselected package liblsan0:amd64.
+2025-Nov-25 18:53:55.573381
+#12 44.30 Preparing to unpack .../028-liblsan0_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:55.573381
+#12 44.30 Unpacking liblsan0:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:55.766636
+#12 44.65 Selecting previously unselected package libtsan2:amd64.
+2025-Nov-25 18:53:55.928435
+#12 44.66 Preparing to unpack .../029-libtsan2_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:55.928435
+#12 44.66 Unpacking libtsan2:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:56.457377
+#12 45.34 Selecting previously unselected package libubsan1:amd64.
+2025-Nov-25 18:53:56.507821
+2025-Nov-25 18:53:56.630574
+#12 45.35 Preparing to unpack .../030-libubsan1_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:56.630574
+#12 45.36 Unpacking libubsan1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:56.845345
+#12 45.73 Selecting previously unselected package libquadmath0:amd64.
+2025-Nov-25 18:53:56.959639
+#12 45.73 Preparing to unpack .../031-libquadmath0_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:56.990033
+#12 45.74 Unpacking libquadmath0:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:56.990033
+#12 45.84 Selecting previously unselected package libgcc-12-dev:amd64.
+2025-Nov-25 18:53:57.129363
+#12 45.85 Preparing to unpack .../032-libgcc-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:57.129363
+#12 45.85 Unpacking libgcc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:53:58.057505
+#12 46.94 Selecting previously unselected package gcc-12.
+2025-Nov-25 18:53:58.217480
+#12 46.95 Preparing to unpack .../033-gcc-12_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:53:58.217480
+#12 46.95 Unpacking gcc-12 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:02.609597
+#12 51.49 Selecting previously unselected package gcc.
+2025-Nov-25 18:54:02.703465
+2025-Nov-25 18:54:02.786279
+#12 51.50 Preparing to unpack .../034-gcc_4%3a12.2.0-3_amd64.deb ...
+2025-Nov-25 18:54:02.786279
+#12 51.51 Unpacking gcc (4:12.2.0-3) ...
+2025-Nov-25 18:54:02.786279
+#12 51.62 Selecting previously unselected package libstdc++-12-dev:amd64.
+2025-Nov-25 18:54:02.928448
+#12 51.64 Preparing to unpack .../035-libstdc++-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:54:02.928448
+#12 51.65 Unpacking libstdc++-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:03.960920
+#12 52.84 Selecting previously unselected package g++-12.
+2025-Nov-25 18:54:04.121825
+#12 52.85 Preparing to unpack .../036-g++-12_12.2.0-14+deb12u1_amd64.deb ...
+2025-Nov-25 18:54:04.121825
+#12 52.85 Unpacking g++-12 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:06.407355
+#12 55.29 Selecting previously unselected package g++.
+2025-Nov-25 18:54:06.617982
+#12 55.29 Preparing to unpack .../037-g++_4%3a12.2.0-3_amd64.deb ...
+2025-Nov-25 18:54:06.617982
+#12 55.29 Unpacking g++ (4:12.2.0-3) ...
+2025-Nov-25 18:54:06.617982
+#12 55.34 Selecting previously unselected package make.
+2025-Nov-25 18:54:06.617982
+#12 55.35 Preparing to unpack .../038-make_4.3-4.1_amd64.deb ...
+2025-Nov-25 18:54:06.617982
+#12 55.35 Unpacking make (4.3-4.1) ...
+2025-Nov-25 18:54:06.617982
+#12 55.50 Selecting previously unselected package libdpkg-perl.
+2025-Nov-25 18:54:06.776605
+#12 55.50 Preparing to unpack .../039-libdpkg-perl_1.21.22_all.deb ...
+2025-Nov-25 18:54:06.776605
+#12 55.51 Unpacking libdpkg-perl (1.21.22) ...
+2025-Nov-25 18:54:06.814412
+#12 55.68 Selecting previously unselected package patch.
+2025-Nov-25 18:54:07.031529
+#12 55.68 Preparing to unpack .../040-patch_2.7.6-7_amd64.deb ...
+2025-Nov-25 18:54:07.031529
+#12 55.69 Unpacking patch (2.7.6-7) ...
+2025-Nov-25 18:54:07.031529
+#12 55.75 Selecting previously unselected package dpkg-dev.
+2025-Nov-25 18:54:07.031529
+#12 55.76 Preparing to unpack .../041-dpkg-dev_1.21.22_all.deb ...
+2025-Nov-25 18:54:07.031529
+#12 55.76 Unpacking dpkg-dev (1.21.22) ...
+2025-Nov-25 18:54:07.167047
+#12 56.05 Selecting previously unselected package build-essential.
+2025-Nov-25 18:54:07.279616
+#12 56.06 Preparing to unpack .../042-build-essential_12.9_amd64.deb ...
+2025-Nov-25 18:54:07.279616
+#12 56.07 Unpacking build-essential (12.9) ...
+2025-Nov-25 18:54:07.279616
+#12 56.16 Selecting previously unselected package python3-pkg-resources.
+2025-Nov-25 18:54:07.434386
+#12 56.16 Preparing to unpack .../043-python3-pkg-resources_66.1.1-1+deb12u2_all.deb ...
+2025-Nov-25 18:54:07.434386
+#12 56.17 Unpacking python3-pkg-resources (66.1.1-1+deb12u2) ...
+2025-Nov-25 18:54:07.472601
+#12 56.33 Selecting previously unselected package python3-six.
+2025-Nov-25 18:54:07.571071
+#12 56.34 Preparing to unpack .../044-python3-six_1.16.0-4_all.deb ...
+2025-Nov-25 18:54:07.571071
+#12 56.35 Unpacking python3-six (1.16.0-4) ...
+2025-Nov-25 18:54:07.571071
+#12 56.41 Selecting previously unselected package gyp.
+2025-Nov-25 18:54:07.571071
+#12 56.42 Preparing to unpack .../045-gyp_0.1+20220404git9ecf45e-2_all.deb ...
+2025-Nov-25 18:54:07.571071
+#12 56.43 Unpacking gyp (0.1+20220404git9ecf45e-2) ...
+2025-Nov-25 18:54:07.716249
+2025-Nov-25 18:54:08.002152
+#12 56.87 Selecting previously unselected package libbrotli1:amd64.
+2025-Nov-25 18:54:08.163385
+#12 56.88 Preparing to unpack .../046-libbrotli1_1.0.9-2+b6_amd64.deb ...
+2025-Nov-25 18:54:08.163385
+#12 56.89 Unpacking libbrotli1:amd64 (1.0.9-2+b6) ...
+2025-Nov-25 18:54:08.295213
+#12 57.18 Selecting previously unselected package libc-ares2:amd64.
+2025-Nov-25 18:54:08.397259
+#12 57.19 Preparing to unpack .../047-libc-ares2_1.18.1-3_amd64.deb ...
+2025-Nov-25 18:54:08.397259
+#12 57.19 Unpacking libc-ares2:amd64 (1.18.1-3) ...
+2025-Nov-25 18:54:08.397259
+#12 57.28 Selecting previously unselected package libicu72:amd64.
+2025-Nov-25 18:54:08.561453
+#12 57.29 Preparing to unpack .../048-libicu72_72.1-3+deb12u1_amd64.deb ...
+2025-Nov-25 18:54:08.561453
+#12 57.29 Unpacking libicu72:amd64 (72.1-3+deb12u1) ...
+2025-Nov-25 18:54:10.733152
+#12 59.62 Selecting previously unselected package libjs-events.
+2025-Nov-25 18:54:10.755457
+2025-Nov-25 18:54:10.857218
+#12 59.62 Preparing to unpack .../049-libjs-events_3.3.0+~3.0.0-3_all.deb ...
+2025-Nov-25 18:54:10.880951
+#12 59.62 Unpacking libjs-events (3.3.0+~3.0.0-3) ...
+2025-Nov-25 18:54:10.880951
+#12 59.66 Selecting previously unselected package libjs-inherits.
+2025-Nov-25 18:54:10.880951
+#12 59.67 Preparing to unpack .../050-libjs-inherits_2.0.4-6_all.deb ...
+2025-Nov-25 18:54:10.880951
+#12 59.67 Unpacking libjs-inherits (2.0.4-6) ...
+2025-Nov-25 18:54:10.880951
+#12 59.70 Selecting previously unselected package libnghttp2-14:amd64.
+2025-Nov-25 18:54:10.880951
+#12 59.70 Preparing to unpack .../051-libnghttp2-14_1.52.0-1+deb12u2_amd64.deb ...
+2025-Nov-25 18:54:10.880951
+#12 59.71 Unpacking libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+2025-Nov-25 18:54:10.880951
+#12 59.74 Selecting previously unselected package libssl-dev:amd64.
+2025-Nov-25 18:54:11.018237
+#12 59.75 Preparing to unpack .../052-libssl-dev_3.0.17-1~deb12u3_amd64.deb ...
+2025-Nov-25 18:54:11.018237
+#12 59.75 Unpacking libssl-dev:amd64 (3.0.17-1~deb12u3) ...
+2025-Nov-25 18:54:11.235073
+#12 60.11 Selecting previously unselected package libuv1:amd64.
+2025-Nov-25 18:54:11.336330
+#12 60.12 Preparing to unpack .../053-libuv1_1.44.2-1+deb12u1_amd64.deb ...
+2025-Nov-25 18:54:11.336330
+#12 60.12 Unpacking libuv1:amd64 (1.44.2-1+deb12u1) ...
+2025-Nov-25 18:54:11.336330
+#12 60.21 Selecting previously unselected package libuv1-dev:amd64.
+2025-Nov-25 18:54:11.336330
+#12 60.21 Preparing to unpack .../054-libuv1-dev_1.44.2-1+deb12u1_amd64.deb ...
+2025-Nov-25 18:54:11.336330
+#12 60.22 Unpacking libuv1-dev:amd64 (1.44.2-1+deb12u1) ...
+2025-Nov-25 18:54:11.438636
+#12 60.32 Selecting previously unselected package node-xtend.
+2025-Nov-25 18:54:11.438636
+#12 60.32 Preparing to unpack .../055-node-xtend_4.0.2-3_all.deb ...
+2025-Nov-25 18:54:11.584556
+#12 60.33 Unpacking node-xtend (4.0.2-3) ...
+2025-Nov-25 18:54:11.584556
+#12 60.36 Selecting previously unselected package nodejs.
+2025-Nov-25 18:54:11.584556
+#12 60.37 Preparing to unpack .../056-nodejs_18.20.4+dfsg-1~deb12u1_amd64.deb ...
+2025-Nov-25 18:54:11.584556
+#12 60.37 Unpacking nodejs (18.20.4+dfsg-1~deb12u1) ...
+2025-Nov-25 18:54:11.584556
+#12 60.47 Selecting previously unselected package node-acorn.
+2025-Nov-25 18:54:11.698189
+#12 60.47 Preparing to unpack .../057-node-acorn_8.8.1+ds+~cs25.17.7-2_all.deb ...
+2025-Nov-25 18:54:11.698189
+#12 60.48 Unpacking node-acorn (8.8.1+ds+~cs25.17.7-2) ...
+2025-Nov-25 18:54:11.698189
+#12 60.55 Selecting previously unselected package node-cjs-module-lexer.
+2025-Nov-25 18:54:11.698189
+#12 60.55 Preparing to unpack .../058-node-cjs-module-lexer_1.2.2+dfsg-5_all.deb ...
+2025-Nov-25 18:54:11.698189
+#12 60.55 Unpacking node-cjs-module-lexer (1.2.2+dfsg-5) ...
+2025-Nov-25 18:54:11.698189
+#12 60.58 Selecting previously unselected package node-busboy.
+2025-Nov-25 18:54:11.848419
+#12 60.59 Preparing to unpack .../059-node-busboy_1.6.0+~cs2.6.0-2_all.deb ...
+2025-Nov-25 18:54:11.848419
+#12 60.59 Unpacking node-busboy (1.6.0+~cs2.6.0-2) ...
+2025-Nov-25 18:54:11.848419
+#12 60.63 Selecting previously unselected package node-undici.
+2025-Nov-25 18:54:11.848419
+#12 60.63 Preparing to unpack .../060-node-undici_5.15.0+dfsg1+~cs20.10.9.3-1+deb12u4_all.deb ...
+2025-Nov-25 18:54:11.848419
+#12 60.64 Unpacking node-undici (5.15.0+dfsg1+~cs20.10.9.3-1+deb12u4) ...
+2025-Nov-25 18:54:11.848419
+#12 60.73 Selecting previously unselected package libnode108:amd64.
+2025-Nov-25 18:54:12.006052
+#12 60.73 Preparing to unpack .../061-libnode108_18.20.4+dfsg-1~deb12u1_amd64.deb ...
+2025-Nov-25 18:54:12.006052
+#12 60.74 Unpacking libnode108:amd64 (18.20.4+dfsg-1~deb12u1) ...
+2025-Nov-25 18:54:13.804320
+#12 62.69 Selecting previously unselected package libnode-dev.
+2025-Nov-25 18:54:13.964296
+#12 62.69 Preparing to unpack .../062-libnode-dev_18.20.4+dfsg-1~deb12u1_amd64.deb ...
+2025-Nov-25 18:54:13.964296
+#12 62.70 Unpacking libnode-dev (18.20.4+dfsg-1~deb12u1) ...
+2025-Nov-25 18:54:13.997268
+#12 62.85 Selecting previously unselected package libpkgconf3:amd64.
+2025-Nov-25 18:54:14.088142
+#12 62.86 Preparing to unpack .../063-libpkgconf3_1.8.1-1_amd64.deb ...
+2025-Nov-25 18:54:14.088142
+#12 62.87 Unpacking libpkgconf3:amd64 (1.8.1-1) ...
+2025-Nov-25 18:54:14.088142
+#12 62.97 Selecting previously unselected package node-abbrev.
+2025-Nov-25 18:54:14.205615
+#12 62.98 Preparing to unpack .../064-node-abbrev_1.1.1+~1.1.2-1_all.deb ...
+2025-Nov-25 18:54:14.205615
+#12 62.98 Unpacking node-abbrev (1.1.1+~1.1.2-1) ...
+2025-Nov-25 18:54:14.205615
+#12 63.03 Selecting previously unselected package node-ms.
+2025-Nov-25 18:54:14.205615
+#12 63.03 Preparing to unpack .../065-node-ms_2.1.3+~cs0.7.31-3_all.deb ...
+2025-Nov-25 18:54:14.205615
+#12 63.04 Unpacking node-ms (2.1.3+~cs0.7.31-3) ...
+2025-Nov-25 18:54:14.205615
+#12 63.09 Selecting previously unselected package node-debug.
+2025-Nov-25 18:54:14.317402
+#12 63.09 Preparing to unpack .../066-node-debug_4.3.4+~cs4.1.7-1_all.deb ...
+2025-Nov-25 18:54:14.317402
+#12 63.09 Unpacking node-debug (4.3.4+~cs4.1.7-1) ...
+2025-Nov-25 18:54:14.317402
+#12 63.14 Selecting previously unselected package node-yallist.
+2025-Nov-25 18:54:14.317402
+#12 63.15 Preparing to unpack .../067-node-yallist_4.0.0+~4.0.1-1_all.deb ...
+2025-Nov-25 18:54:14.317402
+#12 63.15 Unpacking node-yallist (4.0.0+~4.0.1-1) ...
+2025-Nov-25 18:54:14.317402
+#12 63.20 Selecting previously unselected package node-lru-cache.
+2025-Nov-25 18:54:14.477678
+#12 63.21 Preparing to unpack .../068-node-lru-cache_7.14.1-1_all.deb ...
+2025-Nov-25 18:54:14.477678
+#12 63.21 Unpacking node-lru-cache (7.14.1-1) ...
+2025-Nov-25 18:54:14.477678
+#12 63.26 Selecting previously unselected package node-semver.
+2025-Nov-25 18:54:14.477678
+#12 63.27 Preparing to unpack .../069-node-semver_7.3.5+~7.3.9-2_all.deb ...
+2025-Nov-25 18:54:14.477678
+#12 63.27 Unpacking node-semver (7.3.5+~7.3.9-2) ...
+2025-Nov-25 18:54:14.477678
+#12 63.36 Selecting previously unselected package node-agent-base.
+2025-Nov-25 18:54:14.588637
+#12 63.36 Preparing to unpack .../070-node-agent-base_6.0.2+~cs5.4.2-2_all.deb ...
+2025-Nov-25 18:54:14.588637
+#12 63.37 Unpacking node-agent-base (6.0.2+~cs5.4.2-2) ...
+2025-Nov-25 18:54:14.588637
+#12 63.47 Selecting previously unselected package node-ansi-regex.
+2025-Nov-25 18:54:14.732350
+#12 63.48 Preparing to unpack .../071-node-ansi-regex_5.0.1-1_all.deb ...
+2025-Nov-25 18:54:14.732350
+#12 63.49 Unpacking node-ansi-regex (5.0.1-1) ...
+2025-Nov-25 18:54:14.732350
+#12 63.56 Selecting previously unselected package node-color-name.
+2025-Nov-25 18:54:14.732350
+#12 63.56 Preparing to unpack .../072-node-color-name_1.1.4+~1.1.1-2_all.deb ...
+2025-Nov-25 18:54:14.732350
+#12 63.57 Unpacking node-color-name (1.1.4+~1.1.1-2) ...
+2025-Nov-25 18:54:14.732350
+#12 63.62 Selecting previously unselected package node-color-convert.
+2025-Nov-25 18:54:14.879782
+#12 63.62 Preparing to unpack .../073-node-color-convert_2.0.1+~cs2.0.0-2_all.deb ...
+2025-Nov-25 18:54:14.879782
+#12 63.63 Unpacking node-color-convert (2.0.1+~cs2.0.0-2) ...
+2025-Nov-25 18:54:14.879782
+#12 63.70 Selecting previously unselected package node-ansi-styles.
+2025-Nov-25 18:54:14.879782
+#12 63.71 Preparing to unpack .../074-node-ansi-styles_6.2.1-2_all.deb ...
+2025-Nov-25 18:54:14.879782
+#12 63.71 Unpacking node-ansi-styles (6.2.1-2) ...
+2025-Nov-25 18:54:14.879782
+#12 63.76 Selecting previously unselected package node-aproba.
+2025-Nov-25 18:54:14.986234
+#12 63.76 Preparing to unpack .../075-node-aproba_2.0.0-3_all.deb ...
+2025-Nov-25 18:54:14.986234
+#12 63.77 Unpacking node-aproba (2.0.0-3) ...
+2025-Nov-25 18:54:14.986234
+#12 63.83 Selecting previously unselected package node-delegates.
+2025-Nov-25 18:54:14.986234
+#12 63.83 Preparing to unpack .../076-node-delegates_1.0.0-3_all.deb ...
+2025-Nov-25 18:54:14.986234
+#12 63.84 Unpacking node-delegates (1.0.0-3) ...
+2025-Nov-25 18:54:14.986234
+#12 63.87 Selecting previously unselected package node-inherits.
+2025-Nov-25 18:54:15.105466
+#12 63.87 Preparing to unpack .../077-node-inherits_2.0.4-6_all.deb ...
+2025-Nov-25 18:54:15.105466
+#12 63.88 Unpacking node-inherits (2.0.4-6) ...
+2025-Nov-25 18:54:15.105466
+#12 63.93 Selecting previously unselected package node-core-util-is.
+2025-Nov-25 18:54:15.105466
+#12 63.93 Preparing to unpack .../078-node-core-util-is_1.0.3-1_all.deb ...
+2025-Nov-25 18:54:15.105466
+#12 63.94 Unpacking node-core-util-is (1.0.3-1) ...
+2025-Nov-25 18:54:15.105466
+#12 63.98 Selecting previously unselected package node-safe-buffer.
+2025-Nov-25 18:54:15.257579
+#12 63.99 Preparing to unpack .../079-node-safe-buffer_5.2.1+~cs2.1.2-3_all.deb ...
+2025-Nov-25 18:54:15.257579
+#12 63.99 Unpacking node-safe-buffer (5.2.1+~cs2.1.2-3) ...
+2025-Nov-25 18:54:15.257579
+#12 64.07 Selecting previously unselected package node-string-decoder.
+2025-Nov-25 18:54:15.257579
+#12 64.07 Preparing to unpack .../080-node-string-decoder_1.3.0-6_all.deb ...
+2025-Nov-25 18:54:15.257579
+#12 64.08 Unpacking node-string-decoder (1.3.0-6) ...
+2025-Nov-25 18:54:15.257579
+#12 64.14 Selecting previously unselected package node-process-nextick-args.
+2025-Nov-25 18:54:15.416304
+#12 64.15 Preparing to unpack .../081-node-process-nextick-args_2.0.1-3_all.deb ...
+2025-Nov-25 18:54:15.416304
+#12 64.15 Unpacking node-process-nextick-args (2.0.1-3) ...
+2025-Nov-25 18:54:15.416304
+#12 64.22 Selecting previously unselected package node-util-deprecate.
+2025-Nov-25 18:54:15.416304
+#12 64.23 Preparing to unpack .../082-node-util-deprecate_1.0.2-3_all.deb ...
+2025-Nov-25 18:54:15.416304
+#12 64.23 Unpacking node-util-deprecate (1.0.2-3) ...
+2025-Nov-25 18:54:15.416304
+#12 64.30 Selecting previously unselected package node-isarray.
+2025-Nov-25 18:54:15.520128
+2025-Nov-25 18:54:15.577927
+#12 64.30 Preparing to unpack .../083-node-isarray_2.0.5-4_all.deb ...
+2025-Nov-25 18:54:15.577927
+#12 64.31 Unpacking node-isarray (2.0.5-4) ...
+2025-Nov-25 18:54:15.577927
+#12 64.40 Selecting previously unselected package node-readable-stream.
+2025-Nov-25 18:54:15.620443
+#12 64.41 Preparing to unpack .../084-node-readable-stream_3.6.0+~cs3.0.0-4_all.deb ...
+2025-Nov-25 18:54:15.620443
+#12 64.41 Unpacking node-readable-stream (3.6.0+~cs3.0.0-4) ...
+2025-Nov-25 18:54:15.620443
+#12 64.49 Selecting previously unselected package node-are-we-there-yet.
+2025-Nov-25 18:54:15.620443
+#12 64.50 Preparing to unpack .../085-node-are-we-there-yet_3.0.1+~1.1.0-1_all.deb ...
+2025-Nov-25 18:54:15.620443
+#12 64.50 Unpacking node-are-we-there-yet (3.0.1+~1.1.0-1) ...
+2025-Nov-25 18:54:15.731475
+#12 64.56 Selecting previously unselected package node-balanced-match.
+2025-Nov-25 18:54:15.731475
+#12 64.57 Preparing to unpack .../086-node-balanced-match_2.0.0-1_all.deb ...
+2025-Nov-25 18:54:15.731475
+#12 64.57 Unpacking node-balanced-match (2.0.0-1) ...
+2025-Nov-25 18:54:15.731475
+#12 64.61 Selecting previously unselected package node-brace-expansion.
+2025-Nov-25 18:54:15.834243
+#12 64.62 Preparing to unpack .../087-node-brace-expansion_2.0.1-2_all.deb ...
+2025-Nov-25 18:54:15.834243
+#12 64.63 Unpacking node-brace-expansion (2.0.1-2) ...
+2025-Nov-25 18:54:15.834243
+#12 64.68 Selecting previously unselected package node-chownr.
+2025-Nov-25 18:54:15.834243
+#12 64.68 Preparing to unpack .../088-node-chownr_2.0.0-2_all.deb ...
+2025-Nov-25 18:54:15.834243
+#12 64.69 Unpacking node-chownr (2.0.0-2) ...
+2025-Nov-25 18:54:15.834243
+#12 64.71 Selecting previously unselected package node-clone.
+2025-Nov-25 18:54:15.834243
+#12 64.72 Preparing to unpack .../089-node-clone_2.1.2-4_all.deb ...
+2025-Nov-25 18:54:15.945597
+#12 64.72 Unpacking node-clone (2.1.2-4) ...
+2025-Nov-25 18:54:15.945597
+#12 64.76 Selecting previously unselected package node-console-control-strings.
+2025-Nov-25 18:54:15.945597
+#12 64.76 Preparing to unpack .../090-node-console-control-strings_1.1.0-3_all.deb ...
+2025-Nov-25 18:54:15.945597
+#12 64.76 Unpacking node-console-control-strings (1.1.0-3) ...
+2025-Nov-25 18:54:15.945597
+#12 64.79 Selecting previously unselected package node-data-uri-to-buffer.
+2025-Nov-25 18:54:15.945597
+#12 64.80 Preparing to unpack .../091-node-data-uri-to-buffer_4.0.0-3_all.deb ...
+2025-Nov-25 18:54:15.945597
+#12 64.80 Unpacking node-data-uri-to-buffer (4.0.0-3) ...
+2025-Nov-25 18:54:15.945597
+#12 64.83 Selecting previously unselected package node-defaults.
+2025-Nov-25 18:54:16.046283
+#12 64.84 Preparing to unpack .../092-node-defaults_1.0.4+~1.0.3-1_all.deb ...
+2025-Nov-25 18:54:16.046283
+#12 64.84 Unpacking node-defaults (1.0.4+~1.0.3-1) ...
+2025-Nov-25 18:54:16.046283
+#12 64.87 Selecting previously unselected package node-iconv-lite.
+2025-Nov-25 18:54:16.046283
+#12 64.88 Preparing to unpack .../093-node-iconv-lite_0.6.3-3_all.deb ...
+2025-Nov-25 18:54:16.046283
+#12 64.88 Unpacking node-iconv-lite (0.6.3-3) ...
+2025-Nov-25 18:54:16.046283
+#12 64.93 Selecting previously unselected package node-encoding.
+2025-Nov-25 18:54:16.151322
+#12 64.93 Preparing to unpack .../094-node-encoding_0.1.13-2_all.deb ...
+2025-Nov-25 18:54:16.151322
+#12 64.93 Unpacking node-encoding (0.1.13-2) ...
+2025-Nov-25 18:54:16.151322
+#12 64.97 Selecting previously unselected package node-events.
+2025-Nov-25 18:54:16.151322
+#12 64.97 Preparing to unpack .../095-node-events_3.3.0+~3.0.0-3_all.deb ...
+2025-Nov-25 18:54:16.151322
+#12 64.98 Unpacking node-events (3.3.0+~3.0.0-3) ...
+2025-Nov-25 18:54:16.151322
+#12 65.00 Selecting previously unselected package node-time-stamp.
+2025-Nov-25 18:54:16.151322
+#12 65.01 Preparing to unpack .../096-node-time-stamp_2.2.0-2_all.deb ...
+2025-Nov-25 18:54:16.151322
+#12 65.01 Unpacking node-time-stamp (2.2.0-2) ...
+2025-Nov-25 18:54:16.151322
+#12 65.03 Selecting previously unselected package node-fancy-log.
+2025-Nov-25 18:54:16.394804
+#12 65.04 Preparing to unpack .../097-node-fancy-log_1.3.3+~cs1.3.1-2_all.deb ...
+2025-Nov-25 18:54:16.394804
+#12 65.04 Unpacking node-fancy-log (1.3.3+~cs1.3.1-2) ...
+2025-Nov-25 18:54:16.394804
+#12 65.10 Selecting previously unselected package node-fetch.
+2025-Nov-25 18:54:16.394804
+#12 65.11 Preparing to unpack .../098-node-fetch_3.3.0+~cs11.4.11-2_all.deb ...
+2025-Nov-25 18:54:16.394804
+#12 65.11 Unpacking node-fetch (3.3.0+~cs11.4.11-2) ...
+2025-Nov-25 18:54:16.937125
+#12 65.82 Selecting previously unselected package node-fs.realpath.
+2025-Nov-25 18:54:17.063151
+#12 65.83 Preparing to unpack .../099-node-fs.realpath_1.0.0-3_all.deb ...
+2025-Nov-25 18:54:17.063151
+#12 65.83 Unpacking node-fs.realpath (1.0.0-3) ...
+2025-Nov-25 18:54:17.063151
+#12 65.89 Selecting previously unselected package node-has-unicode.
+2025-Nov-25 18:54:17.063151
+#12 65.90 Preparing to unpack .../100-node-has-unicode_2.0.1-5_all.deb ...
+2025-Nov-25 18:54:17.063151
+#12 65.90 Unpacking node-has-unicode (2.0.1-5) ...
+2025-Nov-25 18:54:17.063151
+#12 65.94 Selecting previously unselected package node-signal-exit.
+2025-Nov-25 18:54:17.188588
+#12 65.95 Preparing to unpack .../101-node-signal-exit_3.0.7+~3.0.1-1_all.deb ...
+2025-Nov-25 18:54:17.188588
+#12 65.96 Unpacking node-signal-exit (3.0.7+~3.0.1-1) ...
+2025-Nov-25 18:54:17.188588
+#12 66.02 Selecting previously unselected package node-slice-ansi.
+2025-Nov-25 18:54:17.188588
+#12 66.02 Preparing to unpack .../102-node-slice-ansi_5.0.0+~cs9.0.0-5_all.deb ...
+2025-Nov-25 18:54:17.188588
+#12 66.03 Unpacking node-slice-ansi (5.0.0+~cs9.0.0-5) ...
+2025-Nov-25 18:54:17.188588
+#12 66.07 Selecting previously unselected package node-strip-ansi.
+2025-Nov-25 18:54:17.341838
+#12 66.08 Preparing to unpack .../103-node-strip-ansi_6.0.1-2_all.deb ...
+2025-Nov-25 18:54:17.341838
+#12 66.08 Unpacking node-strip-ansi (6.0.1-2) ...
+2025-Nov-25 18:54:17.341838
+#12 66.14 Selecting previously unselected package node-wcwidth.js.
+2025-Nov-25 18:54:17.341838
+#12 66.14 Preparing to unpack .../104-node-wcwidth.js_1.0.2-2_all.deb ...
+2025-Nov-25 18:54:17.341838
+#12 66.15 Unpacking node-wcwidth.js (1.0.2-2) ...
+2025-Nov-25 18:54:17.341838
+#12 66.22 Selecting previously unselected package node-string-width.
+2025-Nov-25 18:54:17.458230
+#12 66.23 Preparing to unpack .../105-node-string-width_4.2.3+~cs13.2.3-1_all.deb ...
+2025-Nov-25 18:54:17.458230
+#12 66.24 Unpacking node-string-width (4.2.3+~cs13.2.3-1) ...
+2025-Nov-25 18:54:17.458230
+#12 66.34 Selecting previously unselected package node-wide-align.
+2025-Nov-25 18:54:17.560380
+#12 66.35 Preparing to unpack .../106-node-wide-align_1.1.3-4_all.deb ...
+2025-Nov-25 18:54:17.560380
+#12 66.35 Unpacking node-wide-align (1.1.3-4) ...
+2025-Nov-25 18:54:17.560380
+#12 66.43 Selecting previously unselected package node-gauge.
+2025-Nov-25 18:54:17.622105
+#12 66.44 Preparing to unpack .../107-node-gauge_4.0.4-1_all.deb ...
+2025-Nov-25 18:54:17.691988
+#12 66.45 Unpacking node-gauge (4.0.4-1) ...
+2025-Nov-25 18:54:17.691988
+#12 66.55 Selecting previously unselected package node-wrappy.
+2025-Nov-25 18:54:17.767425
+#12 66.56 Preparing to unpack .../108-node-wrappy_1.0.2-3_all.deb ...
+2025-Nov-25 18:54:17.767425
+#12 66.56 Unpacking node-wrappy (1.0.2-3) ...
+2025-Nov-25 18:54:17.767425
+#12 66.64 Selecting previously unselected package node-once.
+2025-Nov-25 18:54:17.767425
+#12 66.65 Preparing to unpack .../109-node-once_1.4.0-7_all.deb ...
+2025-Nov-25 18:54:17.867567
+#12 66.66 Unpacking node-once (1.4.0-7) ...
+2025-Nov-25 18:54:17.867567
+#12 66.73 Selecting previously unselected package node-inflight.
+2025-Nov-25 18:54:17.867567
+#12 66.74 Preparing to unpack .../110-node-inflight_1.0.6-2_all.deb ...
+2025-Nov-25 18:54:17.867567
+#12 66.74 Unpacking node-inflight (1.0.6-2) ...
+2025-Nov-25 18:54:17.989389
+#12 66.83 Selecting previously unselected package node-minimatch.
+2025-Nov-25 18:54:17.989389
+#12 66.83 Preparing to unpack .../111-node-minimatch_5.1.1+~5.1.2-1_all.deb ...
+2025-Nov-25 18:54:17.989389
+#12 66.84 Unpacking node-minimatch (5.1.1+~5.1.2-1) ...
+2025-Nov-25 18:54:17.989389
+#12 66.87 Selecting previously unselected package node-glob.
+2025-Nov-25 18:54:18.172970
+#12 66.88 Preparing to unpack .../112-node-glob_8.0.3+~cs8.4.15-1_all.deb ...
+2025-Nov-25 18:54:18.172970
+#12 66.88 Unpacking node-glob (8.0.3+~cs8.4.15-1) ...
+2025-Nov-25 18:54:18.172970
+#12 66.95 Selecting previously unselected package node-graceful-fs.
+2025-Nov-25 18:54:18.172970
+#12 66.95 Preparing to unpack .../113-node-graceful-fs_4.2.10-1_all.deb ...
+2025-Nov-25 18:54:18.172970
+#12 66.96 Unpacking node-graceful-fs (4.2.10-1) ...
+2025-Nov-25 18:54:18.172970
+#12 67.06 Selecting previously unselected package node-https-proxy-agent.
+2025-Nov-25 18:54:18.312251
+#12 67.06 Preparing to unpack .../114-node-https-proxy-agent_5.0.1+~cs8.0.0-3_all.deb ...
+2025-Nov-25 18:54:18.339944
+#12 67.07 Unpacking node-https-proxy-agent (5.0.1+~cs8.0.0-3) ...
+2025-Nov-25 18:54:18.339944
+#12 67.14 Selecting previously unselected package node-mkdirp.
+2025-Nov-25 18:54:18.339944
+#12 67.15 Preparing to unpack .../115-node-mkdirp_1.0.4+~1.0.2-4_all.deb ...
+2025-Nov-25 18:54:18.339944
+#12 67.15 Unpacking node-mkdirp (1.0.4+~1.0.2-4) ...
+2025-Nov-25 18:54:18.339944
+#12 67.19 Selecting previously unselected package node-nopt.
+2025-Nov-25 18:54:18.419430
+#12 67.20 Preparing to unpack .../116-node-nopt_5.0.0-4_all.deb ...
+2025-Nov-25 18:54:18.419430
+#12 67.20 Unpacking node-nopt (5.0.0-4) ...
+2025-Nov-25 18:54:18.419430
+#12 67.27 Selecting previously unselected package node-set-blocking.
+2025-Nov-25 18:54:18.419430
+#12 67.27 Preparing to unpack .../117-node-set-blocking_2.0.0-2_all.deb ...
+2025-Nov-25 18:54:18.419430
+#12 67.27 Unpacking node-set-blocking (2.0.0-2) ...
+2025-Nov-25 18:54:18.419430
+#12 67.30 Selecting previously unselected package node-npmlog.
+2025-Nov-25 18:54:18.532360
+#12 67.31 Preparing to unpack .../118-node-npmlog_7.0.1+~4.1.4-1_all.deb ...
+2025-Nov-25 18:54:18.532360
+#12 67.31 Unpacking node-npmlog (7.0.1+~4.1.4-1) ...
+2025-Nov-25 18:54:18.532360
+#12 67.35 Selecting previously unselected package node-osenv.
+2025-Nov-25 18:54:18.532360
+#12 67.35 Preparing to unpack .../119-node-osenv_0.1.5+~0.1.1-1_all.deb ...
+2025-Nov-25 18:54:18.532360
+#12 67.36 Unpacking node-osenv (0.1.5+~0.1.1-1) ...
+2025-Nov-25 18:54:18.532360
+#12 67.41 Selecting previously unselected package node-rimraf.
+2025-Nov-25 18:54:18.646564
+#12 67.42 Preparing to unpack .../120-node-rimraf_3.0.2-2_all.deb ...
+2025-Nov-25 18:54:18.646564
+#12 67.43 Unpacking node-rimraf (3.0.2-2) ...
+2025-Nov-25 18:54:18.646564
+#12 67.51 Selecting previously unselected package node-jsonparse.
+2025-Nov-25 18:54:18.646564
+#12 67.52 Preparing to unpack .../121-node-jsonparse_1.3.1-10_all.deb ...
+2025-Nov-25 18:54:18.758119
+#12 67.53 Unpacking node-jsonparse (1.3.1-10) ...
+2025-Nov-25 18:54:18.758119
+#12 67.62 Selecting previously unselected package node-minipass.
+2025-Nov-25 18:54:18.758119
+#12 67.63 Preparing to unpack .../122-node-minipass_3.3.6+~cs9.4.19-1+deb12u1_all.deb ...
+2025-Nov-25 18:54:18.885842
+#12 67.64 Unpacking node-minipass (3.3.6+~cs9.4.19-1+deb12u1) ...
+2025-Nov-25 18:54:18.885842
+#12 67.77 Selecting previously unselected package node-tar.
+2025-Nov-25 18:54:18.985862
+#12 67.77 Preparing to unpack .../123-node-tar_6.1.13+~cs7.0.5-1_all.deb ...
+2025-Nov-25 18:54:18.985862
+#12 67.77 Unpacking node-tar (6.1.13+~cs7.0.5-1) ...
+2025-Nov-25 18:54:18.985862
+#12 67.86 Selecting previously unselected package node-isexe.
+2025-Nov-25 18:54:18.985862
+#12 67.86 Preparing to unpack .../124-node-isexe_2.0.0+~2.0.1-5_all.deb ...
+2025-Nov-25 18:54:18.985862
+#12 67.87 Unpacking node-isexe (2.0.0+~2.0.1-5) ...
+2025-Nov-25 18:54:19.121533
+#12 67.92 Selecting previously unselected package node-which.
+2025-Nov-25 18:54:19.121533
+#12 67.93 Preparing to unpack .../125-node-which_2.0.2+~cs1.3.2-3_all.deb ...
+2025-Nov-25 18:54:19.121533
+#12 67.93 Unpacking node-which (2.0.2+~cs1.3.2-3) ...
+2025-Nov-25 18:54:19.121533
+#12 68.01 Selecting previously unselected package node-gyp.
+2025-Nov-25 18:54:19.232380
+#12 68.01 Preparing to unpack .../126-node-gyp_9.3.0-2_all.deb ...
+2025-Nov-25 18:54:19.232380
+#12 68.02 Unpacking node-gyp (9.3.0-2) ...
+2025-Nov-25 18:54:19.232380
+#12 68.11 Selecting previously unselected package pkgconf-bin.
+2025-Nov-25 18:54:19.392973
+#12 68.12 Preparing to unpack .../127-pkgconf-bin_1.8.1-1_amd64.deb ...
+2025-Nov-25 18:54:19.392973
+#12 68.12 Unpacking pkgconf-bin (1.8.1-1) ...
+2025-Nov-25 18:54:19.392973
+#12 68.26 Selecting previously unselected package pkgconf:amd64.
+2025-Nov-25 18:54:19.489083
+#12 68.28 Preparing to unpack .../128-pkgconf_1.8.1-1_amd64.deb ...
+2025-Nov-25 18:54:19.489083
+#12 68.29 Unpacking pkgconf:amd64 (1.8.1-1) ...
+2025-Nov-25 18:54:19.489083
+#12 68.36 Selecting previously unselected package pkg-config:amd64.
+2025-Nov-25 18:54:19.489083
+#12 68.37 Preparing to unpack .../129-pkg-config_1.8.1-1_amd64.deb ...
+2025-Nov-25 18:54:19.648287
+#12 68.38 Unpacking pkg-config:amd64 (1.8.1-1) ...
+2025-Nov-25 18:54:19.648287
+#12 68.44 Selecting previously unselected package python-is-python3.
+2025-Nov-25 18:54:19.648287
+#12 68.45 Preparing to unpack .../130-python-is-python3_3.11.2-1+deb12u1_all.deb ...
+2025-Nov-25 18:54:19.648287
+#12 68.45 Unpacking python-is-python3 (3.11.2-1+deb12u1) ...
+2025-Nov-25 18:54:19.648287
+#12 68.53 Setting up media-types (10.0.0) ...
+2025-Nov-25 18:54:19.749363
+#12 68.55 Setting up node-fs.realpath (1.0.0-3) ...
+2025-Nov-25 18:54:19.749363
+#12 68.56 Setting up libkeyutils1:amd64 (1.6.3-2) ...
+2025-Nov-25 18:54:19.749363
+#12 68.57 Setting up node-abbrev (1.1.1+~1.1.2-1) ...
+2025-Nov-25 18:54:19.749363
+#12 68.58 Setting up libicu72:amd64 (72.1-3+deb12u1) ...
+2025-Nov-25 18:54:19.749363
+#12 68.59 Setting up node-yallist (4.0.0+~4.0.1-1) ...
+2025-Nov-25 18:54:19.749363
+#12 68.60 Setting up libjs-inherits (2.0.4-6) ...
+2025-Nov-25 18:54:19.749363
+#12 68.61 Setting up node-ansi-regex (5.0.1-1) ...
+2025-Nov-25 18:54:19.749363
+#12 68.61 Setting up node-util-deprecate (1.0.2-3) ...
+2025-Nov-25 18:54:19.749363
+#12 68.62 Setting up node-delegates (1.0.0-3) ...
+2025-Nov-25 18:54:19.749363
+#12 68.63 Setting up libtirpc-common (1.3.3+ds-1) ...
+2025-Nov-25 18:54:19.855594
+#12 68.64 Setting up node-isexe (2.0.0+~2.0.1-5) ...
+2025-Nov-25 18:54:19.855594
+#12 68.65 Setting up libbrotli1:amd64 (1.0.9-2+b6) ...
+2025-Nov-25 18:54:19.855594
+#12 68.66 Setting up node-jsonparse (1.3.1-10) ...
+2025-Nov-25 18:54:19.855594
+#12 68.67 Setting up libsqlite3-0:amd64 (3.40.1-2+deb12u2) ...
+2025-Nov-25 18:54:19.855594
+#12 68.68 Setting up binutils-common:amd64 (2.40-2) ...
+2025-Nov-25 18:54:19.855594
+#12 68.69 Setting up libnghttp2-14:amd64 (1.52.0-1+deb12u2) ...
+2025-Nov-25 18:54:19.855594
+#12 68.70 Setting up linux-libc-dev:amd64 (6.1.158-1) ...
+2025-Nov-25 18:54:19.855594
+#12 68.71 Setting up libctf-nobfd0:amd64 (2.40-2) ...
+2025-Nov-25 18:54:19.855594
+#12 68.72 Setting up node-color-name (1.1.4+~1.1.1-2) ...
+2025-Nov-25 18:54:19.855594
+#12 68.73 Setting up node-cjs-module-lexer (1.2.2+dfsg-5) ...
+2025-Nov-25 18:54:19.855594
+#12 68.74 Setting up node-console-control-strings (1.1.0-3) ...
+2025-Nov-25 18:54:19.960984
+#12 68.75 Setting up libc-ares2:amd64 (1.18.1-3) ...
+2025-Nov-25 18:54:19.960984
+#12 68.76 Setting up libgomp1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:19.960984
+#12 68.78 Setting up bzip2 (1.0.8-5+b1) ...
+2025-Nov-25 18:54:19.960984
+#12 68.78 Setting up libjansson4:amd64 (2.14-2) ...
+2025-Nov-25 18:54:19.960984
+#12 68.80 Setting up node-clone (2.1.2-4) ...
+2025-Nov-25 18:54:19.960984
+#12 68.81 Setting up libkrb5support0:amd64 (1.20.1-2+deb12u4) ...
+2025-Nov-25 18:54:19.960984
+#12 68.82 Setting up node-chownr (2.0.0-2) ...
+2025-Nov-25 18:54:19.960984
+#12 68.82 Setting up node-inherits (2.0.4-6) ...
+2025-Nov-25 18:54:19.960984
+#12 68.83 Setting up perl-modules-5.36 (5.36.0-7+deb12u3) ...
+2025-Nov-25 18:54:19.960984
+#12 68.84 Setting up node-safe-buffer (5.2.1+~cs2.1.2-3) ...
+2025-Nov-25 18:54:20.061649
+#12 68.85 Setting up libpkgconf3:amd64 (1.8.1-1) ...
+2025-Nov-25 18:54:20.061649
+#12 68.86 Setting up libuv1:amd64 (1.44.2-1+deb12u1) ...
+2025-Nov-25 18:54:20.061649
+#12 68.87 Setting up rpcsvc-proto (1.4.3-1) ...
+2025-Nov-25 18:54:20.061649
+#12 68.88 Setting up make (4.3-4.1) ...
+2025-Nov-25 18:54:20.061649
+#12 68.89 Setting up libmpfr6:amd64 (4.2.0-1) ...
+2025-Nov-25 18:54:20.061649
+#12 68.90 Setting up node-balanced-match (2.0.0-1) ...
+2025-Nov-25 18:54:20.061649
+#12 68.91 Setting up node-brace-expansion (2.0.1-2) ...
+2025-Nov-25 18:54:20.061649
+#12 68.92 Setting up xz-utils (5.4.1-1) ...
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: using /usr/bin/xz to provide /usr/bin/lzma (lzma) in auto mode
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzma.1.gz because associated file /usr/share/man/man1/xz.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/unlzma.1.gz because associated file /usr/share/man/man1/unxz.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzcat.1.gz because associated file /usr/share/man/man1/xzcat.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzmore.1.gz because associated file /usr/share/man/man1/xzmore.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzless.1.gz because associated file /usr/share/man/man1/xzless.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzdiff.1.gz because associated file /usr/share/man/man1/xzdiff.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzcmp.1.gz because associated file /usr/share/man/man1/xzcmp.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzgrep.1.gz because associated file /usr/share/man/man1/xzgrep.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.061649
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzegrep.1.gz because associated file /usr/share/man/man1/xzegrep.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.165274
+#12 68.94 update-alternatives: warning: skip creation of /usr/share/man/man1/lzfgrep.1.gz because associated file /usr/share/man/man1/xzfgrep.1.gz (of link group lzma) doesn't exist
+2025-Nov-25 18:54:20.187448
+#12 68.95 Setting up libquadmath0:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.187448
+#12 68.97 Setting up node-set-blocking (2.0.0-2) ...
+2025-Nov-25 18:54:20.187448
+#12 68.97 Setting up libssl-dev:amd64 (3.0.17-1~deb12u3) ...
+2025-Nov-25 18:54:20.187448
+#12 68.99 Setting up libmpc3:amd64 (1.3.1-1) ...
+2025-Nov-25 18:54:20.187448
+#12 69.00 Setting up libatomic1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.187448
+#12 69.01 Setting up patch (2.7.6-7) ...
+2025-Nov-25 18:54:20.187448
+#12 69.01 Setting up node-signal-exit (3.0.7+~3.0.1-1) ...
+2025-Nov-25 18:54:20.187448
+#12 69.02 Setting up pkgconf-bin (1.8.1-1) ...
+2025-Nov-25 18:54:20.187448
+#12 69.03 Setting up libncursesw6:amd64 (6.4-4) ...
+2025-Nov-25 18:54:20.187448
+#12 69.04 Setting up libk5crypto3:amd64 (1.20.1-2+deb12u4) ...
+2025-Nov-25 18:54:20.187448
+#12 69.05 Setting up node-wrappy (1.0.2-3) ...
+2025-Nov-25 18:54:20.267119
+#12 69.06 Setting up libubsan1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.288221
+#12 69.07 Setting up node-defaults (1.0.4+~1.0.3-1) ...
+2025-Nov-25 18:54:20.288221
+#12 69.08 Setting up node-graceful-fs (4.2.10-1) ...
+2025-Nov-25 18:54:20.288221
+#12 69.09 Setting up libcrypt-dev:amd64 (1:4.4.33-2) ...
+2025-Nov-25 18:54:20.288221
+#12 69.10 Setting up libasan8:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.288221
+#12 69.11 Setting up node-aproba (2.0.0-3) ...
+2025-Nov-25 18:54:20.288221
+#12 69.12 Setting up node-string-decoder (1.3.0-6) ...
+2025-Nov-25 18:54:20.288221
+#12 69.12 Setting up node-time-stamp (2.2.0-2) ...
+2025-Nov-25 18:54:20.288221
+#12 69.13 Setting up libjs-events (3.3.0+~3.0.0-3) ...
+2025-Nov-25 18:54:20.288221
+#12 69.14 Setting up libkrb5-3:amd64 (1.20.1-2+deb12u4) ...
+2025-Nov-25 18:54:20.288221
+#12 69.14 Setting up node-core-util-is (1.0.3-1) ...
+2025-Nov-25 18:54:20.288221
+#12 69.15 Setting up node-minimatch (5.1.1+~5.1.2-1) ...
+2025-Nov-25 18:54:20.369613
+#12 69.16 Setting up libtsan2:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.390638
+#12 69.17 Setting up libbinutils:amd64 (2.40-2) ...
+2025-Nov-25 18:54:20.390638
+#12 69.18 Setting up node-xtend (4.0.2-3) ...
+2025-Nov-25 18:54:20.390638
+#12 69.19 Setting up libisl23:amd64 (0.25-1.1) ...
+2025-Nov-25 18:54:20.390638
+#12 69.19 Setting up libc-dev-bin (2.36-9+deb12u13) ...
+2025-Nov-25 18:54:20.390638
+#12 69.20 Setting up readline-common (8.2-1.3) ...
+2025-Nov-25 18:54:20.390638
+#12 69.21 Setting up node-color-convert (2.0.1+~cs2.0.0-2) ...
+2025-Nov-25 18:54:20.390638
+#12 69.22 Setting up libcc1-0:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.390638
+#12 69.22 Setting up node-data-uri-to-buffer (4.0.0-3) ...
+2025-Nov-25 18:54:20.390638
+#12 69.23 Setting up liblsan0:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.390638
+#12 69.24 Setting up libitm1:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.390638
+#12 69.25 Setting up node-isarray (2.0.5-4) ...
+2025-Nov-25 18:54:20.390638
+#12 69.25 Setting up node-osenv (0.1.5+~0.1.1-1) ...
+2025-Nov-25 18:54:20.472841
+#12 69.26 Setting up libgdbm6:amd64 (1.23-3) ...
+2025-Nov-25 18:54:20.472841
+#12 69.27 Setting up node-process-nextick-args (2.0.1-3) ...
+2025-Nov-25 18:54:20.472841
+#12 69.28 Setting up node-has-unicode (2.0.1-5) ...
+2025-Nov-25 18:54:20.472841
+#12 69.29 Setting up node-busboy (1.6.0+~cs2.6.0-2) ...
+2025-Nov-25 18:54:20.472841
+#12 69.30 Setting up libctf0:amd64 (2.40-2) ...
+2025-Nov-25 18:54:20.472841
+#12 69.30 Setting up libuv1-dev:amd64 (1.44.2-1+deb12u1) ...
+2025-Nov-25 18:54:20.472841
+#12 69.31 Setting up node-readable-stream (3.6.0+~cs3.0.0-4) ...
+2025-Nov-25 18:54:20.472841
+#12 69.33 Setting up node-lru-cache (7.14.1-1) ...
+2025-Nov-25 18:54:20.472841
+#12 69.33 Setting up cpp-12 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.472841
+#12 69.35 Setting up node-once (1.4.0-7) ...
+2025-Nov-25 18:54:20.573542
+#12 69.36 Setting up libreadline8:amd64 (8.2-1.3) ...
+2025-Nov-25 18:54:20.573542
+#12 69.37 Setting up node-are-we-there-yet (3.0.1+~1.1.0-1) ...
+2025-Nov-25 18:54:20.573542
+#12 69.38 Setting up node-events (3.3.0+~3.0.0-3) ...
+2025-Nov-25 18:54:20.573542
+#12 69.39 Setting up node-fancy-log (1.3.3+~cs1.3.1-2) ...
+2025-Nov-25 18:54:20.573542
+#12 69.40 Setting up pkgconf:amd64 (1.8.1-1) ...
+2025-Nov-25 18:54:20.573542
+#12 69.40 Setting up node-wcwidth.js (1.0.2-2) ...
+2025-Nov-25 18:54:20.573542
+#12 69.41 Setting up node-fetch (3.3.0+~cs11.4.11-2) ...
+2025-Nov-25 18:54:20.573542
+#12 69.41 Setting up node-iconv-lite (0.6.3-3) ...
+2025-Nov-25 18:54:20.573542
+#12 69.42 Setting up libgprofng0:amd64 (2.40-2) ...
+2025-Nov-25 18:54:20.573542
+#12 69.43 Setting up node-ansi-styles (6.2.1-2) ...
+2025-Nov-25 18:54:20.573542
+#12 69.44 Setting up libgcc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.573542
+#12 69.44 Setting up libgssapi-krb5-2:amd64 (1.20.1-2+deb12u4) ...
+2025-Nov-25 18:54:20.573542
+#12 69.45 Setting up pkg-config:amd64 (1.8.1-1) ...
+2025-Nov-25 18:54:20.573542
+#12 69.46 Setting up libgdbm-compat4:amd64 (1.23-3) ...
+2025-Nov-25 18:54:20.686328
+#12 69.47 Setting up node-undici (5.15.0+dfsg1+~cs20.10.9.3-1+deb12u4) ...
+2025-Nov-25 18:54:20.686328
+#12 69.49 Setting up node-inflight (1.0.6-2) ...
+2025-Nov-25 18:54:20.686328
+#12 69.49 Setting up cpp (4:12.2.0-3) ...
+2025-Nov-25 18:54:20.686328
+#12 69.50 Setting up node-encoding (0.1.13-2) ...
+2025-Nov-25 18:54:20.686328
+#12 69.51 Setting up libperl5.36:amd64 (5.36.0-7+deb12u3) ...
+2025-Nov-25 18:54:20.686328
+#12 69.52 Setting up node-slice-ansi (5.0.0+~cs9.0.0-5) ...
+2025-Nov-25 18:54:20.686328
+#12 69.53 Setting up binutils-x86-64-linux-gnu (2.40-2) ...
+2025-Nov-25 18:54:20.686328
+#12 69.53 Setting up libtirpc3:amd64 (1.3.3+ds-1) ...
+2025-Nov-25 18:54:20.686328
+#12 69.54 Setting up binutils (2.40-2) ...
+2025-Nov-25 18:54:20.741459
+#12 69.55 Setting up perl (5.36.0-7+deb12u3) ...
+2025-Nov-25 18:54:20.741459
+#12 69.57 Setting up libtirpc-dev:amd64 (1.3.3+ds-1) ...
+2025-Nov-25 18:54:20.840800
+#12 69.58 Setting up node-glob (8.0.3+~cs8.4.15-1) ...
+2025-Nov-25 18:54:20.840800
+#12 69.59 Setting up gcc-12 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:20.840800
+#12 69.60 Setting up libdpkg-perl (1.21.22) ...
+2025-Nov-25 18:54:20.840800
+#12 69.62 Setting up node-minipass (3.3.6+~cs9.4.19-1+deb12u1) ...
+2025-Nov-25 18:54:20.840800
+#12 69.63 Setting up libnsl2:amd64 (1.3.0-2) ...
+2025-Nov-25 18:54:20.840800
+#12 69.64 Setting up libpython3.11-stdlib:amd64 (3.11.2-6+deb12u6) ...
+2025-Nov-25 18:54:20.840800
+#12 69.65 Setting up gcc (4:12.2.0-3) ...
+2025-Nov-25 18:54:20.840800
+#12 69.70 Setting up dpkg-dev (1.21.22) ...
+2025-Nov-25 18:54:21.037307
+#12 69.72 Setting up libnsl-dev:amd64 (1.3.0-2) ...
+2025-Nov-25 18:54:21.037307
+#12 69.74 Setting up libc6-dev:amd64 (2.36-9+deb12u13) ...
+2025-Nov-25 18:54:21.037307
+#12 69.75 Setting up libpython3-stdlib:amd64 (3.11.2-1+b1) ...
+2025-Nov-25 18:54:21.037307
+#12 69.76 Setting up python3.11 (3.11.2-6+deb12u6) ...
+2025-Nov-25 18:54:23.179999
+#12 72.06 Setting up libstdc++-12-dev:amd64 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:23.209058
+2025-Nov-25 18:54:23.359449
+#12 72.07 Setting up python3 (3.11.2-1+b1) ...
+2025-Nov-25 18:54:23.392840
+#12 72.09 running python rtupdate hooks for python3.11...
+2025-Nov-25 18:54:23.392840
+#12 72.09 running python post-rtupdate hooks for python3.11...
+2025-Nov-25 18:54:23.392840
+#12 72.27 Setting up python3-six (1.16.0-4) ...
+2025-Nov-25 18:54:23.537430
+2025-Nov-25 18:54:23.753754
+#12 72.64 Setting up python-is-python3 (3.11.2-1+deb12u1) ...
+2025-Nov-25 18:54:23.928537
+#12 72.65 Setting up g++-12 (12.2.0-14+deb12u1) ...
+2025-Nov-25 18:54:23.928537
+#12 72.66 Setting up python3-pkg-resources (66.1.1-1+deb12u2) ...
+2025-Nov-25 18:54:24.741188
+#12 73.62 Setting up g++ (4:12.2.0-3) ...
+2025-Nov-25 18:54:24.963204
+#12 73.64 update-alternatives: using /usr/bin/g++ to provide /usr/bin/c++ (c++) in auto mode
+2025-Nov-25 18:54:24.963204
+#12 73.66 Setting up build-essential (12.9) ...
+2025-Nov-25 18:54:24.963204
+#12 73.68 Setting up gyp (0.1+20220404git9ecf45e-2) ...
+2025-Nov-25 18:54:26.059397
+#12 74.94 Setting up node-acorn (8.8.1+ds+~cs25.17.7-2) ...
+2025-Nov-25 18:54:26.128112
+2025-Nov-25 18:54:26.211625
+#12 74.97 Setting up libnode108:amd64 (18.20.4+dfsg-1~deb12u1) ...
+2025-Nov-25 18:54:26.211625
+#12 74.98 Setting up nodejs (18.20.4+dfsg-1~deb12u1) ...
+2025-Nov-25 18:54:26.211625
+#12 75.00 update-alternatives: using /usr/bin/nodejs to provide /usr/bin/js (js) in auto mode
+2025-Nov-25 18:54:26.211625
+#12 75.01 update-alternatives: warning: skip creation of /usr/share/man/man1/js.1.gz because associated file /usr/share/man/man1/nodejs.1.gz (of link group js) doesn't exist
+2025-Nov-25 18:54:26.211625
+#12 75.02 Setting up node-strip-ansi (6.0.1-2) ...
+2025-Nov-25 18:54:26.211625
+#12 75.04 Setting up node-which (2.0.2+~cs1.3.2-3) ...
+2025-Nov-25 18:54:26.328241
+#12 75.06 Setting up node-mkdirp (1.0.4+~1.0.2-4) ...
+2025-Nov-25 18:54:26.328241
+#12 75.08 Setting up node-nopt (5.0.0-4) ...
+2025-Nov-25 18:54:26.328241
+#12 75.10 Setting up node-ms (2.1.3+~cs0.7.31-3) ...
+2025-Nov-25 18:54:26.328241
+#12 75.12 Setting up node-rimraf (3.0.2-2) ...
+2025-Nov-25 18:54:26.328241
+#12 75.13 Setting up node-string-width (4.2.3+~cs13.2.3-1) ...
+2025-Nov-25 18:54:26.328241
+#12 75.16 Setting up node-semver (7.3.5+~7.3.9-2) ...
+2025-Nov-25 18:54:26.498335
+#12 75.17 Setting up libnode-dev (18.20.4+dfsg-1~deb12u1) ...
+2025-Nov-25 18:54:26.498335
+#12 75.20 Setting up node-debug (4.3.4+~cs4.1.7-1) ...
+2025-Nov-25 18:54:26.498335
+#12 75.22 Setting up node-agent-base (6.0.2+~cs5.4.2-2) ...
+2025-Nov-25 18:54:26.498335
+#12 75.24 Setting up node-tar (6.1.13+~cs7.0.5-1) ...
+2025-Nov-25 18:54:26.498335
+#12 75.26 Setting up node-wide-align (1.1.3-4) ...
+2025-Nov-25 18:54:26.653655
+#12 75.28 Setting up node-https-proxy-agent (5.0.1+~cs8.0.0-3) ...
+2025-Nov-25 18:54:26.653655
+#12 75.30 Setting up node-gauge (4.0.4-1) ...
+2025-Nov-25 18:54:26.653655
+#12 75.31 Setting up node-npmlog (7.0.1+~4.1.4-1) ...
+2025-Nov-25 18:54:26.653655
+#12 75.33 Setting up node-gyp (9.3.0-2) ...
+2025-Nov-25 18:54:26.653655
+#12 75.35 Processing triggers for libc-bin (2.36-9+deb12u13) ...
+2025-Nov-25 18:54:27.111095
+#12 DONE 76.0s
+2025-Nov-25 18:54:27.222014
+#13 [build 2/6] COPY package-lock.json package.json ./
+2025-Nov-25 18:54:27.222014
+#13 DONE 0.1s
+2025-Nov-25 18:54:27.385203
+#14 [build 3/6] RUN npm ci --include=dev
+2025-Nov-25 18:54:34.381380
+#14 7.159 npm warn ERESOLVE overriding peer dependency
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn While resolving: vite@7.1.12
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn Found: @types/node@20.16.11
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn node_modules/@types/node
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn   dev @types/node@"20.16.11" from the root project
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn   11 more (@types/better-sqlite3, @types/body-parser, ...)
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn Could not resolve dependency:
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn peerOptional @types/node@"^20.19.0 || >=22.12.0" from vite@7.1.12
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn node_modules/vitest/node_modules/vite
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn   vite@"^6.0.0 || ^7.0.0" from vitest@4.0.6
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn   node_modules/vitest
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn   1 more (@vitest/mocker)
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn Conflicting peer dependency: @types/node@24.10.1
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn node_modules/@types/node
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn   peerOptional @types/node@"^20.19.0 || >=22.12.0" from vite@7.1.12
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn   node_modules/vitest/node_modules/vite
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn     vite@"^6.0.0 || ^7.0.0" from vitest@4.0.6
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn     node_modules/vitest
+2025-Nov-25 18:54:34.615808
+#14 7.168 npm warn     1 more (@vitest/mocker)
+2025-Nov-25 18:54:34.615808
+#14 7.242 npm warn EBADENGINE Unsupported engine {
+2025-Nov-25 18:54:34.615808
+#14 7.242 npm warn EBADENGINE   package: 'vite@7.1.12',
+2025-Nov-25 18:54:34.615808
+#14 7.242 npm warn EBADENGINE   required: { node: '^20.19.0 || >=22.12.0' },
+2025-Nov-25 18:54:34.615808
+#14 7.242 npm warn EBADENGINE   current: { node: 'v20.18.0', npm: '10.8.2' }
+2025-Nov-25 18:54:34.615808
+#14 7.242 npm warn EBADENGINE }
+2025-Nov-25 18:54:51.191119
+#14 23.96 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2025-Nov-25 18:54:51.354059
+#14 24.13 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2025-Nov-25 18:55:21.958901
+#14 54.59
+2025-Nov-25 18:55:21.958901
+#14 54.59 added 689 packages, and audited 690 packages in 53s
+2025-Nov-25 18:55:21.958901
+#14 54.59
+2025-Nov-25 18:55:21.958901
+#14 54.59 90 packages are looking for funding
+2025-Nov-25 18:55:21.958901
+#14 54.59   run `npm fund` for details
+2025-Nov-25 18:55:22.255895
+#14 55.03
+2025-Nov-25 18:55:22.255895
+#14 55.03 10 vulnerabilities (3 low, 5 moderate, 2 high)
+2025-Nov-25 18:55:22.255895
+#14 55.03
+2025-Nov-25 18:55:22.255895
+#14 55.03 To address issues that do not require attention, run:
+2025-Nov-25 18:55:22.255895
+#14 55.03   npm audit fix
+2025-Nov-25 18:55:22.255895
+#14 55.03
+2025-Nov-25 18:55:22.255895
+#14 55.03 To address all issues possible (including breaking changes), run:
+2025-Nov-25 18:55:22.255895
+#14 55.03   npm audit fix --force
+2025-Nov-25 18:55:22.255895
+#14 55.03
+2025-Nov-25 18:55:22.255895
+#14 55.03 Some issues need review, and may require choosing
+2025-Nov-25 18:55:22.255895
+#14 55.03 a different dependency.
+2025-Nov-25 18:55:22.255895
+#14 55.03
+2025-Nov-25 18:55:22.255895
+#14 55.03 Run `npm audit` for details.
+2025-Nov-25 18:55:22.426197
+#14 55.05 npm notice
+2025-Nov-25 18:55:22.426197
+#14 55.05 npm notice New major version of npm available! 10.8.2 -> 11.6.3
+2025-Nov-25 18:55:22.426197
+#14 55.05 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.3
+2025-Nov-25 18:55:22.426197
+#14 55.05 npm notice To update run: npm install -g npm@11.6.3
+2025-Nov-25 18:55:22.426197
+#14 55.05 npm notice
+2025-Nov-25 18:55:22.566602
+#14 DONE 55.3s
+2025-Nov-25 18:55:22.727064
+#15 [build 4/6] COPY . .
+2025-Nov-25 18:55:23.109033
+#15 DONE 0.5s
+2025-Nov-25 18:55:23.293539
+#16 [build 5/6] RUN npm run build
+2025-Nov-25 18:55:24.317073
+#16 1.215
+2025-Nov-25 18:55:24.435838
+#16 1.215 > rest-express@1.0.0 build
+2025-Nov-25 18:55:24.435838
+#16 1.215 > npm run build:client && npm run build:server
+2025-Nov-25 18:55:24.435838
+#16 1.215
+2025-Nov-25 18:55:24.708682
+#16 1.606
+2025-Nov-25 18:55:24.708682
+#16 1.606 > rest-express@1.0.0 build:client
+2025-Nov-25 18:55:24.708682
+#16 1.606 > vite build
+2025-Nov-25 18:55:24.708682
+#16 1.606
+2025-Nov-25 18:55:25.213012
+#16 2.106 vite v5.4.20 building for production...
+2025-Nov-25 18:55:26.708611
+#16 3.604 transforming...
+2025-Nov-25 18:55:26.752049
+2025-Nov-25 18:55:32.153367
+#16 9.051
+2025-Nov-25 18:55:32.153367
+#16 9.051 A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+2025-Nov-25 18:55:47.341341
+#16 24.24 ✓ 2600 modules transformed.
+2025-Nov-25 18:55:47.505861
+#16 24.25 x Build failed in 22.07s
+2025-Nov-25 18:55:47.505861
+#16 24.25 error during build:
+2025-Nov-25 18:55:47.505861
+#16 24.25 [vite:asset] Could not load /app/attached_assets/generated_images/Pavisoft_Sistemas_tech_background_61320ac2.png (imported by client/src/components/LoginForm.tsx): ENOENT: no such file or directory, open '/app/attached_assets/generated_images/Pavisoft_Sistemas_tech_background_61320ac2.png'
+2025-Nov-25 18:55:47.505861
+#16 24.25     at async open (node:internal/fs/promises:639:25)
+2025-Nov-25 18:55:47.505861
+#16 24.25     at async Object.readFile (node:internal/fs/promises:1242:14)
+2025-Nov-25 18:55:47.505861
+#16 24.25     at async fileToBuiltUrl (file:///app/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:20428:19)
+2025-Nov-25 18:55:47.505861
+#16 24.25     at async Object.load (file:///app/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:20328:17)
+2025-Nov-25 18:55:47.505861
+#16 24.25     at async PluginDriver.hookFirstAndGetPlugin (file:///app/node_modules/rollup/dist/es/shared/node-entry.js:22308:28)
+2025-Nov-25 18:55:47.505861
+#16 24.25     at async file:///app/node_modules/rollup/dist/es/shared/node-entry.js:21308:33
+2025-Nov-25 18:55:47.505861
+#16 24.25     at async Queue.work (file:///app/node_modules/rollup/dist/es/shared/node-entry.js:22536:32)
+2025-Nov-25 18:55:47.641054
+#16 ERROR: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2025-Nov-25 18:55:47.884196
+------
+2025-Nov-25 18:55:47.884196
+> [build 5/6] RUN npm run build:
+2025-Nov-25 18:55:47.884196
+24.25 x Build failed in 22.07s
+2025-Nov-25 18:55:47.884196
+24.25 error during build:
+2025-Nov-25 18:55:47.884196
+24.25 [vite:asset] Could not load /app/attached_assets/generated_images/Pavisoft_Sistemas_tech_background_61320ac2.png (imported by client/src/components/LoginForm.tsx): ENOENT: no such file or directory, open '/app/attached_assets/generated_images/Pavisoft_Sistemas_tech_background_61320ac2.png'
+2025-Nov-25 18:55:47.884196
+24.25     at async open (node:internal/fs/promises:639:25)
+2025-Nov-25 18:55:47.884196
+24.25     at async Object.readFile (node:internal/fs/promises:1242:14)
+2025-Nov-25 18:55:47.884196
+24.25     at async fileToBuiltUrl (file:///app/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:20428:19)
+2025-Nov-25 18:55:47.884196
+24.25     at async Object.load (file:///app/node_modules/vite/dist/node/chunks/dep-D_zLpgQd.js:20328:17)
+2025-Nov-25 18:55:47.884196
+24.25     at async PluginDriver.hookFirstAndGetPlugin (file:///app/node_modules/rollup/dist/es/shared/node-entry.js:22308:28)
+2025-Nov-25 18:55:47.884196
+24.25     at async file:///app/node_modules/rollup/dist/es/shared/node-entry.js:21308:33
+2025-Nov-25 18:55:47.884196
+24.25     at async Queue.work (file:///app/node_modules/rollup/dist/es/shared/node-entry.js:22536:32)
+2025-Nov-25 18:55:47.884196
+------
+2025-Nov-25 18:55:47.942207
+Dockerfile:67
+2025-Nov-25 18:55:47.942207
+2025-Nov-25 18:55:47.942207
+--------------------
+2025-Nov-25 18:55:47.942207
+2025-Nov-25 18:55:47.942207
+65 |
+2025-Nov-25 18:55:47.942207
+2025-Nov-25 18:55:47.942207
+66 |     # Build application
+2025-Nov-25 18:55:47.942207
+2025-Nov-25 18:55:47.942207
+67 | >>> RUN npm run build
+2025-Nov-25 18:55:47.942207
+2025-Nov-25 18:55:47.942207
+68 |
+2025-Nov-25 18:55:47.942207
+2025-Nov-25 18:55:47.942207
+69 |     # Remove development dependencies
+2025-Nov-25 18:55:47.942207
+2025-Nov-25 18:55:47.942207
+--------------------
+2025-Nov-25 18:55:47.942207
+2025-Nov-25 18:55:47.942207
+failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2025-Nov-25 18:55:48.000025
+exit status 1
+2025-Nov-25 18:55:48.167105
+========================================
+2025-Nov-25 18:55:48.229187
+Deployment failed: Command execution failed (exit code 1): docker exec awkgs0swgowww8g0ckow0kww bash -c 'SOURCE_COMMIT=111485bba415fddb2da73fc630fe27c66d638f5c COOLIFY_BRANCH=main COOLIFY_RESOURCE_UUID=uo4kwkgs8gks8w88g000go04 COOLIFY_CONTAINER_NAME=uo4kwkgs8gks8w88g000go04-185238709109  docker compose --env-file /artifacts/build-time.env --project-name uo4kwkgs8gks8w88g000go04 --project-directory /artifacts/awkgs0swgowww8g0ckow0kww -f /artifacts/awkgs0swgowww8g0ckow0kww/docker-compose.yml build --pull --build-arg SOURCE_COMMIT --build-arg COOLIFY_URL --build-arg COOLIFY_FQDN --build-arg SERVICE_FQDN_APP --build-arg SERVICE_URL_APP --build-arg ASAAS_API_KEY --build-arg DATABASE_URL --build-arg MASTER_ADMIN_PASSWORD --build-arg MASTER_USER_EMAIL --build-arg MASTER_USER_PASSWORD --build-arg MERCADOPAGO_ACCESS_TOKEN --build-arg PORT --build-arg PUBLIC_ADMIN_PASSWORD --build-arg SMTP_FROM --build-arg SMTP_HOST --build-arg SMTP_PASSWORD --build-arg SMTP_PORT --build-arg SMTP_USER --build-arg COOLIFY_BUILD_SECRETS_HASH=7e9dde4408c1bcc22931283e130f3b1f9d848060f785024653061708cf1d897d'
+2025-Nov-25 18:55:48.229187
+Error: Dockerfile:67
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+--------------------
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+65 |
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+66 |     # Build application
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+67 | >>> RUN npm run build
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+68 |
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+69 |     # Remove development dependencies
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+--------------------
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+failed to solve: process "/bin/sh -c npm run build" did not complete successfully: exit code: 1
+2025-Nov-25 18:55:48.229187
+2025-Nov-25 18:55:48.229187
+exit status 1
+2025-Nov-25 18:55:48.305178
+Error type: RuntimeException
+2025-Nov-25 18:55:48.385357
+Error code: 0
+2025-Nov-25 18:55:48.429428
+Location: /var/www/html/app/Traits/ExecuteRemoteCommand.php:237
+2025-Nov-25 18:55:48.469613
+Stack trace (first 5 lines):
+2025-Nov-25 18:55:48.507029
+#0 /var/www/html/app/Traits/ExecuteRemoteCommand.php(104): App\Jobs\ApplicationDeploymentJob->executeCommandWithProcess()
+2025-Nov-25 18:55:48.527739
+#1 /var/www/html/vendor/laravel/framework/src/Illuminate/Collections/Traits/EnumeratesValues.php(271): App\Jobs\ApplicationDeploymentJob->{closure:App\Traits\ExecuteRemoteCommand::execute_remote_command():71}()
+2025-Nov-25 18:55:48.552499
+#2 /var/www/html/app/Traits/ExecuteRemoteCommand.php(71): Illuminate\Support\Collection->each()
+2025-Nov-25 18:55:48.599118
+#3 /var/www/html/app/Jobs/ApplicationDeploymentJob.php(707): App\Jobs\ApplicationDeploymentJob->execute_remote_command()
+2025-Nov-25 18:55:48.694261
+#4 /var/www/html/app/Jobs/ApplicationDeploymentJob.php(474): App\Jobs\ApplicationDeploymentJob->deploy_docker_compose_buildpack()
+2025-Nov-25 18:55:48.761183
+========================================
+2025-Nov-25 18:55:49.375856
+Gracefully shutting down build container: awkgs0swgowww8g0ckow0kww
+2025-Nov-25 18:55:49.713480
+[CMD]: docker stop --time=30 awkgs0swgowww8g0ckow0kww
+2025-Nov-25 18:55:49.713480
+awkgs0swgowww8g0ckow0kww
+2025-Nov-25 18:55:49.915380
+[CMD]: docker rm -f awkgs0swgowww8g0ckow0kww
+2025-Nov-25 18:55:49.915380
+Error response from daemon: No such container: awkgs0swgowww8g0ckow0kww
