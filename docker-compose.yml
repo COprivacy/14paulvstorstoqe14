@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      cache_from:
+        - type=registry,ref=ghcr.io/YOUR_USERNAME/YOUR_REPO:buildcache
     ports:
       - "5000:5000"
     environment:
