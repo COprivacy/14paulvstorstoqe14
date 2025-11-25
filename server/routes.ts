@@ -1730,6 +1730,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Health check endpoint para Coolify/Docker
+  app.get("/api/health", (_req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime() 
+    });
+  });
+
   // Validar cupom (público - usado no checkout)
   app.post("/api/cupons/validar", async (req, res) => {
     try {
