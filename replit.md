@@ -7,6 +7,12 @@ A web application for Brazilian small businesses, offering inventory management,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**2025-11-26:** Fixed dynamic pricing system for payment webhooks and coupon validation:
+- Replaced hardcoded prices in Mercado Pago webhook with dynamic fetch from `storage.getSystemConfig('pacotes_funcionarios_precos')`
+- Applied same fix to Asaas webhook for consistency
+- Updated coupon validation to fetch plan prices dynamically from `storage.getSystemConfig('planos_precos')`
+- All payment flows now use actual payment amounts when available, with database-configured fallbacks
+
 **2025-11-10 (Evening):** Implemented comprehensive audit log system for employee monitoring:
 - Added `getLogsAdminByAccount` method in PostgresStorage with secure parameterized queries (using `inArray`)
 - Created GET `/api/logs-admin` route with data enrichment (user name/email)
