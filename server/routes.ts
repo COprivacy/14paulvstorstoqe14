@@ -1760,8 +1760,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cupom = resultado.cupom!;
       let valorDesconto = 0;
 
-      // Calcular valor do desconto baseado no plano
-      const valorPlano = plano === 'premium_mensal' ? 79.99 : 767.04;
+      // Buscar preços dinâmicos do banco de dados
+      let planoValues = {
+        premium_mensal: 79.99,
+        premium_anual: 767.04,
+      };
+
+      try {
+        if (storage.getSystemConfig) {
+          const precosConfig = await storage.getSystemConfig('planos_precos');
+          if (precosConfig && precosConfig.valor) {
+            const precosParsed = JSON.parse(precosConfig.valor);
+            if (precosParsed.premium_mensal && precosParsed.premium_anual) {
+              planoValues = precosParsed;
+            }
+          }
+        }
+      } catch (error) {
+        logger.warn('Erro ao carregar preços de planos, usando padrão', 'CUPOM_VALIDAR', { error });
+      }
+
+      // Calcular valor do desconto baseado no plano (preços dinâmicos)
+      const valorPlano = planoValues[plano as keyof typeof planoValues] || 79.99;
 
       if (cupom.tipo === 'percentual') {
         valorDesconto = (valorPlano * cupom.valor) / 100;
@@ -5168,13 +5188,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pacote_50: 50,
           };
 
-          // Mapear pacotes para preços
-          const pacotePrecos: Record<string, number> = {
-            pacote_5: 39.90,
-            pacote_10: 69.90,
-            pacote_20: 119.90,
-            pacote_50: 249.90,
+          // Buscar preços dinâmicos do banco de dados
+          let pacotePrecos: Record<string, number> = {
+            pacote_5: 49.99,
+            pacote_10: 89.99,
+            pacote_20: 159.99,
+            pacote_50: 349.99,
           };
+
+          // Tentar buscar preços customizados do banco
+          try {
+            if (storage.getSystemConfig) {
+              const precosConfig = await storage.getSystemConfig('pacotes_funcionarios_precos');
+              if (precosConfig && precosConfig.valor) {
+                const precosParsed = JSON.parse(precosConfig.valor);
+                pacotePrecos = {
+                  pacote_5: precosParsed.pacote_5 || pacotePrecos.pacote_5,
+                  pacote_10: precosParsed.pacote_10 || pacotePrecos.pacote_10,
+                  pacote_20: precosParsed.pacote_20 || pacotePrecos.pacote_20,
+                  pacote_50: precosParsed.pacote_50 || pacotePrecos.pacote_50,
+                };
+                logger.info('Preços de pacotes carregados do banco', 'MERCADOPAGO_WEBHOOK', pacotePrecos);
+              }
+            }
+          } catch (error) {
+            logger.warn('Erro ao carregar preços customizados, usando padrão', 'MERCADOPAGO_WEBHOOK', { error });
+          }
 
           const quantidadeAdicional = pacoteQuantidades[pacoteId];
 
@@ -5190,13 +5229,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const dataVencimento = new Date();
               dataVencimento.setDate(dataVencimento.getDate() + 30);
 
-              // Registrar pacote comprado
+              // Registrar pacote comprado (usar valor real do pagamento quando disponível)
               if (storage.createEmployeePackage) {
                 await storage.createEmployeePackage({
                   user_id: userId,
                   package_type: pacoteId,
                   quantity: quantidadeAdicional,
-                  price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
+                  price: paymentData.transaction_amount || pacotePrecos[pacoteId] || 0,
                   status: "ativo",
                   payment_id: paymentId.toString(),
                   data_vencimento: dataVencimento.toISOString(),
@@ -5427,14 +5466,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pacote_50: 50,
       };
 
-      // Mapear pacotes para preços
-      const pacotePrecos: Record<string, number> = {
-        pacote_5: 39.90,
-        pacote_10: 69.90,
-        pacote_20: 119.90,
-        pacote_50: 249.90,
+      // Buscar preços dinâmicos do banco de dados
+      let pacotePrecos: Record<string, number> = {
+        pacote_5: 49.99,
+        pacote_10: 89.99,
+        pacote_20: 159.99,
+        pacote_50: 349.99,
       };
 
+      // Tentar buscar preços customizados do banco
+      try {
+        if (storage.getSystemConfig) {
+          const precosConfig = await storage.getSystemConfig('pacotes_funcionarios_precos');
+          if (precosConfig && precosConfig.valor) {
+            const precosParsed = JSON.parse(precosConfig.valor);
+            pacotePrecos = {
+              pacote_5: precosParsed.pacote_5 || pacotePrecos.pacote_5,
+              pacote_10: precosParsed.pacote_10 || pacotePrecos.pacote_10,
+              pacote_20: precosParsed.pacote_20 || pacotePrecos.pacote_20,
+              pacote_50: precosParsed.pacote_50 || pacotePrecos.pacote_50,
+            };
+            logger.info('Preços de pacotes carregados do banco', 'ASAAS_WEBHOOK', pacotePrecos);
+          }
+        }
+      } catch (error) {
+        logger.warn('Erro ao carregar preços customizados, usando padrão', 'ASAAS_WEBHOOK', { error });
+      }
 
       const quantidadeAdicional = pacoteQuantidades[pacoteId];
 
@@ -5450,13 +5507,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const dataVencimento = new Date();
           dataVencimento.setDate(dataVencimento.getDate() + 30);
 
-          // Registrar pacote comprado
+          // Registrar pacote comprado (usar valor real do pagamento quando disponível)
           if (storage.createEmployeePackage) {
             await storage.createEmployeePackage({
               user_id: userId,
               package_type: pacoteId,
               quantity: quantidadeAdicional,
-              price: pacotePrecos[pacoteId] || payment.value || 0,
+              price: payment.value || pacotePrecos[pacoteId] || 0,
               status: "ativo",
               payment_id: payment.id,
               data_vencimento: dataVencimento.toISOString(),
