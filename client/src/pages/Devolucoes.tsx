@@ -243,6 +243,11 @@ export default function Devolucoes() {
       data.produto_id = produtoId;
     }
 
+    // Vincular devolução à venda original (importante para relatórios)
+    if (vendaSelecionada && vendaSelecionada.id) {
+      data.venda_id = vendaSelecionada.id;
+    }
+
     if (editingDevolucao) {
       updateMutation.mutate({ id: editingDevolucao.id, data });
     } else {

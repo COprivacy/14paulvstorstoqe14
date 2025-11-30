@@ -73,6 +73,12 @@ export default function Dashboard() {
     refetchInterval: 10000, // Auto-refresh a cada 10 segundos
   });
 
+  // Buscar devoluções para subtrair das vendas
+  const { data: devolucoes = [] } = useQuery({
+    queryKey: ["/api/devolucoes"],
+    refetchInterval: 10000, // Auto-refresh a cada 10 segundos
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
       const response = await fetch(`/api/produtos/${id}`, {
@@ -124,13 +130,30 @@ export default function Dashboard() {
     }
   });
   
-  const todaySales = vendasHoje.reduce((sum: number, v: any) => sum + (Number(v.valor_total) || 0), 0);
+  // Calcular devoluções aprovadas de hoje para subtrair das vendas
+  const devolucoesHojeAprovadas = devolucoes
+    .filter((d: any) => {
+      if (d.status !== 'aprovada') return false;
+      if (!d.data_devolucao) return false;
+      try {
+        const devDate = new Date(d.data_devolucao).toISOString().split('T')[0];
+        return devDate === today;
+      } catch (error) {
+        console.error('Erro ao processar data de devolução:', d);
+        return false;
+      }
+    })
+    .reduce((sum: number, d: any) => sum + (Number(d.valor_total) || 0), 0);
+  
+  // Vendas líquidas de hoje = vendas brutas - devoluções aprovadas (mínimo 0)
+  const vendasBrutasHoje = vendasHoje.reduce((sum: number, v: any) => sum + (Number(v.valor_total) || 0), 0);
+  const todaySales = Math.max(0, vendasBrutasHoje - devolucoesHojeAprovadas);
   
   // Debug: Mostrar vendas do dia
   console.log('📊 VENDAS HOJE:', {
     data: today,
     quantidade: vendasHoje.length,
-    vendas: vendasHoje.map(v => ({
+    vendas: vendasHoje.map((v: any) => ({
       id: v.id,
       produto: v.produto,
       valor: v.valor_total,
@@ -138,7 +161,9 @@ export default function Dashboard() {
       vendedor: v.vendedor,
       orcamento: v.orcamento_numero
     })),
-    total: todaySales
+    vendasBrutas: vendasBrutasHoje,
+    devolucoesHoje: devolucoesHojeAprovadas,
+    totalLiquido: todaySales
   });
 
   // Dados para gráficos
@@ -179,13 +204,23 @@ export default function Dashboard() {
       const daySales = vendas
         .filter((v: any) => v.data?.startsWith(date))
         .reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0);
+      
+      // Subtrair devoluções aprovadas do dia
+      const dayReturns = devolucoes
+        .filter((d: any) => {
+          if (d.status !== 'aprovada' || !d.data_devolucao) return false;
+          try {
+            return new Date(d.data_devolucao).toISOString().split('T')[0] === date;
+          } catch { return false; }
+        })
+        .reduce((sum: number, d: any) => sum + (d.valor_total || 0), 0);
 
       return {
         day: dayName,
-        vendas: Number(daySales.toFixed(2))
+        vendas: Math.max(0, Number((daySales - dayReturns).toFixed(2)))
       };
     });
-  }, [vendas]);
+  }, [vendas, devolucoes]);
 
   const topProducts = useMemo(() => {
     const productSales = vendas.reduce((acc: any, v: any) => {
@@ -229,7 +264,8 @@ export default function Dashboard() {
         fullMonth: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
         year: date.getFullYear(),
         monthNum: date.getMonth(),
-        vendas: 0
+        vendas: 0,
+        devolucoes: 0
       };
     });
 
@@ -246,23 +282,58 @@ export default function Dashboard() {
       }
     });
 
-    return months;
-  }, [vendas]);
+    // Subtrair devoluções aprovadas de cada mês
+    devolucoes.forEach((d: any) => {
+      if (d.status === 'aprovada' && d.data_devolucao) {
+        try {
+          const devDate = new Date(d.data_devolucao);
+          const devMonth = devDate.getMonth();
+          const devYear = devDate.getFullYear();
 
-  // Vendas do mês atual
+          const monthData = months.find(m => m.monthNum === devMonth && m.year === devYear);
+          if (monthData) {
+            monthData.devolucoes += d.valor_total || 0;
+          }
+        } catch (error) {
+          console.error('Erro ao processar data de devolução:', d);
+        }
+      }
+    });
+
+    // Calcular vendas líquidas (mínimo 0)
+    return months.map(m => ({
+      ...m,
+      vendas: Math.max(0, m.vendas - m.devolucoes)
+    }));
+  }, [vendas, devolucoes]);
+
+  // Vendas do mês atual (líquidas = vendas - devoluções)
   const currentMonthSales = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    return vendas
+    const vendasMes = vendas
       .filter((v: any) => {
         if (!v.data) return false;
         const saleDate = new Date(v.data);
         return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear;
       })
       .reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0);
-  }, [vendas]);
+
+    // Subtrair devoluções aprovadas do mês atual
+    const devolucoesMes = devolucoes
+      .filter((d: any) => {
+        if (d.status !== 'aprovada' || !d.data_devolucao) return false;
+        try {
+          const devDate = new Date(d.data_devolucao);
+          return devDate.getMonth() === currentMonth && devDate.getFullYear() === currentYear;
+        } catch { return false; }
+      })
+      .reduce((sum: number, d: any) => sum + (d.valor_total || 0), 0);
+
+    return Math.max(0, vendasMes - devolucoesMes);
+  }, [vendas, devolucoes]);
 
   const metaPercentage = (currentMonthSales / metaMensal) * 100;
 
