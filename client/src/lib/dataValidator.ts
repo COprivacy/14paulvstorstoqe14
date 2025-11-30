@@ -67,6 +67,10 @@ export function validateVenda(venda: any): ValidationResult {
     ...venda,
     valor_total: Number(venda.valor_total) || 0,
     quantidade_vendida: Number(venda.quantidade_vendida) || 0,
+    // Preservar campos de orçamento e vendedor
+    orcamento_numero: venda.orcamento_numero || null,
+    orcamento_id: venda.orcamento_id || null,
+    vendedor: venda.vendedor || null,
   };
 
   return {

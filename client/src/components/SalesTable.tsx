@@ -96,8 +96,9 @@ export default function SalesTable({ sales }: SalesTableProps) {
                     else if (sale.forma_pagamento === 'boleto') formaPagamento = 'Boleto';
 
                     // Verificar se existe devolução relacionada a esta venda
+                    // Normalizar tipos para comparação (venda_id pode vir como string do PostgreSQL)
                     const devolucaoRelacionada = devolucoes.find((d: any) => 
-                      d.venda_id === sale.id && d.status === 'aprovada'
+                      Number(d.venda_id) === Number(sale.id) && d.status === 'aprovada'
                     );
 
                     return (

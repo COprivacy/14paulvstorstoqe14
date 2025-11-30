@@ -3096,12 +3096,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
 
-      const startDate = req.query.start_date as string;
-      const endDate = req.query.end_date as string;
       const incluirArquivados = req.query.incluirArquivados === 'true';
 
-      const allVendas = await storage.getVendas(startDate, endDate);
-      let vendas = allVendas.filter((v) => v.user_id === effectiveUserId);
+      // Usar getVendasByUser para incluir orcamento_numero via join com orçamentos
+      let vendas = await storage.getVendasByUser(effectiveUserId);
 
       // Filtrar vendas arquivadas se necessário
       // NOTA: Atualmente vendas não têm campo 'status' para arquivamento
