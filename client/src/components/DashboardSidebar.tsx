@@ -3,6 +3,7 @@ import { Home, Package, ClipboardList, FileText, Settings, CreditCard, Users, Do
 import { Link, useLocation } from "wouter";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useUser } from "@/hooks/use-user";
+import { useSidebar } from "@/components/ui/sidebar";
 
 type MenuItem = {
   title: string;
@@ -10,6 +11,7 @@ type MenuItem = {
   icon: any;
   permission?: "dashboard" | "pdv" | "produtos" | "inventario" | "relatorios" | "clientes" | "fornecedores" | "financeiro" | "config_fiscal" | "configuracoes" | "caixa" | "devolucoes" | "contas_pagar" | "contas_receber" | "historico_caixas" | "orcamentos";
   adminOnly?: boolean;
+  badge?: string;
 };
 
 const generalMenuItems: MenuItem[] = [
@@ -46,11 +48,21 @@ const configMenuItemsEnd: MenuItem[] = [
 ];
 
 export default function DashboardSidebar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { hasPermission } = usePermissions();
   const { user } = useUser();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const isAdmin = user?.is_admin === "true";
+
+  const handleNavigation = (path: string) => {
+    setLocation(path);
+    // Auto-close sidebar on mobile after navigation
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
 
   const renderMenuItem = (item: MenuItem) => {
     // Se é admin only e não é admin, não mostrar
@@ -68,7 +80,10 @@ export default function DashboardSidebar() {
           isActive={location === item.url}
           className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5 data-[active=true]:shadow-sm"
         >
-          <Link href={item.url} data-testid={`link-${item.title.toLowerCase()}`}>
+          <Link href={item.url} data-testid={`link-${item.title.toLowerCase()}`} onClick={(e) => {
+            e.preventDefault();
+            handleNavigation(item.url);
+          }}>
             <item.icon className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
             <span className="flex-1 font-medium">{item.title}</span>
             {!hasAccess && (
@@ -114,7 +129,10 @@ export default function DashboardSidebar() {
               {hasPermission("pdv") && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/pdv"}>
-                    <Link href="/pdv">
+                    <Link href="/pdv" onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation("/pdv");
+                    }}>
                       <ShoppingCart className="h-4 w-4" />
                       <span>PDV</span>
                     </Link>
@@ -124,7 +142,10 @@ export default function DashboardSidebar() {
               {hasPermission("caixa") && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/caixa"}>
-                    <Link href="/caixa">
+                    <Link href="/caixa" onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation("/caixa");
+                    }}>
                       <Wallet className="h-4 w-4" />
                       <span>Caixa</span>
                     </Link>
@@ -144,7 +165,7 @@ export default function DashboardSidebar() {
             <SidebarMenu className="space-y-1">
               {/* 1. Planos */}
               {configMenuItems.map(renderMenuItem)}
-              
+
               {/* 2. Painel Admin (somente para admins) */}
               {isAdmin && (
                 <SidebarMenuItem>
@@ -152,33 +173,39 @@ export default function DashboardSidebar() {
                     asChild
                     className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
                   >
-                    <Link href="/admin">
+                    <Link href="/admin" onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation("/admin");
+                    }}>
                       <Crown className="h-4 w-4 text-yellow-500 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
                       <span className="flex-1 font-medium">Painel Admin</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              
+
               {/* 3. Config. Fiscal */}
               {configMenuItemsAfterAdmin.map(renderMenuItem)}
-              
+
               {/* 4. Ajuda e Termos */}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
                   className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
                 >
-                  <Link href="/ajuda">
+                  <Link href="/ajuda" onClick={(e) => {
+                    e.preventDefault();
+                    handleNavigation("/ajuda");
+                  }}>
                     <HelpCircle className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                     <span className="flex-1 font-medium">Ajuda e Termos</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
+
               {/* 5. Configurações */}
               {configMenuItemsEnd.map(renderMenuItem)}
-              
+
               {/* Admin Master (em qualquer lugar no final) */}
               {user?.email === "pavisoft.suporte@gmail.com" && user?.is_admin === "true" && (
                 <SidebarMenuItem>
@@ -186,7 +213,10 @@ export default function DashboardSidebar() {
                     asChild
                     className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
                   >
-                    <Link href="/admin-publico">
+                    <Link href="/admin-publico" onClick={(e) => {
+                      e.preventDefault();
+                      handleNavigation("/admin-publico");
+                    }}>
                       <Crown className="h-4 w-4 text-amber-500 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
                       <span className="flex-1 font-medium bg-gradient-to-r from-amber-500 to-yellow-500 bg-clip-text text-transparent">
                         Admin Master
