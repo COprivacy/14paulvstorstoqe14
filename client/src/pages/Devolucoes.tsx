@@ -692,10 +692,18 @@ export default function Devolucoes() {
                     </TableHeader>
                     <TableBody>
                       {vendas
-                        .filter(v => 
-                          !searchVendas || 
-                          v.produto?.toLowerCase().includes(searchVendas.toLowerCase())
-                        )
+                        .filter(v => {
+                          // Filtrar por busca
+                          const matchesSearch = !searchVendas || 
+                            v.produto?.toLowerCase().includes(searchVendas.toLowerCase());
+                          
+                          // Verificar se a venda já foi devolvida (tem devolução aprovada vinculada)
+                          const jaDevolvida = devolucoes.some((d: any) => 
+                            Number(d.venda_id) === Number(v.id) && d.status === 'aprovada'
+                          );
+                          
+                          return matchesSearch && !jaDevolvida;
+                        })
                         .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
                         .slice(0, 50)
                         .map((venda) => (
@@ -724,6 +732,22 @@ export default function Devolucoes() {
                             </TableCell>
                           </TableRow>
                         ))}
+                      {vendas.filter(v => {
+                        const matchesSearch = !searchVendas || 
+                          v.produto?.toLowerCase().includes(searchVendas.toLowerCase());
+                        const jaDevolvida = devolucoes.some((d: any) => 
+                          Number(d.venda_id) === Number(v.id) && d.status === 'aprovada'
+                        );
+                        return matchesSearch && !jaDevolvida;
+                      }).length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                            {searchVendas 
+                              ? "Nenhuma venda disponível encontrada com esse filtro"
+                              : "Todas as vendas já foram devolvidas ou não há vendas disponíveis"}
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
