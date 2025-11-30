@@ -18,6 +18,7 @@ interface Sale {
   itens?: string;
   cliente_id?: number;
   orcamento_numero?: string;
+  status?: string; // Adicionado para verificar status de arquivamento
 }
 
 interface SalesTableProps {
@@ -102,7 +103,10 @@ export default function SalesTable({ sales }: SalesTableProps) {
                     );
 
                     return (
-                      <TableRow key={sale.id} className={devolucaoRelacionada ? 'bg-red-50 dark:bg-red-950/10' : ''}>
+                      <TableRow 
+                        key={sale.id} 
+                        className={sale.status === "arquivada" ? "opacity-60 bg-muted/30" : ""}
+                      >
                         <TableCell className="max-w-[300px] truncate" title={sale.produto || 'N/A'}>
                           <div className="flex items-center gap-2">
                             {sale.produto || 'N/A'}
@@ -136,9 +140,14 @@ export default function SalesTable({ sales }: SalesTableProps) {
                         </TableCell>
                         <TableCell className="text-center">
                           {devolucaoRelacionada ? (
-                            <Badge variant="destructive" className="whitespace-nowrap" title={`Devolvido ${devolucaoRelacionada.quantidade} un. - R$ ${devolucaoRelacionada.valor_total.toFixed(2)}`}>
-                              Devolvido
-                            </Badge>
+                            <div className="flex flex-col gap-1 items-center">
+                              <Badge variant="destructive" className="text-xs">
+                                Sim
+                              </Badge>
+                              <Badge variant="outline" className="font-mono text-xs text-blue-600">
+                                DEV-{devolucaoRelacionada.id}
+                              </Badge>
+                            </div>
                           ) : (
                             '-'
                           )}
