@@ -1343,8 +1343,15 @@ export default function Devolucoes() {
                 <TableBody>
                   {filteredDevolucoes.map((devolucao) => (
                     <TableRow key={devolucao.id} data-testid={`row-devolucao-${devolucao.id}`} className="hover:bg-muted/50 transition-colors">
-                      <TableCell className="font-mono text-sm text-muted-foreground" data-testid={`text-id-${devolucao.id}`}>
-                        #{devolucao.id}
+                      <TableCell data-testid={`text-id-${devolucao.id}`}>
+                        <div className="flex flex-col">
+                          <span className="font-mono font-bold text-blue-600 text-base">
+                            DEV-{devolucao.id}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Devolução #{devolucao.id}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium" data-testid={`text-data-${devolucao.id}`}>
                         {formatDate(devolucao.data_devolucao)}
