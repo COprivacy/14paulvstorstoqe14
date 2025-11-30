@@ -7,6 +7,13 @@ A web application for Brazilian small businesses, offering inventory management,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**2025-11-30:** Fixed Dashboard and Devoluções integration:
+- Dashboard "Vendas Hoje" now correctly subtracts approved devoluções (returns)
+- All sales metrics (daily, weekly trends, monthly comparisons) now account for returns
+- Added Math.max(0, ...) protection to prevent negative sales values
+- Fixed Devolucoes.tsx to include venda_id when creating devoluções from sales (enables proper linking in reports)
+- Note: Historical devoluções created before this fix lack venda_id and need a migration script to retroactively link
+
 **2025-11-26:** Fixed dynamic pricing system for payment webhooks and coupon validation:
 - Replaced hardcoded prices in Mercado Pago webhook with dynamic fetch from `storage.getSystemConfig('pacotes_funcionarios_precos')`
 - Applied same fix to Asaas webhook for consistency
