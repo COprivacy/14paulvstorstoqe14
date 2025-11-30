@@ -215,7 +215,7 @@ export default function Devolucoes() {
     const userStr = localStorage.getItem("user");
     let operadorNome = "Sistema";
     let operadorId: string | undefined;
-    
+
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
@@ -363,7 +363,9 @@ export default function Devolucoes() {
 
   const filteredDevolucoes = devolucoes.filter(d => {
     const matchesSearch = d.produto_nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          d.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase());
+                          d.cliente_nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          d.id.toString().includes(searchTerm) || // Busca por ID da devolução
+                          d.operador_nome?.toLowerCase().includes(searchTerm.toLowerCase()); // Busca por operador
     const matchesStatus = filterStatus === "all" || d.status === filterStatus;
     const matchesPeriodo = getFilteredByPeriod(d);
     const matchesMotivo = filterMotivo === "all" || d.motivo === filterMotivo;
@@ -1184,12 +1186,12 @@ export default function Devolucoes() {
               <div className="relative flex-1 sm:flex-initial">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por produto ou cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-full sm:w-[250px]"
-                  data-testid="input-search"
-                />
+                    placeholder="Buscar por ID, produto, cliente ou operador..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 w-full sm:w-[250px]"
+                    data-testid="input-search"
+                  />
               </div>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
                 <SelectTrigger className="w-[140px]" data-testid="select-filter-status">
