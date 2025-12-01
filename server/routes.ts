@@ -1948,9 +1948,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Se o webhook_url não foi fornecido, gerar um padrão
       if (!config.webhook_url) {
-        const baseUrl = process.env.REPLIT_DEV_DOMAIN
-          ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-          : "http://localhost:5000";
+        let baseUrl = process.env.APP_URL?.replace(/\/$/, '') || '';
+        if (!baseUrl) {
+          baseUrl = process.env.REPLIT_DEV_DOMAIN
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+            : "http://localhost:5000";
+        }
         config.webhook_url = `${baseUrl}/api/webhook/mercadopago`;
       }
 

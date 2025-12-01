@@ -111,7 +111,9 @@ export class MercadoPagoService {
     try {
       let baseUrl = '';
       
-      if (process.env.REPLIT_DEV_DOMAIN) {
+      if (process.env.APP_URL) {
+        baseUrl = process.env.APP_URL.replace(/\/$/, '');
+      } else if (process.env.REPLIT_DEV_DOMAIN) {
         baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
       } else if (process.env.REPLIT_DOMAINS) {
         const domains = process.env.REPLIT_DOMAINS.split(',');
