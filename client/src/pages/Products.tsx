@@ -35,7 +35,7 @@ export default function Products() {
 
   const { data: products = [], isLoading, isError } = useQuery({
     queryKey: ["/api/produtos"],
-    refetchInterval: 15000, // Auto-refresh a cada 15 segundos
+    refetchInterval: 5000, // Auto-refresh a cada 5 segundos para sincronizar bloqueios
   });
 
   const filteredProducts = useMemo(() => {
