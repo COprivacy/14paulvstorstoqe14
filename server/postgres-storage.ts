@@ -140,13 +140,13 @@ export class PostgresStorage implements IStorage {
           AND table_name = 'cupons'
         );
       `;
-      
+
       const result = await this.db.execute(checkTableQuery);
       const tableExists = result.rows[0]?.exists;
 
       if (!tableExists) {
         console.log('📦 Criando tabelas de cupons...');
-        
+
         // Criar tabela de cupons
         await this.db.execute(sql`
           CREATE TABLE IF NOT EXISTS cupons (
@@ -171,7 +171,7 @@ export class PostgresStorage implements IStorage {
         await this.db.execute(sql`
           CREATE INDEX IF NOT EXISTS cupons_codigo_idx ON cupons(codigo);
         `);
-        
+
         await this.db.execute(sql`
           CREATE INDEX IF NOT EXISTS cupons_status_idx ON cupons(status);
         `);
@@ -192,7 +192,7 @@ export class PostgresStorage implements IStorage {
         await this.db.execute(sql`
           CREATE INDEX IF NOT EXISTS uso_cupons_cupom_id_idx ON uso_cupons(cupom_id);
         `);
-        
+
         await this.db.execute(sql`
           CREATE INDEX IF NOT EXISTS uso_cupons_user_id_idx ON uso_cupons(user_id);
         `);
@@ -230,7 +230,7 @@ export class PostgresStorage implements IStorage {
     try {
       const [cupom] = await this.db.select().from(cupons).where(eq(cupons.id, id)).limit(1);
       if (!cupom) return undefined;
-      
+
       return {
         ...cupom,
         planos_aplicaveis: Array.isArray(cupom.planos_aplicaveis) 
@@ -252,7 +252,7 @@ export class PostgresStorage implements IStorage {
           : [],
         data_criacao: new Date().toISOString(),
       }).returning();
-      
+
       return {
         ...cupom,
         planos_aplicaveis: Array.isArray(cupom.planos_aplicaveis) 
@@ -273,15 +273,15 @@ export class PostgresStorage implements IStorage {
           ? updateData.planos_aplicaveis as any
           : [];
       }
-      
+
       const [cupom] = await this.db
         .update(cupons)
         .set(updateData)
-        .where(eq(cupons.id, id))
+        .where(eq(cupom.id, id))
         .returning();
-      
+
       if (!cupom) return undefined;
-      
+
       return {
         ...cupom,
         planos_aplicaveis: Array.isArray(cupom.planos_aplicaveis) 
@@ -335,7 +335,7 @@ export class PostgresStorage implements IStorage {
       const planosAplicaveis = Array.isArray(cupom.planos_aplicaveis) 
         ? cupom.planos_aplicaveis 
         : [];
-      
+
       if (planosAplicaveis.length > 0 && !planosAplicaveis.includes(plano)) {
         return { valido: false, erro: 'Cupom não aplicável para este plano' };
       }
@@ -851,7 +851,7 @@ export class PostgresStorage implements IStorage {
   async deleteAllLogsAdmin(contaId?: string): Promise<number> {
     try {
       let result;
-      
+
       if (contaId) {
         // Deletar apenas logs de uma conta específica
         result = await this.db
@@ -864,12 +864,12 @@ export class PostgresStorage implements IStorage {
           .delete(logsAdmin)
           .returning();
       }
-      
+
       // Contar os registros deletados
       const deletedCount = result.length;
-      
+
       logger.info('[DB] Logs de auditoria limpos', { contaId: contaId || 'todos', deletedCount });
-      
+
       return deletedCount;
     } catch (error) {
       logger.error('[DB] Erro ao limpar logs de auditoria:', { error });
@@ -1115,14 +1115,14 @@ export class PostgresStorage implements IStorage {
         )
       ))
       .returning();
-    
+
     // Log detalhado dos caixas arquivados
     if (result.length > 0) {
       const userCounts = result.reduce((acc: Record<string, number>, caixa: any) => {
         acc[caixa.user_id] = (acc[caixa.user_id] || 0) + 1;
         return acc;
       }, {});
-      
+
       console.log('[ARQUIVAMENTO] Caixas arquivados:', {
         total: result.length,
         porUsuario: userCounts,
@@ -1130,7 +1130,7 @@ export class PostgresStorage implements IStorage {
         ids: result.map((c: any) => c.id).slice(0, 10)
       });
     }
-    
+
     return result.length;
   }
 
@@ -1232,7 +1232,7 @@ export class PostgresStorage implements IStorage {
         .from(userCustomization)
         .where(eq(userCustomization.user_id, userId))
         .limit(1);
-      
+
       return result[0] || null;
     } catch (error) {
       logger.error('[DB] Erro ao buscar customização do usuário:', { userId, error });
@@ -1254,7 +1254,7 @@ export class PostgresStorage implements IStorage {
           })
           .where(eq(userCustomization.user_id, userId))
           .returning();
-        
+
         return result[0];
       } else {
         // Criar nova customização
@@ -1265,7 +1265,7 @@ export class PostgresStorage implements IStorage {
             ...data,
           })
           .returning();
-        
+
         return result[0];
       }
     } catch (error) {
@@ -1279,7 +1279,7 @@ export class PostgresStorage implements IStorage {
       await this.db
         .delete(userCustomization)
         .where(eq(userCustomization.user_id, userId));
-      
+
       logger.info('[DB] Customização resetada com sucesso:', { userId });
     } catch (error) {
       logger.error('[DB] Erro ao resetar customização do usuário:', { userId, error });
@@ -1397,48 +1397,21 @@ export class PostgresStorage implements IStorage {
         (statusFinal === 'aprovado' && statusOriginal !== 'aprovado') ||
         (statusFinal === 'aprovado' && statusOriginal === 'aprovado' && itensMudaram);
 
-      if (precisaRecalcularBloqueios) {
-        const produtosParaTravar = [...new Set(itensAtualizados.map((i: any) => i.produto_id))];
-        await tx
-          .select()
-          .from(produtos)
-          .where(inArray(produtos.id, produtosParaTravar))
-          .for('update');
+      // SEMPRE criar bloqueios quando status for aprovado (independente do status anterior)
+      if (statusFinal === 'aprovado') {
+        // Remover bloqueios antigos primeiro (se existirem)
+        await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
 
+        // Criar novos bloqueios
+        const dataBloqueio = new Date().toISOString();
         for (const item of itensAtualizados) {
-          const result = await tx
-            .select({
-              estoque: produtos.quantidade,
-              total_bloqueado: sql<number>`COALESCE(SUM(
-                CASE WHEN ${bloqueiosEstoque.orcamento_id} != ${id} 
-                THEN ${bloqueiosEstoque.quantidade_bloqueada} 
-                ELSE 0 END
-              ), 0)`,
-            })
-            .from(produtos)
-            .leftJoin(bloqueiosEstoque, 
-              and(
-                eq(bloqueiosEstoque.produto_id, produtos.id),
-                eq(bloqueiosEstoque.user_id, orcamentoOriginal.user_id)
-              )
-            )
-            .where(
-              and(
-                eq(produtos.id, item.produto_id),
-                eq(produtos.user_id, orcamentoOriginal.user_id)
-              )
-            )
-            .groupBy(produtos.id, produtos.quantidade);
-
-          if (!result[0]) {
-            throw new Error(`Produto ${item.produto_id} não encontrado`);
-          }
-
-          const quantidadeDisponivel = result[0].estoque - Number(result[0].total_bloqueado);
-          if (quantidadeDisponivel < item.quantidade) {
-            const [produto] = await tx.select().from(produtos).where(eq(produtos.id, item.produto_id));
-            throw new Error(`Estoque insuficiente para ${produto?.nome}. Disponível: ${quantidadeDisponivel}, Solicitado: ${item.quantidade}`);
-          }
+          await tx.insert(bloqueiosEstoque).values({
+            produto_id: item.produto_id,
+            orcamento_id: id,
+            user_id: orcamentoOriginal.user_id,
+            quantidade_bloqueada: item.quantidade,
+            data_bloqueio: dataBloqueio,
+          });
         }
       }
 
@@ -1465,20 +1438,8 @@ export class PostgresStorage implements IStorage {
         .where(eq(orcamentos.id, id))
         .returning();
 
-      if (precisaRecalcularBloqueios) {
-        await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
-        
-        const dataBloqueio = new Date().toISOString();
-        for (const item of itensAtualizados) {
-          await tx.insert(bloqueiosEstoque).values({
-            produto_id: item.produto_id,
-            orcamento_id: id,
-            user_id: orcamentoOriginal.user_id,
-            quantidade_bloqueada: item.quantidade,
-            data_bloqueio: dataBloqueio,
-          });
-        }
-      } else if (statusOriginal === 'aprovado' && statusFinal !== 'aprovado') {
+      // Se o status deixou de ser aprovado, remover os bloqueios
+      if (orcamento.status !== 'aprovado') {
         await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
       }
 
@@ -1507,7 +1468,7 @@ export class PostgresStorage implements IStorage {
 
   async criarBloqueioEstoque(orcamentoId: number, userId: string, itens: any[]): Promise<void> {
     const dataBloqueio = new Date().toISOString();
-    
+
     for (const item of itens) {
       await this.db
         .insert(bloqueiosEstoque)
@@ -1564,7 +1525,7 @@ export class PostgresStorage implements IStorage {
             eq(bloqueiosEstoque.user_id, userId)
           )
         );
-      
+
       return Number(result[0]?.total || 0);
     } catch (error) {
       logger.error('[DB] Erro ao buscar quantidade bloqueada:', { error, produtoId, userId });
@@ -1575,89 +1536,133 @@ export class PostgresStorage implements IStorage {
   async getQuantidadeDisponivelProduto(produtoId: number, userId: string): Promise<number> {
     const produto = await this.getProduto(produtoId);
     if (!produto) return 0;
-    
+
     const quantidadeBloqueada = await this.getQuantidadeBloqueadaPorProduto(produtoId, userId);
     return Math.max(0, produto.quantidade - quantidadeBloqueada);
   }
 
-  async converterOrcamentoEmVenda(id: number, userId: string, vendedorNome?: string, formaPagamento?: string): Promise<Venda> {
-    const orcamento = await this.getOrcamento(id);
-
-    if (!orcamento) {
-      throw new Error("Orçamento não encontrado");
-    }
-
-    if (orcamento.user_id !== userId) {
-      throw new Error("Acesso negado");
-    }
-
-    if (orcamento.status === 'convertido') {
-      throw new Error("Este orçamento já foi convertido em venda");
-    }
-
-    // Criar venda baseada no orçamento
-    const itensOrcamento = Array.isArray(orcamento.itens) ? orcamento.itens : [];
-
-    // Se o orçamento tem cliente_id, usar ele. Senão, tentar buscar pelo nome do cliente
-    let clienteId = orcamento.cliente_id;
-
-    if (!clienteId && orcamento.cliente_nome) {
-      // Buscar cliente pelo nome e user_id
-      const clientesEncontrados = await this.db
+  async converterOrcamentoEmVenda(
+    orcamentoId: number,
+    userId: string,
+    vendedor: string,
+    formaPagamento: string
+  ): Promise<Venda> {
+    return await this.db.transaction(async (tx) => {
+      // 1. Buscar orçamento e fazer lock
+      const [orcamento] = await tx
         .select()
-        .from(clientes)
+        .from(orcamentos)
         .where(
           and(
-            eq(clientes.user_id, userId),
-            eq(clientes.nome, orcamento.cliente_nome)
+            eq(orcamentos.id, orcamentoId),
+            eq(orcamentos.user_id, userId)
           )
-        );
+        )
+        .for('update');
 
-      if (clientesEncontrados.length > 0) {
-        clienteId = clientesEncontrados[0].id;
+      if (!orcamento) {
+        throw new Error('Orçamento não encontrado');
       }
-    }
 
-    const [venda] = await this.db
-      .insert(vendas)
-      .values({
-        user_id: userId,
-        data: new Date().toISOString(),
-        valor_total: orcamento.valor_total,
-        forma_pagamento: formaPagamento || 'dinheiro',
-        itens: JSON.stringify(itensOrcamento),
-        cliente_id: clienteId || undefined,
-        produto: itensOrcamento.map((i: any) => i.nome).join(', '),
-        quantidade_vendida: itensOrcamento.reduce((sum: number, i: any) => sum + i.quantidade, 0),
-        orcamento_id: id,
-        orcamento_numero: orcamento.numero,
-        vendedor: vendedorNome || orcamento.vendedor || 'Sistema',
-      })
-      .returning();
-
-    // Atualizar produtos (reduzir estoque)
-    for (const item of itensOrcamento as any[]) {
-      const produto = await this.getProduto(item.produto_id);
-      if (produto && produto.user_id === userId) {
-        await this.updateProduto(item.produto_id, {
-          quantidade: produto.quantidade - item.quantidade,
-        });
+      if (orcamento.status !== 'aprovado') {
+        throw new Error('Apenas orçamentos aprovados podem ser convertidos em venda');
       }
-    }
 
-    // Marcar orçamento como convertido
-    await this.db
-      .update(orcamentos)
-      .set({
-        status: 'convertido',
-        data_atualizacao: new Date().toISOString(),
-        venda_id: venda.id,
-      })
-      .where(eq(orcamentos.id, id));
+      const itens = Array.isArray(orcamento.itens) ? orcamento.itens : [];
 
-    await this.removerBloqueiosOrcamento(id);
+      // 2. Buscar cliente se não houver ID, ou criar se não existir
+      let clienteId = orcamento.cliente_id;
+      if (!clienteId && orcamento.cliente_nome) {
+        const clientesEncontrados = await tx
+          .select()
+          .from(clientes)
+          .where(
+            and(
+              eq(clientes.user_id, userId),
+              eq(clientes.nome, orcamento.cliente_nome)
+            )
+          );
 
-    return venda;
+        if (clientesEncontrados.length > 0) {
+          clienteId = clientesEncontrados[0].id;
+        } else {
+          // Se não encontrar, criar um novo cliente
+          const [novoCliente] = await tx.insert(clientes).values({
+            user_id: userId,
+            nome: orcamento.cliente_nome,
+            email: orcamento.cliente_email,
+            telefone: orcamento.cliente_telefone,
+            cpf_cnpj: orcamento.cliente_cpf_cnpj,
+            data_cadastro: new Date().toISOString(),
+          }).returning();
+          clienteId = novoCliente.id;
+        }
+      }
+
+      // 3. Criar a venda
+      const [venda] = await tx
+        .insert(vendas)
+        .values({
+          user_id: userId,
+          data: new Date().toISOString(),
+          valor_total: orcamento.valor_total,
+          forma_pagamento: formaPagamento || 'dinheiro',
+          itens: JSON.stringify(itens),
+          cliente_id: clienteId || undefined,
+          produto: itens.map((i: any) => i.nome).join(', '),
+          quantidade_vendida: itens.reduce((sum: number, i: any) => sum + i.quantidade, 0),
+          orcamento_id: orcamentoId,
+          orcamento_numero: orcamento.numero,
+          vendedor: vendedor || orcamento.vendedor || 'Sistema',
+        })
+        .returning();
+
+      // 4. Atualizar status do orçamento para "convertido"
+      await tx
+        .update(orcamentos)
+        .set({
+          status: 'convertido',
+          data_atualizacao: new Date().toISOString(),
+          venda_id: venda.id,
+        })
+        .where(eq(orcamentos.id, orcamentoId));
+
+      // 5. PRIMEIRO deduzir do estoque real
+      for (const item of itens) {
+        const [produtoAtual] = await tx
+          .select()
+          .from(produtos)
+          .where(
+            and(
+              eq(produtos.id, item.produto_id),
+              eq(produtos.user_id, userId)
+            )
+          )
+          .for('update');
+
+        if (!produtoAtual) {
+          throw new Error(`Produto ${item.produto_id} não encontrado`);
+        }
+
+        if (produtoAtual.quantidade < item.quantidade) {
+          throw new Error(`Estoque insuficiente para ${item.nome}. Disponível: ${produtoAtual.quantidade}, Solicitado: ${item.quantidade}`);
+        }
+
+        await tx
+          .update(produtos)
+          .set({
+            quantidade: sql`${produtos.quantidade} - ${item.quantidade}`,
+          })
+          .where(eq(produtos.id, item.produto_id));
+      }
+
+      // 6. DEPOIS remover bloqueios do orçamento
+      await tx
+        .delete(bloqueiosEstoque)
+        .where(eq(bloqueiosEstoque.orcamento_id, orcamentoId));
+
+      return venda;
+    });
   }
 
   // ============================================
@@ -1794,7 +1799,7 @@ export class PostgresStorage implements IStorage {
         .set(updateFields)
         .where(eq(employeePackages.id, packageId))
         .returning();
-      
+
       logger.info('[DB] Status do pacote de funcionários atualizado', { packageId, status });
       return result;
     } catch (error: any) {
