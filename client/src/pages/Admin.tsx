@@ -100,7 +100,7 @@ interface AuditLog {
   user_agent?: string;
 }
 
-function AuditLogsSection({ logs, employees }: { logs: AuditLog[]; employees: User[] }) {
+function AuditLogsSection({ logs, employees, onClearLogs }: { logs: AuditLog[]; employees: User[]; onClearLogs: () => void }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
   const [selectedPeriod, setSelectedPeriod] = useState<string>("all");
@@ -235,7 +235,7 @@ function AuditLogsSection({ logs, employees }: { logs: AuditLog[]; employees: Us
         </div>
         <div className="flex gap-2">
           <Button
-            onClick={() => setShowClearLogsDialog(true)}
+            onClick={onClearLogs}
             size="sm"
             variant="destructive"
             className="gap-2 shadow-md"
@@ -1378,7 +1378,7 @@ export default function Admin() {
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-6 mt-6">
-          <AuditLogsSection logs={logs} employees={accountUsers} />
+          <AuditLogsSection logs={logs} employees={accountUsers} onClearLogs={() => setShowClearLogsDialog(true)} />
         </TabsContent>
       </Tabs>
       </div>
