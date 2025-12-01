@@ -53,7 +53,7 @@ export class MercadoPagoService {
         timeout: 5000,
       }
     });
-    
+
     this.preferenceClient = new Preference(this.client);
     this.paymentClient = new Payment(this.client);
   }
@@ -70,39 +70,45 @@ export class MercadoPagoService {
         }
       });
 
-      if (response.ok) {
-        return { 
-          success: true, 
-          message: 'Conexão estabelecida com sucesso com o Mercado Pago!' 
-        };
-      } else if (response.status === 401) {
-        return {
-          success: false,
-          message: 'Access Token inválido. Verifique suas credenciais no painel do Mercado Pago.'
-        };
-      } else if (response.status === 403) {
-        return {
-          success: false,
-          message: 'Acesso negado. Verifique as permissões do seu Access Token.'
-        };
-      } else {
+      if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
+        const isTestToken = this.client.options.accessToken?.startsWith('TEST-');
+
+        if (response.status === 401) {
+          return {
+            success: false,
+            message: isTestToken 
+              ? 'Token de teste inválido. Verifique se copiou corretamente as credenciais de teste.' 
+              : 'Access Token inválido. Verifique suas credenciais no painel do Mercado Pago.'
+          };
+        }
+
+        if (response.status === 403) {
+          return {
+            success: false,
+            message: isTestToken
+              ? 'Token de teste sem permissões. Use credenciais de teste válidas do painel do Mercado Pago.'
+              : 'Access Token sem permissões necessárias. Gere um novo token com permissões completas.'
+          };
+        }
+
         return {
           success: false,
-          message: errorData.message || `Erro HTTP ${response.status}: ${response.statusText}`
+          message: errorData.message || `Erro HTTP ${response.status}`
         };
       }
+
+      const isTestToken = this.client.options.accessToken?.startsWith('TEST-');
+      return {
+        success: true,
+        message: isTestToken 
+          ? '✅ Conexão estabelecida com sucesso! (Credenciais de TESTE)' 
+          : '✅ Conexão estabelecida com sucesso! (Credenciais de PRODUÇÃO)'
+      };
     } catch (error: any) {
-      // Erro de rede ou outro erro não relacionado à API
-      if (error.message && error.message.includes('fetch')) {
-        return { 
-          success: false, 
-          message: 'Erro de conexão. Verifique sua internet ou se o Mercado Pago está acessível.'
-        };
-      }
-      return { 
-        success: false, 
-        message: error.message || 'Erro ao conectar com o Mercado Pago' 
+      return {
+        success: false,
+        message: `Erro de conexão: ${error.message}`
       };
     }
   }
@@ -110,7 +116,7 @@ export class MercadoPagoService {
   async createPreference(params: MercadoPagoPreferenceParams) {
     try {
       let baseUrl = '';
-      
+
       if (process.env.APP_URL) {
         baseUrl = process.env.APP_URL.replace(/\/$/, '');
       } else if (process.env.REPLIT_DEV_DOMAIN) {
@@ -121,7 +127,7 @@ export class MercadoPagoService {
           baseUrl = `https://${domains[0].trim()}`;
         }
       }
-      
+
       if (!baseUrl) {
         baseUrl = 'https://localhost:5000';
       }
