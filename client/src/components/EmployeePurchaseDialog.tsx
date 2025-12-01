@@ -220,8 +220,8 @@ export function EmployeePurchaseDialog({
                       <span className="text-3xl font-bold text-primary" data-testid={`text-preco-${pacote.id}`}>
                         {pacote.preco}
                       </span>
-                      <p className="text-sm font-medium text-foreground mt-1">Pagamento mensal</p>
-                      <p className="text-xs text-muted-foreground">Renovação automática</p>
+                      <p className="text-sm font-medium text-foreground mt-1">Mensalidade</p>
+                      <p className="text-xs text-muted-foreground">Renovação automática mensal</p>
                     </div>
                   </CardHeader>
 
