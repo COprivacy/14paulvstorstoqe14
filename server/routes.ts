@@ -4260,15 +4260,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const externalReference = `${pacoteId}_${userId}_${Date.now()}`;
 
-      // Criar preferência de pagamento no Mercado Pago
+      // Criar preferência de pagamento no Mercado Pago COM RECORRÊNCIA MENSAL
       const preference = await mercadopago.createPreference({
         items: [
           {
-            title: `${nomePacote} - Pavisoft Sistemas`,
+            title: `${nomePacote} - Pavisoft Sistemas (Recorrente)`,
             quantity: 1,
             unit_price: valor,
             currency_id: "BRL",
-            description: `Pacote com ${quantidade} funcionários adicionais`,
+            description: `Pacote com ${quantidade} funcionários adicionais - Renovação automática mensal`,
           },
         ],
         payer: {
@@ -4276,6 +4276,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: user.nome,
         },
         external_reference: externalReference,
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: "months",
+          transaction_amount: valor,
+          currency_id: "BRL",
+        },
       });
 
       console.log(

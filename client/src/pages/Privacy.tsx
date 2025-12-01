@@ -271,11 +271,13 @@ export default function Privacy() {
                       5.5. <strong>Bloqueio por Inadimplência:</strong> Em caso de inadimplência ou expiração do plano principal (Trial, Premium Mensal ou Premium Anual), sua conta será bloqueada até a regularização do pagamento. <strong className="text-red-600">IMPORTANTE: Quando o plano principal é bloqueado ou expira, TODOS os funcionários cadastrados também são bloqueados automaticamente, mesmo que existam pacotes de funcionários ativos.</strong>
                     </p>
                     <p>
-                      5.6. <strong>Pacotes de Funcionários:</strong> Os pacotes de funcionários (5, 10, 20 ou 50 funcionários) são complementares ao plano principal e só funcionam se houver um plano base ativo (Trial, Premium Mensal ou Premium Anual). Sem um plano principal ativo, os pacotes de funcionários não concedem acesso ao sistema.
+                      5.6. <strong>Pacotes de Funcionários:</strong> Os pacotes de funcionários (5, 10, 20 ou 50 funcionários) são complementares ao plano principal e só funcionam se houver um plano base ativo (Trial, Premium Mensal ou Premium Anual). Sem um plano principal ativo, os pacotes de funcionários não concedem acesso ao sistema. <strong className="text-blue-600">Os pacotes possuem renovação automática mensal</strong>, sendo cobrados mensalmente até o cancelamento.
                     </p>
                     <p>
-                      5.7. <strong>Expiração de Pacotes de Funcionários:</strong> Quando um pacote de funcionários expira, apenas os funcionários extras (além do limite padrão do seu plano) serão bloqueados. O plano principal e o funcionário padrão continuam ativos se o plano base estiver em dia.
+                      5.7. <strong>Renovação e Cancelamento de Pacotes:</strong> Os pacotes de funcionários são renovados automaticamente todo mês. Você pode cancelar a qualquer momento através das configurações da sua conta. Ao cancelar, os funcionários extras serão bloqueados no fim do período vigente.
                     </p>
+                    <p>
+                      5.8. <strong>Expiração por Falta de Pagamento:</strong> Se a renovação mensal do pacote não for bem-sucedida (ex: cartão recusado), apenas os funcionários extras (além do limite padrão do seu plano) serão bloqueados. O plano principal e o funcionário padrão contin</p>
                   </div>
                 </section>
 
