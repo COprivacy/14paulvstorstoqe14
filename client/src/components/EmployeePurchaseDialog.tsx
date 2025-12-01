@@ -63,8 +63,10 @@ export function EmployeePurchaseDialog({
       destaque: false,
       recursos: [
         "✅ 5 funcionários adicionais",
+        "✅ Controle de permissões individual",
         "✅ Ativação imediata",
         "✅ Suporte por email",
+        "📊 Ideal para pequenos negócios",
       ],
     },
     {
@@ -77,9 +79,11 @@ export function EmployeePurchaseDialog({
       destaque: true,
       recursos: [
         "✅ 10 funcionários adicionais",
+        "✅ Controle de permissões individual",
         "✅ Ativação imediata",
         "✅ Suporte prioritário",
-        `💰 Economize R$ ${((precosReais.pacote_5 * 2) - precosReais.pacote_10).toFixed(2).replace('.', ',')}`,
+        `💰 Economize R$ ${((precosReais.pacote_5 * 2) - precosReais.pacote_10).toFixed(2).replace('.', ',')} vs 2 pacotes básicos`,
+        "📈 Perfeito para crescimento",
       ],
     },
     {
@@ -92,9 +96,11 @@ export function EmployeePurchaseDialog({
       destaque: false,
       recursos: [
         "✅ 20 funcionários adicionais",
+        "✅ Controle de permissões individual",
         "✅ Ativação imediata",
         "✅ Suporte prioritário",
-        `💰 Economize R$ ${((precosReais.pacote_5 * 4) - precosReais.pacote_20).toFixed(2).replace('.', ',')}`,
+        `💰 Economize R$ ${((precosReais.pacote_5 * 4) - precosReais.pacote_20).toFixed(2).replace('.', ',')} vs 4 pacotes básicos`,
+        "🏢 Ideal para empresas em expansão",
       ],
     },
     {
@@ -107,10 +113,12 @@ export function EmployeePurchaseDialog({
       destaque: false,
       recursos: [
         "✅ 50 funcionários adicionais",
+        "✅ Controle de permissões individual",
         "✅ Ativação imediata",
-        "✅ Suporte prioritário",
-        `💰 Economize R$ ${((precosReais.pacote_5 * 10) - precosReais.pacote_50).toFixed(2).replace('.', ',')}`,
+        "✅ Suporte prioritário 24/7",
+        `💰 Economize R$ ${((precosReais.pacote_5 * 10) - precosReais.pacote_50).toFixed(2).replace('.', ',')} vs 10 pacotes básicos`,
         "⭐ Consultoria exclusiva",
+        "🚀 Para empresas consolidadas",
       ],
     },
   ];
@@ -212,7 +220,8 @@ export function EmployeePurchaseDialog({
                       <span className="text-3xl font-bold text-primary" data-testid={`text-preco-${pacote.id}`}>
                         {pacote.preco}
                       </span>
-                      <p className="text-xs text-muted-foreground mt-1">Pagamento único</p>
+                      <p className="text-sm font-medium text-foreground mt-1">Pagamento mensal</p>
+                      <p className="text-xs text-muted-foreground">Renovação automática</p>
                     </div>
                   </CardHeader>
 

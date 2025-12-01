@@ -212,14 +212,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar se senha está em hash ou texto puro (migração gradual)
       let senhaValida = false;
-      
+
       if (user.senha.startsWith('$2a$') || user.senha.startsWith('$2b$')) {
         // Senha já está em hash - usar bcrypt
         senhaValida = await bcrypt.compare(senha, user.senha);
       } else {
         // Senha ainda em texto puro - comparar diretamente e fazer hash
         senhaValida = user.senha === senha;
-        
+
         if (senhaValida) {
           // Atualizar para hash na próxima vez
           const hashedPassword = await bcrypt.hash(senha, 10);
@@ -238,38 +238,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // VALIDAR E ATUALIZAR STATUS DE EXPIRAÇÃO ANTES DE RETORNAR
       const now = new Date();
       let userAtualizado = user;
-      
+
       // Verificar se é trial ou free e se está expirado
       if ((user.plano === 'trial' || user.plano === 'free') && !user.is_admin) {
         const dataExpiracao = user.data_expiracao_plano || user.data_expiracao_trial;
-        
+
         if (dataExpiracao) {
           const expirationDate = new Date(dataExpiracao);
-          
+
           if (now >= expirationDate && user.status !== 'bloqueado') {
             // Trial/Free expirado - bloquear usuário
             await storage.updateUser(user.id, {
               status: 'bloqueado',
               plano: 'free'
             });
-            
+
             // Bloquear funcionários também
             if (storage.getFuncionarios) {
               const funcionarios = await storage.getFuncionarios();
               const funcionariosDaConta = funcionarios.filter(f => f.conta_id === user.id);
-              
+
               for (const func of funcionariosDaConta) {
                 await storage.updateFuncionario(func.id, { status: 'bloqueado' });
               }
             }
-            
+
             logger.warn('Usuário bloqueado no login por expiração', 'AUTH', {
               userId: user.id,
               email: user.email,
               plano: user.plano,
               dataExpiracao
             });
-            
+
             // Buscar dados atualizados
             userAtualizado = await storage.getUserByEmail(email) || user;
           }
@@ -325,14 +325,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar se senha está em hash ou texto puro (migração gradual)
       let senhaValida = false;
-      
+
       if (funcionario.senha.startsWith('$2a$') || funcionario.senha.startsWith('$2b$')) {
         // Senha já está em hash - usar bcrypt
         senhaValida = await bcrypt.compare(senha, funcionario.senha);
       } else {
         // Senha ainda em texto puro - comparar diretamente e fazer hash
         senhaValida = funcionario.senha === senha;
-        
+
         if (senhaValida) {
           // Atualizar para hash na próxima vez
           const hashedPassword = await bcrypt.hash(senha, 10);
@@ -728,7 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // VALIDAÇÃO 1: Apenas usuário master específico pode tentar (ID E EMAIL)
       const authorizedEmail = process.env.MASTER_USER_EMAIL || 'pavisoft.suporte@gmail.com';
       const authorizedUserId = "pavisoft-admin-001";
-      
+
       if (!authorizedEmail) {
         logger.error("MASTER_USER_EMAIL não configurada", "SECURITY");
         return res
@@ -981,11 +981,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/whatsapp-support", async (req, res) => {
     try {
       const whatsappConfig = await storage.getSystemConfig('whatsapp_support_number');
-      
+
       if (whatsappConfig && whatsappConfig.valor) {
         return res.json({ number: whatsappConfig.valor });
       }
-      
+
       // Número padrão caso não esteja configurado
       return res.json({ number: '+5511999999999' });
     } catch (error: any) {
@@ -1005,7 +1005,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.upsertSystemConfig('whatsapp_support_number', number);
-      
+
       await storage.logAdminAction?.(
         userId,
         "WHATSAPP_ATUALIZADO",
@@ -1025,7 +1025,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/plan-prices", async (req, res) => {
     try {
       console.log('📋 [PLAN_PRICES] Buscando preços dos planos...');
-      
+
       // Definir preços padrão
       const DEFAULT_PRICES = {
         premium_mensal: 79.99,
@@ -1034,23 +1034,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Tentar buscar preços customizados do banco
       const precosConfig = await storage.getSystemConfig('planos_precos');
-      
+
       console.log('📋 [PLAN_PRICES] Configuração encontrada:', precosConfig);
-      
+
       if (precosConfig && precosConfig.valor) {
         try {
           const precos = JSON.parse(precosConfig.valor);
-          
+
           console.log('📋 [PLAN_PRICES] Preços parseados:', precos);
-          
+
           // Validar que os preços são números válidos
-          if (typeof precos.premium_mensal === 'number' && 
+          if (typeof precos.premium_mensal === 'number' &&
               typeof precos.premium_anual === 'number' &&
-              precos.premium_mensal > 0 && 
+              precos.premium_mensal > 0 &&
               precos.premium_anual > 0) {
-            
+
             console.log('✅ [PLAN_PRICES] Retornando preços customizados:', precos);
-            
+
             // Definir headers explicitamente
             res.setHeader('Content-Type', 'application/json');
             return res.status(200).json(precos);
@@ -1064,7 +1064,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('📋 [PLAN_PRICES] Retornando preços padrão');
       res.setHeader('Content-Type', 'application/json');
       return res.status(200).json(DEFAULT_PRICES);
-      
+
     } catch (error: any) {
       console.error('❌ [PLAN_PRICES] Erro crítico:', error);
       res.setHeader('Content-Type', 'application/json');
@@ -1113,7 +1113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Salvar no banco
       await storage.upsertSystemConfig('planos_precos', JSON.stringify(precos));
-      
+
       // Verificar se foi salvo corretamente
       const verificacao = await storage.getSystemConfig('planos_precos');
       console.log('🔍 [PLAN_PRICES] POST - Verificação após salvar:', verificacao);
@@ -1129,11 +1129,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       logger.info('[API] Preços atualizados com sucesso', 'PLAN_PRICES', precos);
 
       console.log('✅ [PLAN_PRICES] POST - Resposta enviada:', { success: true, precos });
-      
+
       // Definir headers explicitamente
       res.setHeader('Content-Type', 'application/json');
       return res.status(200).json({ success: true, precos });
-      
+
     } catch (error: any) {
       console.error('❌ [PLAN_PRICES] POST - Erro:', error);
       logger.error('[API] Erro ao atualizar preços:', error);
@@ -1149,28 +1149,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Buscar preços dos pacotes de funcionários
   app.get("/api/employee-package-prices", async (req, res) => {
     try {
-      // Definir preços padrão
+      // Definir preços padrão otimizados
       const DEFAULT_PRICES = {
-        pacote_5: 49.99,
-        pacote_10: 89.99,
-        pacote_20: 159.99,
-        pacote_50: 349.99,
+        pacote_5: 49.90,
+        pacote_10: 89.90,
+        pacote_20: 159.90,
+        pacote_50: 349.90,
       };
 
       // Tentar buscar preços customizados
       if (storage.getSystemConfig) {
         const precosConfig = await storage.getSystemConfig('pacotes_funcionarios_precos');
-        
+
         if (precosConfig && precosConfig.valor) {
           try {
             const precos = JSON.parse(precosConfig.valor);
-            
+
             // Validar que os preços são números válidos
-            if (typeof precos.pacote_5 === 'number' && 
+            if (typeof precos.pacote_5 === 'number' &&
                 typeof precos.pacote_10 === 'number' &&
                 typeof precos.pacote_20 === 'number' &&
                 typeof precos.pacote_50 === 'number' &&
-                precos.pacote_5 > 0 && 
+                precos.pacote_5 > 0 &&
                 precos.pacote_10 > 0 &&
                 precos.pacote_20 > 0 &&
                 precos.pacote_50 > 0) {
@@ -1188,10 +1188,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       logger.error('[API] Erro ao buscar preços de pacotes:', error);
       // Sempre retornar JSON, mesmo em caso de erro
       return res.status(200).json({
-        pacote_5: 49.99,
-        pacote_10: 89.99,
-        pacote_20: 159.99,
-        pacote_50: 349.99,
+        pacote_5: 49.90,
+        pacote_10: 89.90,
+        pacote_20: 159.90,
+        pacote_50: 349.90,
       });
     }
   });
@@ -1225,7 +1225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔢 [EMPLOYEE_PACKAGES] Valores parseados:', { p5, p10, p20, p50 });
 
       // Validar que são números válidos e positivos
-      if (isNaN(p5) || isNaN(p10) || isNaN(p20) || isNaN(p50) || 
+      if (isNaN(p5) || isNaN(p10) || isNaN(p20) || isNaN(p50) ||
           p5 <= 0 || p10 <= 0 || p20 <= 0 || p50 <= 0) {
         console.log('❌ [EMPLOYEE_PACKAGES] Valores inválidos');
         return res.status(400).json({ error: "Preços devem ser números válidos e positivos" });
@@ -1242,7 +1242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Salvar no banco
       await storage.upsertSystemConfig('pacotes_funcionarios_precos', JSON.stringify(precos));
-      
+
       // Verificar se foi salvo corretamente
       const verificacao = await storage.getSystemConfig('pacotes_funcionarios_precos');
       console.log('🔍 [EMPLOYEE_PACKAGES] Verificação após salvar:', verificacao);
@@ -1258,9 +1258,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       logger.info('[API] Preços dos pacotes atualizados com sucesso', 'EMPLOYEE_PACKAGES', precos);
 
       console.log('✅ [EMPLOYEE_PACKAGES] Resposta enviada:', { success: true, precos });
-      
+
       return res.status(200).json({ success: true, precos });
-      
+
     } catch (error: any) {
       console.error('❌ [EMPLOYEE_PACKAGES] Erro:', error);
       logger.error('[API] Erro ao atualizar preços dos pacotes:', error);
@@ -1430,7 +1430,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (storage.getEmployeePackages && storage.updateEmployeePackageStatus) {
         const packages = await storage.getEmployeePackages(subscription.user_id);
         const activePacotes = packages.filter((p: any) => p.status === 'ativo');
-        
+
         for (const pacote of activePacotes) {
           await storage.updateEmployeePackageStatus(pacote.id, 'cancelado', new Date().toISOString());
         }
@@ -1453,13 +1453,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const { EmailService } = await import("./email-service");
         const emailService = new EmailService();
-        
+
         await emailService.sendAccountBlocked({
           to: user.email,
           userName: user.nome,
           planName: subscription.plano,
         });
-        
+
         logger.info('Email de cancelamento enviado', 'ADMIN_SUBSCRIPTIONS', {
           userId: subscription.user_id,
           email: user.email,
@@ -1589,7 +1589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.logAdminAction(
           userId,
           "PACOTES_PRECOS_ATUALIZADOS",
-          `Preços de pacotes atualizados - +5: R$ ${p5Num.toFixed(2)}, +10: R$ ${p10Num.toFixed(2)}, +20: R$ ${p20Num.toFixed(2)}, +50: R$ ${p50Num.toFixed(2)}`,
+          `Preços de pacotes atualizados - 5: R$ ${p5Num.toFixed(2)}, 10: R$ ${p10Num.toFixed(2)}, 20: R$ ${p20Num.toFixed(2)}, 50: R$ ${p50Num.toFixed(2)}`,
           req
         );
       }
@@ -1718,10 +1718,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Health check endpoint para Coolify/Docker
   app.get("/api/health", (_req, res) => {
-    res.status(200).json({ 
-      status: "healthy", 
+    res.status(200).json({
+      status: "healthy",
       timestamp: new Date().toISOString(),
-      uptime: process.uptime() 
+      uptime: process.uptime()
     });
   });
 
@@ -1737,9 +1737,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const resultado = await storage.validarCupom?.(codigo, plano, userId || 'temp');
 
       if (!resultado?.valido) {
-        return res.status(400).json({ 
-          valido: false, 
-          erro: resultado?.erro || 'Cupom inválido' 
+        return res.status(400).json({
+          valido: false,
+          erro: resultado?.erro || 'Cupom inválido'
         });
       }
 
@@ -1990,31 +1990,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const now = new Date();
       let statusAtualizado = false;
-      
+
       // Verificar expiração de plano
       if ((user.plano === 'trial' || user.plano === 'free') && user.is_admin !== 'true') {
         const dataExpiracao = user.data_expiracao_plano || user.data_expiracao_trial;
-        
+
         if (dataExpiracao) {
           const expirationDate = new Date(dataExpiracao);
-          
+
           if (now >= expirationDate && user.status !== 'bloqueado') {
             // Usuário expira e fica bloqueado, SEM voltar para free
             await storage.updateUser(user.id, {
               status: 'bloqueado'
               // NÃO atualiza o plano para 'free'
             });
-            
+
             // Bloquear funcionários
             if (storage.getFuncionarios) {
               const funcionarios = await storage.getFuncionarios();
               const funcionariosDaConta = funcionarios.filter(f => f.conta_id === user.id);
-              
+
               for (const func of funcionariosDaConta) {
                 await storage.updateFuncionario(func.id, { status: 'bloqueado' });
               }
             }
-            
+
             statusAtualizado = true;
             logger.info('Status atualizado - plano expirado', 'EXPIRATION_CHECK', {
               userId: user.id,
@@ -2027,13 +2027,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verificar expiração de pacote de funcionários
       if (user.data_expiracao_pacote_funcionarios) {
         const packageExpiration = new Date(user.data_expiracao_pacote_funcionarios);
-        
+
         if (now >= packageExpiration && user.max_funcionarios > (user.max_funcionarios_base || 1)) {
           await storage.updateUser(user.id, {
             max_funcionarios: user.max_funcionarios_base || 1,
             data_expiracao_pacote_funcionarios: null
           });
-          
+
           statusAtualizado = true;
           logger.info('Pacote de funcionários expirado - limite revertido', 'EXPIRATION_CHECK', {
             userId: user.id,
@@ -2044,13 +2044,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar dados atualizados
       const userAtualizado = await storage.getUserById(userId);
-      
+
       if (!userAtualizado) {
         return res.status(404).json({ error: "Erro ao buscar dados atualizados" });
       }
 
       const { senha: _, ...userSemSenha } = userAtualizado;
-      
+
       res.json({
         user: userSemSenha,
         statusAtualizado
@@ -2460,15 +2460,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validação forte de senha
       if (senha.length < 8) {
-        return res.status(400).json({ 
-          error: "A senha deve ter no mínimo 8 caracteres" 
+        return res.status(400).json({
+          error: "A senha deve ter no mínimo 8 caracteres"
         });
       }
 
       const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
       if (!passwordRegex.test(senha)) {
-        return res.status(400).json({ 
-          error: "A senha deve conter letras maiúsculas, minúsculas e números" 
+        return res.status(400).json({
+          error: "A senha deve conter letras maiúsculas, minúsculas e números"
         });
       }
 
@@ -2726,20 +2726,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await storage.deleteAllLogsAdmin(contaId);
-      
+
       await storage.logAdminAction?.(
         effectiveUserId,
         "LOGS_LIMPOS",
         "Logs de auditoria foram limpos",
-        { 
+        {
           ip: req.ip,
           userAgent: req.headers["user-agent"],
-          contaId: effectiveUserId 
+          contaId: effectiveUserId
         }
       );
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "Logs removidos com sucesso"
       });
     } catch (error) {
@@ -3638,7 +3638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar todos os pacotes de funcionários do sistema
       const packages = await storage.db.execute(sql`
-        SELECT * FROM employee_packages 
+        SELECT * FROM employee_packages
         ORDER BY data_compra DESC
       `);
 
@@ -4056,19 +4056,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (cupom) {
         try {
           const resultadoCupom = await storage.validarCupom?.(cupom, plano, 'temp');
-          
+
           if (resultadoCupom?.valido && resultadoCupom.cupom) {
             cupomAplicado = resultadoCupom.cupom;
-            
+
             // Calcular desconto
             if (cupomAplicado.tipo === 'percentual') {
               valorDesconto = (valorFinal * cupomAplicado.valor) / 100;
             } else {
               valorDesconto = Math.min(cupomAplicado.valor, valorFinal);
             }
-            
+
             valorFinal = Math.max(0, valorFinal - valorDesconto);
-            
+
             console.log(`✅ [CHECKOUT] Cupom aplicado: ${cupom} - Desconto: R$ ${valorDesconto.toFixed(2)}`);
           }
         } catch (error) {
@@ -4165,7 +4165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data_vencimento: dataVencimento.toISOString(),
         prazo_limite_pagamento: prazoLimitePagamento.toISOString(),
         tentativas_cobranca: 0,
-        mercadopago_preference_id: preference.id,
+        mercadopago_payment_id: preference.id,
         forma_pagamento: formaPagamento,
         status_pagamento: "pending",
         init_point: preference.init_point,
@@ -4181,7 +4181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subscription_id: subscription.id,
             valor_desconto: valorDesconto,
           });
-          
+
           logger.info('Cupom registrado com sucesso', 'CHECKOUT', {
             cupom: cupomAplicado.codigo,
             userId: user.id,
@@ -4263,8 +4263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Criar preferência de pagamento no Mercado Pago COM RECORRÊNCIA MENSAL
       const preference = await mercadopago.createPreference({
         items: [
-          {
-            title: `${nomePacote} - Pavisoft Sistemas (Recorrente)`,
+          {            title: `${nomePacote} - Pavisoft Sistemas (Recorrente)`,
             quantity: 1,
             unit_price: valor,
             currency_id: "BRL",
@@ -4653,7 +4652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/employee-packages", requireAdmin, async (req, res) => {
     try {
       const packages = await storage.db.execute(sql`
-        SELECT 
+        SELECT
           ep.*,
           u.nome as user_name,
           u.email as user_email,
@@ -4662,7 +4661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LEFT JOIN users u ON ep.user_id = u.id
         ORDER BY ep.data_compra DESC
       `);
-      
+
       res.json(packages.rows || []);
     } catch (error) {
       logger.error("Erro ao buscar pacotes de funcionários", "ADMIN", { error });
@@ -4676,8 +4675,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { userId, packageType, quantity, price } = req.body;
 
       if (!userId || !packageType || !quantity) {
-        return res.status(400).json({ 
-          error: "Dados incompletos. userId, packageType e quantity são obrigatórios." 
+        return res.status(400).json({
+          error: "Dados incompletos. userId, packageType e quantity são obrigatórios."
         });
       }
 
@@ -4846,8 +4845,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { paymentId, gateway } = req.body;
 
       if (!paymentId || !gateway) {
-        return res.status(400).json({ 
-          error: "paymentId e gateway são obrigatórios" 
+        return res.status(400).json({
+          error: "paymentId e gateway são obrigatórios"
         });
       }
 
@@ -4886,15 +4885,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const isEmployeePackage = externalReference && externalReference.startsWith("pacote_");
 
         if (!isEmployeePackage) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             error: "Este pagamento não é de um pacote de funcionários",
-            externalReference 
+            externalReference
           });
         }
 
         if (status !== "approved") {
-          return res.status(400).json({ 
-            error: `Pagamento não está aprovado. Status atual: ${status}` 
+          return res.status(400).json({
+            error: `Pagamento não está aprovado. Status atual: ${status}`
           });
         }
 
@@ -4932,12 +4931,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Verificar se já existe pacote com este payment_id
         const existingPackages = await storage.db.execute(sql`
-          SELECT * FROM employee_packages 
+          SELECT * FROM employee_packages
           WHERE payment_id = ${paymentId.toString()}
         `);
 
         if (existingPackages.rows && existingPackages.rows.length > 0) {
-          return res.status(400).json({ 
+          return res.status(400).json({
             error: "Este pagamento já foi processado anteriormente",
             package: existingPackages.rows[0]
           });
@@ -4949,15 +4948,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dataVencimento.setDate(dataVencimento.getDate() + 30);
 
         // Registrar pacote
-        const newPackage = await storage.createEmployeePackage({
-          user_id: userId,
-          package_type: pacoteId,
-          quantity: quantidadeAdicional,
-          price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
-          status: "ativo",
-          payment_id: paymentId.toString(),
-          data_vencimento: dataVencimento.toISOString(),
-        });
+        if (storage.createEmployeePackage) {
+          await storage.createEmployeePackage({
+            user_id: userId,
+            package_type: pacoteId,
+            quantity: quantidadeAdicional,
+            price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
+            status: "ativo",
+            payment_id: paymentId.toString(),
+            data_vencimento: dataVencimento.toISOString(),
+          });
+        }
 
         // Atualizar usuário
         await storage.updateUser(userId, {
@@ -4979,6 +4980,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: 'ativo',
             });
           }
+
+          logger.info("Funcionários reativados após compra de pacote", "ADMIN_REPROCESS", {
+            userId,
+            funcionariosReativados: funcionariosBloqueados.length,
+          });
         }
 
         logger.info("Webhook reprocessado com sucesso", "ADMIN_REPROCESS", {
@@ -4991,7 +4997,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           success: true,
           message: "Webhook reprocessado com sucesso!",
-          package: newPackage,
           newLimit: novoLimite,
         });
 
@@ -5033,7 +5038,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         const paymentData = await response.json();
-        
+
         res.json({
           success: true,
           gateway: "mercadopago",
@@ -5071,13 +5076,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { status } = req.body;
 
       if (!status || !["ativo", "pendente", "cancelado", "expirado"].includes(status)) {
-        return res.status(400).json({ 
-          error: "Status inválido. Use: ativo, pendente, cancelado ou expirado" 
+        return res.status(400).json({
+          error: "Status inválido. Use: ativo, pendente, cancelado ou expirado"
         });
       }
 
       await storage.db.execute(sql`
-        UPDATE employee_packages 
+        UPDATE employee_packages
         SET status = ${status}
         WHERE id = ${packageId}
       `);
@@ -5181,9 +5186,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Buscar preços dinâmicos do banco de dados
           let pacotePrecos: Record<string, number> = {
             pacote_5: 49.99,
-            pacote_10: 89.99,
-            pacote_20: 159.99,
-            pacote_50: 349.99,
+            pacote_10: 89.90,
+            pacote_20: 159.90,
+            pacote_50: 349.90,
           };
 
           // Tentar buscar preços customizados do banco
@@ -5301,9 +5306,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
               }
 
-              return res.json({ 
-                success: true, 
-                message: "Pacote de funcionários ativado com sucesso" 
+              return res.json({
+                success: true,
+                message: "Pacote de funcionários ativado com sucesso"
               });
             }
           }
@@ -5460,8 +5465,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let pacotePrecos: Record<string, number> = {
         pacote_5: 49.99,
         pacote_10: 89.99,
-        pacote_20: 159.99,
-        pacote_50: 349.99,
+        pacote_20: 159.90,
+        pacote_50: 349.90,
       };
 
       // Tentar buscar preços customizados do banco
@@ -5690,8 +5695,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Atualizar assinatura com status cancelado e data de atualização
       await storage.updateSubscription(subscriptionId, {
-        status: "cancelado",
-        status_pagamento: "cancelled",
+        status: 'cancelado',
+        status_pagamento: 'cancelled',
         data_cancelamento: new Date().toISOString(),
         data_atualizacao: new Date().toISOString(),
         motivo_cancelamento:
@@ -5700,8 +5705,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Atualizar usuário para plano free
       await storage.updateUser(subscription.user_id, {
-        plano: "free",
-        status: "ativo",
+        plano: 'free',
+        status: 'ativo',
       });
 
       console.log(
@@ -5886,7 +5891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Verificar se o usuário está bloqueado
       if (user.status !== 'bloqueado') {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: "Usuário não está bloqueado",
           message: "Apenas funcionários de contas bloqueadas podem ser bloqueados em massa"
         });
@@ -6054,7 +6059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/caixas/aberto", getUserId, async (req, res) => {
     try {
       const userId = req.headers["effective-user-id"] as string;
-      const funcionarioId = req.headers["funcionario-id"] as string | undefined;
+      const funcionarioId = req.headers["funcionario-id"] as string; // Validado pelo middleware
       const userType = req.headers["x-user-type"] as string;
 
       if (!userId) {
@@ -6530,6 +6535,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             -devolucao.valor_total
           );
           console.log(`💰 Valor descontado do caixa: R$ ${devolucao.valor_total.toFixed(2)}`);
+        } else {
+          console.warn(`⚠️ Devolução aprovada mas não há caixa aberto para registrar o valor`);
         }
       }
 
@@ -7156,12 +7163,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ============================================
   // ROTAS DE CUSTOMIZAÇÃO DO USUÁRIO
   // ============================================
-  
+
   // Obter configurações de customização do usuário
   app.get("/api/user-customization", requireAuth, async (req, res) => {
     try {
       const effectiveUserId = getEffectiveUserId(req);
-      
+
       if (!effectiveUserId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
@@ -7182,7 +7189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/user-customization", requireAuth, async (req, res) => {
     try {
       const effectiveUserId = getEffectiveUserId(req);
-      
+
       if (!effectiveUserId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
@@ -7210,7 +7217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/user-customization", requireAuth, async (req, res) => {
     try {
       const effectiveUserId = getEffectiveUserId(req);
-      
+
       if (!effectiveUserId) {
         return res.status(401).json({ error: "Usuário não autenticado" });
       }
