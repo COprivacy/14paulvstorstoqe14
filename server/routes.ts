@@ -4278,29 +4278,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         external_reference: externalReference,
       });
 
-      // Enviar email de confirmação (opcional)
-      try {
-        const { EmailService } = await import("./email-service");
-        const emailService = new EmailService();
+      console.log(
+        `✅ Preferência de pagamento criada - Pacote: ${nomePacote}, User: ${user.email}`,
+      );
 
-        await emailService.sendEmployeePackagePurchased({
+      // Enviar email de confirmação em segundo plano (não bloqueia a resposta)
+      import("./email-service").then(({ EmailService }) => {
+        const emailService = new EmailService();
+        emailService.sendEmployeePackagePurchased({
           to: user.email,
           userName: user.nome,
           packageName: nomePacote,
           quantity: quantidade,
           price: valor,
           paymentUrl: preference.init_point,
+        }).then(() => {
+          console.log(`📧 Email de compra enviado para ${user.email}`);
+        }).catch((emailError) => {
+          console.error("⚠️ Erro ao enviar email (não crítico):", emailError);
         });
-
-        console.log(`📧 Email de compra enviado para ${user.email}`);
-      } catch (emailError) {
-        console.error("⚠️ Erro ao enviar email (não crítico):", emailError);
-        // Não bloqueia a compra se o email falhar
-      }
-
-      console.log(
-        `✅ Preferência de pagamento criada - Pacote: ${nomePacote}, User: ${user.email}`,
-      );
+      });
 
       res.json({
         success: true,
