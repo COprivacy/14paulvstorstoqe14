@@ -109,25 +109,40 @@ export class MercadoPagoService {
 
   async createPreference(params: MercadoPagoPreferenceParams) {
     try {
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : 'http://localhost:5000';
+      let baseUrl = '';
+      
+      if (process.env.REPLIT_DEV_DOMAIN) {
+        baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+      } else if (process.env.REPLIT_DOMAINS) {
+        const domains = process.env.REPLIT_DOMAINS.split(',');
+        if (domains.length > 0 && domains[0]) {
+          baseUrl = `https://${domains[0].trim()}`;
+        }
+      }
+      
+      if (!baseUrl) {
+        baseUrl = 'https://localhost:5000';
+      }
+
+      const successUrl = params.back_urls?.success || `${baseUrl}/planos?status=success`;
+      const failureUrl = params.back_urls?.failure || `${baseUrl}/planos?status=failure`;
+      const pendingUrl = params.back_urls?.pending || `${baseUrl}/planos?status=pending`;
 
       const body: any = {
         items: params.items,
         payer: params.payer,
         back_urls: {
-          success: `${baseUrl}/planos?status=success`,
-          failure: `${baseUrl}/planos?status=failure`,
-          pending: `${baseUrl}/planos?status=pending`,
-          ...params.back_urls,
+          success: successUrl,
+          failure: failureUrl,
+          pending: pendingUrl,
         },
-        auto_return: params.auto_return || 'approved',
         external_reference: params.external_reference,
       };
 
-      // Usar notification_url fornecido ou gerar padrão
-      // O webhook será configurado no painel quando o usuário tiver domínio premium
+      if (successUrl.startsWith('https://') && !successUrl.includes('localhost')) {
+        body.auto_return = params.auto_return || 'approved';
+      }
+
       if (params.notification_url) {
         body.notification_url = params.notification_url;
       }

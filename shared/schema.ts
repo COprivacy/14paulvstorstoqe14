@@ -155,9 +155,9 @@ export const insertUserSchema = createInsertSchema(users).omit({
   email: z.string().email("Email inválido").toLowerCase(),
   senha: z.string()
     .min(8, "Senha deve ter no mínimo 8 caracteres")
+    .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
     .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
-    .regex(/[0-9]/, "Senha deve conter pelo menos um número")
-    .regex(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um caractere especial"),
+    .regex(/[0-9]/, "Senha deve conter pelo menos um número"),
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres").max(100),
   meta_mensal: z.number().optional(),
 });

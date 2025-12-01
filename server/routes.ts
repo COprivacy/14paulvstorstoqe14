@@ -155,20 +155,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email já cadastrado" });
       }
 
-      // Validação forte de senha
-      if (userData.senha.length < 8) {
-        return res.status(400).json({ 
-          error: "A senha deve ter no mínimo 8 caracteres" 
-        });
-      }
-
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-      if (!passwordRegex.test(userData.senha)) {
-        return res.status(400).json({ 
-          error: "A senha deve conter letras maiúsculas, minúsculas e números" 
-        });
-      }
-
       // Hash da senha ANTES de armazenar
       const hashedPassword = await bcrypt.hash(userData.senha, 10);
 
