@@ -46,15 +46,19 @@ export class EmailService {
       console.error('   Configure os Secrets do Replit com SMTP_USER e SMTP_PASSWORD');
     }
 
+    // Determinar se deve usar SSL baseado na porta
+    const smtpPort = parseInt(process.env.SMTP_PORT || '587');
+    const useSSL = smtpPort === 465;
+    
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '465'),
-      secure: true, // true para porta 465, false para 587
+      port: smtpPort,
+      secure: useSSL, // true para porta 465, false para 587 (usa STARTTLS)
       auth: {
         user: process.env.SMTP_USER || '',
         pass: smtpPassword,
       },
-      // Adicionar configurações de timeout e retry
+      // Configurações de timeout e retry
       connectionTimeout: 10000, // 10 segundos
       greetingTimeout: 5000,
       socketTimeout: 10000,
@@ -62,6 +66,12 @@ export class EmailService {
       maxConnections: 5,
       rateDelta: 20000,
       rateLimit: 5,
+      // Para porta 587, forçar STARTTLS
+      requireTLS: !useSSL,
+      tls: {
+        // Não rejeitar certificados auto-assinados em desenvolvimento
+        rejectUnauthorized: process.env.NODE_ENV === 'production'
+      }
     });
 
     // Verificar conexão SMTP ao inicializar (com timeout)
