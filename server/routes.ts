@@ -4114,6 +4114,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Construir URL do webhook
+      let webhookUrl = config.webhook_url;
+      if (!webhookUrl) {
+        let baseUrl = process.env.APP_URL;
+        if (!baseUrl) {
+          baseUrl = process.env.REPLIT_DEV_DOMAIN
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+            : "http://localhost:5000";
+        }
+        webhookUrl = `${baseUrl}/api/webhook/mercadopago`;
+      }
+
+      logger.info("Criando preferência de pagamento", "CHECKOUT", {
+        externalReference,
+        webhookUrl,
+        valorFinal,
+      });
+
       // Criar preferência de pagamento no Mercado Pago
       const preference = await mercadopago.createPreference({
         items,
@@ -4128,6 +4146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             : undefined,
         },
         external_reference: externalReference,
+        notification_url: webhookUrl,
       });
 
       // Criar ou atualizar usuário
@@ -4259,10 +4278,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const externalReference = `${pacoteId}_${userId}_${Date.now()}`;
 
+      // Construir URL do webhook para pacotes de funcionários
+      let webhookUrl = config.webhook_url;
+      if (!webhookUrl) {
+        let baseUrl = process.env.APP_URL;
+        if (!baseUrl) {
+          baseUrl = process.env.REPLIT_DEV_DOMAIN
+            ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+            : "http://localhost:5000";
+        }
+        webhookUrl = `${baseUrl}/api/webhook/mercadopago`;
+      }
+
+      logger.info("Criando preferência para pacote de funcionários", "PURCHASE_EMPLOYEES", {
+        externalReference,
+        webhookUrl,
+        pacoteId,
+        quantidade,
+        valor,
+      });
+
       // Criar preferência de pagamento no Mercado Pago COM RECORRÊNCIA MENSAL
       const preference = await mercadopago.createPreference({
         items: [
-          {            title: `${nomePacote} - Pavisoft Sistemas (Recorrente)`,
+          {
+            title: `${nomePacote} - Pavisoft Sistemas (Recorrente)`,
             quantity: 1,
             unit_price: valor,
             currency_id: "BRL",
@@ -4274,6 +4314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: user.nome,
         },
         external_reference: externalReference,
+        notification_url: webhookUrl,
         auto_recurring: {
           frequency: 1,
           frequency_type: "months",
@@ -5099,10 +5140,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { type, data, action } = req.body;
 
+      console.log("========================================");
+      console.log("[WEBHOOK MERCADOPAGO] Notificação recebida:");
+      console.log("  - Type:", type);
+      console.log("  - Action:", action);
+      console.log("  - Data ID:", data?.id);
+      console.log("  - Body completo:", JSON.stringify(req.body, null, 2));
+      console.log("========================================");
+
       logger.info("Webhook Mercado Pago recebido", "MERCADOPAGO_WEBHOOK", {
         type,
         action,
-        dataId: data?.id
+        dataId: data?.id,
+        fullBody: req.body
       });
 
       // Processar notificação de pagamento
