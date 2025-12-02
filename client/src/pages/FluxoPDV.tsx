@@ -65,7 +65,6 @@ export default function FluxoPDV() {
       })
       .reduce((sum: number, c: any) => sum + (c.valor || 0), 0);
 
-    // Adicionar vencidas se o toggle estiver ativo
     if (incluirVencidas) {
       total += contasVencidas.totalReceber;
     }
@@ -83,7 +82,6 @@ export default function FluxoPDV() {
       })
       .reduce((sum: number, c: any) => sum + (c.valor || 0), 0);
 
-    // Adicionar vencidas se o toggle estiver ativo
     if (incluirVencidas) {
       total += contasVencidas.totalPagar;
     }
@@ -151,25 +149,29 @@ export default function FluxoPDV() {
   }, [contasPagar]);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold dark:text-white">Fluxo de Caixa Projetado</h1>
-        <p className="text-muted-foreground mt-1">Análise de fluxo de caixa baseado em contas a pagar e receber</p>
+    <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-7xl">
+      {/* Header */}
+      <div className="space-y-2">
+        <h1 className="text-2xl md:text-3xl font-bold dark:text-white">Fluxo de Caixa Projetado</h1>
+        <p className="text-sm md:text-base text-muted-foreground">
+          Análise de fluxo de caixa baseado em contas a pagar e receber
+        </p>
       </div>
 
-      {/* Filtros de Período */}
+      {/* Filtros */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Filtros de Projeção
-          </CardTitle>
-          <CardDescription>Configure o período de análise e opções de cálculo</CardDescription>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg">Filtros de Projeção</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="dias-projecao">Período de Projeção (dias)</Label>
+              <Label htmlFor="dias-projecao" className="text-sm font-medium">
+                Período de Projeção (dias)
+              </Label>
               <Input
                 id="dias-projecao"
                 type="number"
@@ -177,45 +179,41 @@ export default function FluxoPDV() {
                 max="365"
                 value={diasProjecao}
                 onChange={(e) => setDiasProjecao(Math.max(7, Math.min(365, parseInt(e.target.value) || 30)))}
-                className="w-full"
               />
               <p className="text-xs text-muted-foreground">
                 Analisando os próximos {diasProjecao} dias
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="incluir-vencidas" className="flex items-center gap-2">
-                Incluir Contas Vencidas no Cálculo
-              </Label>
-              <div className="flex items-center space-x-2">
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Incluir Contas Vencidas</Label>
+              <div className="flex items-center gap-3">
                 <Switch
                   id="incluir-vencidas"
                   checked={incluirVencidas}
                   onCheckedChange={setIncluirVencidas}
                 />
                 <Label htmlFor="incluir-vencidas" className="text-sm font-normal cursor-pointer">
-                  {incluirVencidas ? 'Incluindo contas vencidas' : 'Apenas contas futuras'}
+                  {incluirVencidas ? 'Incluídas nos cálculos' : 'Apenas contas futuras'}
                 </Label>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {incluirVencidas 
-                  ? 'Contas vencidas estão sendo somadas aos valores projetados'
-                  : 'Contas vencidas não estão sendo incluídas no cálculo'}
-              </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Cards de Resumo */}
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Entrada Projetada</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+      {/* Cards de Valores Principais */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-green-200 dark:border-green-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Entrada Projetada
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600" />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-1">
             <div className="text-2xl font-bold text-green-600" data-testid="text-entrada-projetada">
               R$ {entradaProjetada.toFixed(2)}
             </div>
@@ -223,12 +221,16 @@ export default function FluxoPDV() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saída Projetada</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+        <Card className="border-red-200 dark:border-red-900/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Saída Projetada
+              </CardTitle>
+              <TrendingDown className="h-4 w-4 text-red-600" />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-1">
             <div className="text-2xl font-bold text-red-600" data-testid="text-saida-projetada">
               R$ {saidaProjetada.toFixed(2)}
             </div>
@@ -236,12 +238,16 @@ export default function FluxoPDV() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo Projetado</CardTitle>
-            <DollarSign className="h-4 w-4 text-blue-600" />
+        <Card className={`border-2 ${saldoProjetado >= 0 ? 'border-blue-300 dark:border-blue-900/50' : 'border-red-300 dark:border-red-900/50'}`}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Saldo Projetado
+              </CardTitle>
+              <DollarSign className={`h-4 w-4 ${saldoProjetado >= 0 ? 'text-blue-600' : 'text-red-600'}`} />
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-1">
             <div className={`text-2xl font-bold ${saldoProjetado >= 0 ? 'text-blue-600' : 'text-red-600'}`} data-testid="text-saldo-projetado">
               R$ {saldoProjetado.toFixed(2)}
             </div>
@@ -250,61 +256,57 @@ export default function FluxoPDV() {
         </Card>
       </div>
 
-      {/* Card de Contas Vencidas - Expandido */}
+      {/* Alerta de Contas Vencidas */}
       {(contasVencidas.pagar > 0 || contasVencidas.receber > 0) && (
-        <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
-          <CardHeader>
-            <CardTitle className="text-orange-800 dark:text-orange-300 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              Atenção: Contas Vencidas
-            </CardTitle>
+        <Card className="border-orange-300 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900/50">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+              <CardTitle className="text-lg text-orange-800 dark:text-orange-300">
+                Contas Vencidas
+              </CardTitle>
+            </div>
             <CardDescription className="text-orange-700 dark:text-orange-400">
-              Valores em atraso que requerem atenção imediata
+              Valores em atraso que requerem atenção
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               {contasVencidas.pagar > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 bg-white dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-900/50">
+                  <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium text-orange-800 dark:text-orange-300">
-                      Contas a Pagar Vencidas
+                      A Pagar
                     </span>
-                    <span className="text-sm font-bold text-orange-900 dark:text-orange-200">
-                      {contasVencidas.pagar} conta(s)
+                    <span className="text-sm font-bold px-2 py-1 bg-orange-100 dark:bg-orange-900/50 rounded">
+                      {contasVencidas.pagar}
                     </span>
                   </div>
-                  <div className="text-2xl font-bold text-red-600">
+                  <div className="text-xl font-bold text-red-600">
                     R$ {contasVencidas.totalPagar.toFixed(2)}
                   </div>
-                  <p className="text-xs text-orange-700 dark:text-orange-400">
-                    Total em atraso para fornecedores
-                  </p>
                 </div>
               )}
               {contasVencidas.receber > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 bg-white dark:bg-orange-950/30 rounded-lg border border-orange-200 dark:border-orange-900/50">
+                  <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium text-orange-800 dark:text-orange-300">
-                      Contas a Receber Vencidas
+                      A Receber
                     </span>
-                    <span className="text-sm font-bold text-orange-900 dark:text-orange-200">
-                      {contasVencidas.receber} conta(s)
+                    <span className="text-sm font-bold px-2 py-1 bg-orange-100 dark:bg-orange-900/50 rounded">
+                      {contasVencidas.receber}
                     </span>
                   </div>
-                  <div className="text-2xl font-bold text-orange-600">
+                  <div className="text-xl font-bold text-orange-600">
                     R$ {contasVencidas.totalReceber.toFixed(2)}
                   </div>
-                  <p className="text-xs text-orange-700 dark:text-orange-400">
-                    Total em atraso de clientes
-                  </p>
                 </div>
               )}
             </div>
             {incluirVencidas && (
               <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  ℹ️ Estes valores estão sendo incluídos nos cálculos de projeção acima
+                <p className="text-xs text-blue-800 dark:text-blue-300">
+                  ℹ️ Estes valores estão incluídos nos cálculos acima
                 </p>
               </div>
             )}
@@ -312,26 +314,26 @@ export default function FluxoPDV() {
         </Card>
       )}
 
-      {/* Gráfico de Fluxo de Caixa Semanal */}
+      {/* Gráfico de Fluxo Semanal */}
       <Card>
-        <CardHeader>
-          <CardTitle>Fluxo de Caixa Semanal</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Fluxo de Caixa Semanal</CardTitle>
           <CardDescription>
-            Projeção para as próximas {Math.ceil(diasProjecao / 7)} semanas ({diasProjecao} dias)
+            Projeção para as próximas {Math.ceil(diasProjecao / 7)} semanas
           </CardDescription>
         </CardHeader>
         <CardContent>
           {!temDados ? (
             <div className="text-center py-12 text-muted-foreground">
-              <p>Dados insuficientes para gerar o gráfico</p>
-              <p className="text-sm mt-2">Adicione contas a pagar e a receber para visualizar o fluxo projetado</p>
+              <p className="font-medium">Dados insuficientes para gerar o gráfico</p>
+              <p className="text-sm mt-2">Adicione contas a pagar e receber para visualizar o fluxo</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="semana" />
-                <YAxis />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="semana" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" />
                 <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
                 <Legend />
                 <Line type="monotone" dataKey="entrada" stroke="#10b981" name="Entrada" strokeWidth={2} />
@@ -346,16 +348,16 @@ export default function FluxoPDV() {
       {/* Despesas por Categoria */}
       {despesasPorCategoria.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle>Despesas Pendentes por Categoria</CardTitle>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Despesas Pendentes por Categoria</CardTitle>
             <CardDescription>Top 5 categorias de despesas</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={despesasPorCategoria} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="category" dataKey="name" />
-                <YAxis type="number" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                <YAxis type="number" stroke="hsl(var(--muted-foreground))" />
                 <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
                 <Bar dataKey="value" fill="#ef4444" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -366,26 +368,26 @@ export default function FluxoPDV() {
 
       {/* Resumo Detalhado */}
       <Card>
-        <CardHeader>
-          <CardTitle>Resumo Detalhado</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Resumo Detalhado</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b">
-              <span className="font-semibold">Contas a Receber (Pendentes)</span>
-              <span className="font-mono text-green-600">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+              <span className="text-sm font-medium">Contas a Receber (Pendentes)</span>
+              <span className="font-mono text-sm font-bold text-green-600">
                 R$ {contasReceber.filter((c: any) => c.status === 'pendente').reduce((sum: number, c: any) => sum + (c.valor || 0), 0).toFixed(2)}
               </span>
             </div>
-            <div className="flex justify-between items-center pb-3 border-b">
-              <span className="font-semibold">Contas a Pagar (Pendentes)</span>
-              <span className="font-mono text-red-600">
+            <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+              <span className="text-sm font-medium">Contas a Pagar (Pendentes)</span>
+              <span className="font-mono text-sm font-bold text-red-600">
                 R$ {contasPagar.filter((c: any) => c.status === 'pendente').reduce((sum: number, c: any) => sum + (c.valor || 0), 0).toFixed(2)}
               </span>
             </div>
-            <div className="flex justify-between items-center pb-3 border-b">
-              <span className="font-semibold">Total de Vendas (Mês Atual)</span>
-              <span className="font-mono text-blue-600">
+            <div className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+              <span className="text-sm font-medium">Total de Vendas (Mês Atual)</span>
+              <span className="font-mono text-sm font-bold text-blue-600">
                 R$ {vendas.filter((v: any) => {
                   if (!v.data) return false;
                   const vendaDate = new Date(v.data);
@@ -395,15 +397,15 @@ export default function FluxoPDV() {
             </div>
             {(contasVencidas.pagar > 0 || contasVencidas.receber > 0) && (
               <>
-                <div className="flex justify-between items-center pb-3 border-b">
-                  <span className="font-semibold text-orange-700 dark:text-orange-400">Contas Vencidas a Pagar</span>
-                  <span className="font-mono text-red-600">
+                <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900/50">
+                  <span className="text-sm font-medium text-orange-800 dark:text-orange-300">Contas Vencidas a Pagar</span>
+                  <span className="font-mono text-sm font-bold text-red-600">
                     R$ {contasVencidas.totalPagar.toFixed(2)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center pb-3 border-b">
-                  <span className="font-semibold text-orange-700 dark:text-orange-400">Contas Vencidas a Receber</span>
-                  <span className="font-mono text-orange-600">
+                <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900/50">
+                  <span className="text-sm font-medium text-orange-800 dark:text-orange-300">Contas Vencidas a Receber</span>
+                  <span className="font-mono text-sm font-bold text-orange-600">
                     R$ {contasVencidas.totalReceber.toFixed(2)}
                   </span>
                 </div>
