@@ -43,7 +43,6 @@ async function autoFixDatabaseSchema() {
       { name: 'cpf_cnpj', type: 'TEXT', default: null },
       { name: 'telefone', type: 'TEXT', default: null },
       { name: 'endereco', type: 'TEXT', default: null },
-      { name: 'asaas_customer_id', type: 'TEXT', default: null },
       { name: 'permissoes', type: 'TEXT', default: null },
       { name: 'ultimo_acesso', type: 'TEXT', default: null },
       { name: 'max_funcionarios', type: 'INTEGER', default: 1 },

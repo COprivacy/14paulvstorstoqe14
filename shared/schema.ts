@@ -18,7 +18,6 @@ export const users = pgTable("users", {
   cpf_cnpj: text("cpf_cnpj"),
   telefone: text("telefone"),
   endereco: text("endereco"),
-  asaas_customer_id: text("asaas_customer_id"),
   permissoes: text("permissoes"),
   ultimo_acesso: text("ultimo_acesso"),
   max_funcionarios: integer("max_funcionarios").default(1),

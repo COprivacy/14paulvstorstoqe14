@@ -917,7 +917,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         cpf_cnpj: user.cpf_cnpj || null,
         telefone: user.telefone || null,
         endereco: user.endereco || null,
-        asaas_customer_id: user.asaas_customer_id || null,
         max_funcionarios: user.max_funcionarios || 1,
         meta_mensal: user.meta_mensal || 15000,
       }));
