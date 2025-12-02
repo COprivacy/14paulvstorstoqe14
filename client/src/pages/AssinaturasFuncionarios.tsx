@@ -84,7 +84,6 @@ export default function AssinaturasFuncionarios() {
   const [selectedPrice, setSelectedPrice] = useState(39.90);
   
   const [reprocessPaymentId, setReprocessPaymentId] = useState("");
-  const [reprocessGateway, setReprocessGateway] = useState("mercadopago");
   
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
 
@@ -178,7 +177,7 @@ export default function AssinaturasFuncionarios() {
     
     reprocessMutation.mutate({
       paymentId: reprocessPaymentId,
-      gateway: reprocessGateway,
+      gateway: "mercadopago",
     });
   };
 
@@ -413,21 +412,8 @@ export default function AssinaturasFuncionarios() {
                     data-testid="input-payment-id"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    ID do pagamento no gateway (Mercado Pago ou Asaas)
+                    ID do pagamento no Mercado Pago
                   </p>
-                </div>
-                
-                <div>
-                  <Label>Gateway de Pagamento</Label>
-                  <Select value={reprocessGateway} onValueChange={setReprocessGateway}>
-                    <SelectTrigger data-testid="select-gateway">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mercadopago">Mercado Pago</SelectItem>
-                      <SelectItem value="asaas">Asaas</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
               

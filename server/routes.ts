@@ -4481,7 +4481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           packageName: "Pacote 5 Funcionários",
           quantity: 5,
           price: 25.0,
-          paymentUrl: "https://sandbox.asaas.com/i/test123",
+          paymentUrl: "https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=test123",
         });
         results.push({
           tipo: "Pacote de Funcionários - Aguardando Pagamento",
@@ -4999,10 +4999,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           newLimit: novoLimite,
         });
 
-      } else if (gateway === "asaas") {
-        return res.status(501).json({ error: "Reprocessamento de Asaas ainda não implementado" });
       } else {
-        return res.status(400).json({ error: "Gateway inválido. Use 'mercadopago' ou 'asaas'" });
+        return res.status(400).json({ error: "Gateway inválido. Use 'mercadopago'" });
       }
 
     } catch (error: any) {
@@ -5056,10 +5054,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
         });
 
-      } else if (gateway === "asaas") {
-        return res.status(501).json({ error: "Busca de detalhes no Asaas ainda não implementada" });
       } else {
-        return res.status(400).json({ error: "Gateway inválido" });
+        return res.status(400).json({ error: "Gateway inválido. Use 'mercadopago'" });
       }
 
     } catch (error: any) {
@@ -5420,229 +5416,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       res.status(500).json({ error: error.message });
     }
-  });
-
-  // Asaas Webhook
-  app.post("/api/webhook/asaas", async (req, res) => {
-    const signature = req.headers["asaas-access-token"];
-    if (signature !== process.env.ASAAS_ACCESS_TOKEN) {
-      logger.warn("Webhook rejeitado - token inválido", "WEBHOOK");
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    const { event, payment } = req.body;
-
-    console.log("Webhook Asaas recebido:", event, payment);
-
-    if (!payment || !payment.id) {
-      return res.status(400).json({ error: "Dados do webhook inválidos" });
-    }
-
-    // Verificar se é um pagamento de pacote de funcionários
-    const isEmployeePackage =
-      payment.externalReference &&
-      payment.externalReference.startsWith("pacote_");
-
-    if (
-      isEmployeePackage &&
-      (event === "PAYMENT_RECEIVED" || event === "PAYMENT_CONFIRMED")
-    ) {
-      // Processar pagamento de pacote de funcionários
-      const parts = payment.externalReference.split("_");
-      const pacoteId = parts[0] + "_" + parts[1]; // pacote_5, pacote_10, etc
-      const userId = parts[2];
-
-      // Mapear pacotes para quantidade de funcionários
-      const pacoteQuantidades: Record<string, number> = {
-        pacote_5: 5,
-        pacote_10: 10,
-        pacote_20: 20,
-        pacote_50: 50,
-      };
-
-      // Buscar preços dinâmicos do banco de dados
-      let pacotePrecos: Record<string, number> = {
-        pacote_5: 49.99,
-        pacote_10: 89.99,
-        pacote_20: 159.90,
-        pacote_50: 349.90,
-      };
-
-      // Tentar buscar preços customizados do banco
-      try {
-        if (storage.getSystemConfig) {
-          const precosConfig = await storage.getSystemConfig('pacotes_funcionarios_precos');
-          if (precosConfig && precosConfig.valor) {
-            const precosParsed = JSON.parse(precosConfig.valor);
-            pacotePrecos = {
-              pacote_5: precosParsed.pacote_5 || pacotePrecos.pacote_5,
-              pacote_10: precosParsed.pacote_10 || pacotePrecos.pacote_10,
-              pacote_20: precosParsed.pacote_20 || pacotePrecos.pacote_20,
-              pacote_50: precosParsed.pacote_50 || pacotePrecos.pacote_50,
-            };
-            logger.info('Preços de pacotes carregados do banco', 'ASAAS_WEBHOOK', pacotePrecos);
-          }
-        }
-      } catch (error) {
-        logger.warn('Erro ao carregar preços customizados, usando padrão', 'ASAAS_WEBHOOK', { error });
-      }
-
-      const quantidadeAdicional = pacoteQuantidades[pacoteId];
-
-      if (quantidadeAdicional && userId) {
-        const users = await storage.getUsers();
-        const user = users.find((u: any) => u.id === userId);
-
-        if (user) {
-          const limiteAtual = user.max_funcionarios || 1;
-          const novoLimite = limiteAtual + quantidadeAdicional;
-
-          // Calcular data de vencimento (30 dias)
-          const dataVencimento = new Date();
-          dataVencimento.setDate(dataVencimento.getDate() + 30);
-
-          // Registrar pacote comprado (usar valor real do pagamento quando disponível)
-          if (storage.createEmployeePackage) {
-            await storage.createEmployeePackage({
-              user_id: userId,
-              package_type: pacoteId,
-              quantity: quantidadeAdicional,
-              price: payment.value || pacotePrecos[pacoteId] || 0,
-              status: "ativo",
-              payment_id: payment.id,
-              data_vencimento: dataVencimento.toISOString(),
-            });
-          }
-
-          // Atualizar usuário
-          await storage.updateUser(userId, {
-            max_funcionarios: novoLimite,
-            max_funcionarios_base: user.max_funcionarios_base || 1,
-            data_expiracao_pacote_funcionarios: dataVencimento.toISOString(),
-          });
-
-          // 🔥 NOVO: Reativar funcionários bloqueados POR FALTA DE LIMITE
-          // (mas APENAS se a conta principal estiver ativa)
-          if (user.status === 'ativo' && storage.getFuncionarios) {
-            const funcionarios = await storage.getFuncionarios();
-            const funcionariosBloqueados = funcionarios
-              .filter(f => f.conta_id === userId && f.status === 'bloqueado')
-              .sort((a, b) => new Date(a.data_criacao || 0).getTime() - new Date(b.data_criacao || 0).getTime())
-              .slice(0, quantidadeAdicional);
-
-            for (const funcionario of funcionariosBloqueados) {
-              await storage.updateFuncionario(funcionario.id, {
-                status: 'ativo',
-              });
-
-              logger.info('Funcionário reativado após compra de pacote', 'WEBHOOK', {
-                funcionarioId: funcionario.id,
-                funcionarioNome: funcionario.nome,
-                contaId: userId,
-              });
-            }
-
-            if (funcionariosBloqueados.length > 0) {
-              console.log(
-                `✅ [WEBHOOK] ${funcionariosBloqueados.length} funcionário(s) reativado(s) automaticamente`,
-              );
-            }
-          }
-
-          console.log(
-            `✅ [WEBHOOK] Pagamento confirmado - Pacote: ${pacoteId}`,
-          );
-          console.log(`✅ [WEBHOOK] User: ${user.email} | ${user.nome}`);
-          console.log(
-            `✅ [WEBHOOK] Limite anterior: ${limiteAtual} → Novo limite: ${novoLimite}`,
-          );
-          console.log(
-            `✅ [WEBHOOK] Vencimento: ${dataVencimento.toLocaleDateString('pt-BR')}`,
-          );
-
-          logger.info("Pacote de funcionários ativado", "WEBHOOK", {
-            userId,
-            userEmail: user.email,
-            pacoteId,
-            quantidadeAdicional,
-            limiteAnterior: limiteAtual,
-            novoLimite,
-            dataVencimento: dataVencimento.toISOString(),
-          });
-
-          // Enviar email de confirmação de ativação
-          try {
-            const { EmailService } = await import("./email-service");
-            const emailService = new EmailService();
-
-            const nomePacote = `Pacote ${quantidadeAdicional} Funcionários`;
-
-            await emailService.sendEmployeePackageActivated({
-              to: user.email,
-              userName: user.nome,
-              packageName: nomePacote,
-              quantity: quantidadeAdicional,
-              newLimit: novoLimite,
-              price: payment.value || 0,
-            });
-
-            console.log(`📧 Email de ativação enviado para ${user.email}`);
-          } catch (emailError) {
-            console.error(
-              "⚠️ Erro ao enviar email de ativação (não crítico):",
-              emailError,
-            );
-          }
-        }
-      }
-
-
-      res.json({
-        success: true,
-        message: "Webhook de pacote processado com sucesso",
-      });
-      return;
-    }
-
-    // Processar pagamento de assinatura normal
-    const subscriptions = await storage.getSubscriptions();
-    const subscription = subscriptions?.find(
-      (s) => s.asaas_payment_id === payment.id,
-    );
-
-    if (!subscription) {
-      console.log("Assinatura não encontrada para pagamento:", payment.id);
-      return res.status(404).json({ error: "Assinatura não encontrada" });
-    }
-
-    if (event === "PAYMENT_RECEIVED" || event === "PAYMENT_CONFIRMED") {
-      await storage.updateSubscription(subscription.id, {
-        status: "ativo",
-        status_pagamento: "RECEIVED",
-        data_inicio: new Date().toISOString(),
-      });
-
-      await storage.updateUser(subscription.user_id, {
-        plano: subscription.plano,
-        data_expiracao_plano: subscription.data_vencimento,
-        status: "ativo",
-      });
-
-      console.log(`Pagamento confirmado para assinatura ${subscription.id}`);
-    } else if (event === "PAYMENT_OVERDUE") {
-      await storage.updateSubscription(subscription.id, {
-        status: "expirado",
-        status_pagamento: "OVERDUE",
-      });
-
-      await storage.updateUser(subscription.user_id, {
-        status: "inativo",
-      });
-
-      console.log(`Pagamento vencido para assinatura ${subscription.id}`);
-    }
-
-    res.json({ success: true, message: "Webhook processado com sucesso" });
   });
 
   // Subscriptions routes - RESTRITO a admins

@@ -2224,7 +2224,7 @@ export default function AdminPublico() {
   const [selectedClientFor360, setSelectedClientFor360] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'assinaturas_funcionarios' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes'>('dashboard');
-  const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('mercadopago'); // Default to mercadopago, as asaas is removed.
+  const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('mercadopago');
   const [userEditDialogOpen, setUserEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [limparLogsDialogOpen, setLimparLogsDialogOpen] = useState(false);

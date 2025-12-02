@@ -557,7 +557,7 @@ export const employeePackages = pgTable("employee_packages", {
   quantity: integer("quantity").notNull(), // Quantidade de funcionários adicionados
   price: real("price").notNull(), // Valor pago
   status: text("status").notNull().default("ativo"), // ativo, expirado, cancelado
-  payment_id: text("payment_id"), // ID do pagamento (Mercado Pago ou Asaas)
+  payment_id: text("payment_id"), // ID do pagamento (Mercado Pago)
   data_compra: text("data_compra").notNull(),
   data_vencimento: text("data_vencimento").notNull(), // 30 dias após compra
   data_cancelamento: text("data_cancelamento"),

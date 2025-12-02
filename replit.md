@@ -14,9 +14,10 @@ Preferred communication style: Simple, everyday language.
 - Fixed Devolucoes.tsx to include venda_id when creating devoluções from sales (enables proper linking in reports)
 - Note: Historical devoluções created before this fix lack venda_id and need a migration script to retroactively link
 
+**2025-12-02:** Removed all Asaas payment gateway dependencies - system now uses only Mercado Pago for payments.
+
 **2025-11-26:** Fixed dynamic pricing system for payment webhooks and coupon validation:
 - Replaced hardcoded prices in Mercado Pago webhook with dynamic fetch from `storage.getSystemConfig('pacotes_funcionarios_precos')`
-- Applied same fix to Asaas webhook for consistency
 - Updated coupon validation to fetch plan prices dynamically from `storage.getSystemConfig('planos_precos')`
 - All payment flows now use actual payment amounts when available, with database-configured fallbacks
 
