@@ -277,7 +277,7 @@ export class PostgresStorage implements IStorage {
       const [cupom] = await this.db
         .update(cupons)
         .set(updateData)
-        .where(eq(cupom.id, id))
+        .where(eq(cupons.id, id))
         .returning();
 
       if (!cupom) return undefined;

@@ -52,7 +52,8 @@ import {
   Check,
   Crown,
   Package,
-  Info
+  Info,
+  Building2 // Keep Building2 import, as it might be used elsewhere, though not in this file context anymore.
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -2223,11 +2224,11 @@ export default function AdminPublico() {
   const [selectedClientFor360, setSelectedClientFor360] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'assinaturas_funcionarios' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes'>('dashboard');
-  const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('config');
+  const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('mercadopago'); // Default to mercadopago, as asaas is removed.
   const [userEditDialogOpen, setUserEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [limparLogsDialogOpen, setLimparLogsDialogOpen] = useState(false);
-  
+
   // Estados para assinaturas
   const [subscriptionFilterStatus, setSubscriptionFilterStatus] = useState<string>("todos");
   const [subscriptionReprocessDialogOpen, setSubscriptionReprocessDialogOpen] = useState(false);
@@ -2258,10 +2259,10 @@ export default function AdminPublico() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/all-logs'] });
-      
+
       // Disparar evento para o AdminLogsView recarregar
       window.dispatchEvent(new CustomEvent('logs-cleared'));
-      
+
       toast({
         title: "✅ Logs limpos com sucesso",
         description: `${data.deletedCount} registro(s) removido(s)`,
@@ -2482,7 +2483,7 @@ export default function AdminPublico() {
       });
       return;
     }
-    
+
     subscriptionReprocessMutation.mutate(subscriptionReprocessPaymentId);
   };
 
@@ -2494,11 +2495,11 @@ export default function AdminPublico() {
           "x-is-admin": "true",
         },
       });
-      
+
       if (!res.ok) {
         throw new Error("Erro ao buscar detalhes do pagamento");
       }
-      
+
       const data = await res.json();
       setSubscriptionPaymentDetails(data.payment);
       setSubscriptionDetailsDialogOpen(true);
@@ -3022,7 +3023,7 @@ export default function AdminPublico() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="w-[200px]">
                       <Label>Status</Label>
                       <Select 
@@ -3095,9 +3096,9 @@ export default function AdminPublico() {
                                 user?.nome?.toLowerCase().includes(searchLower) ||
                                 user?.email?.toLowerCase().includes(searchLower) ||
                                 sub.mercadopago_payment_id?.toLowerCase().includes(searchLower);
-                              
+
                               const matchStatus = subscriptionFilterStatus === 'todos' || sub.status === subscriptionFilterStatus;
-                              
+
                               return matchSearch && matchStatus;
                             })
                             .map((sub) => {
@@ -3220,7 +3221,7 @@ export default function AdminPublico() {
                       Forçar o processamento de um pagamento já aprovado que não foi ativado automaticamente
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <div className="space-y-4">
                     <div>
                       <Label>Payment ID</Label>
@@ -3235,7 +3236,7 @@ export default function AdminPublico() {
                       </p>
                     </div>
                   </div>
-                  
+
                   <DialogFooter>
                     <Button 
                       variant="outline" 
@@ -3267,7 +3268,7 @@ export default function AdminPublico() {
                       Informações diretas do gateway de pagamento
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   {subscriptionPaymentDetails && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -3310,7 +3311,7 @@ export default function AdminPublico() {
                           </p>
                         </div>
                       </div>
-                      
+
                       {subscriptionPaymentDetails.status_detail && (
                         <div>
                           <Label className="text-muted-foreground">Detalhes do Status</Label>
@@ -3319,7 +3320,7 @@ export default function AdminPublico() {
                       )}
                     </div>
                   )}
-                  
+
                   <DialogFooter>
                     <Button onClick={() => setSubscriptionDetailsDialogOpen(false)}>Fechar</Button>
                   </DialogFooter>
@@ -3329,7 +3330,33 @@ export default function AdminPublico() {
           ) : activeTab === 'configuracoes' ? (
             // Aba de Configurações - Apenas Mercado Pago
             <div className="space-y-6">
-              <MercadoPagoConfigTab />
+              <Tabs defaultValue={configTab} onValueChange={(value: any) => setConfigTab(value)}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="mercadopago">
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Mercado Pago
+                  </TabsTrigger>
+                  <TabsTrigger value="fiscalnfe">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Nota Fiscal
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="mercadopago">
+                  <MercadoPagoConfigTab />
+                </TabsContent>
+                <TabsContent value="fiscalnfe">
+                  {/* Placeholder for FiscalNFeConfigTab - assuming it exists elsewhere */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Configuração de Nota Fiscal</CardTitle>
+                      <CardDescription>Configure sua integração com o emissor de notas fiscais</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p>Conteúdo da configuração de NFe virá aqui...</p>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </div>
           ) : activeTab === 'sistema' ? (
             // Aba de Sistema
@@ -3799,9 +3826,6 @@ export default function AdminPublico() {
                 </CardContent>
               </Card>
             </div>
-          ) : activeTab === 'promocoes' ? (
-            // Aba de Promoções e Descontos - SISTEMA ATIVO
-            <PromocoesTab />
           ) : (
             // Dashboard Principal
             <>
@@ -3885,7 +3909,7 @@ export default function AdminPublico() {
                       Distribuição de Planos
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent>```javascript
                     <ChartContainer config={{}} className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
