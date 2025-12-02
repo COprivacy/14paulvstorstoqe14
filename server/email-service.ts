@@ -48,30 +48,44 @@ export class EmailService {
 
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
+      port: parseInt(process.env.SMTP_PORT || '465'),
+      secure: true, // true para porta 465, false para 587
       auth: {
         user: process.env.SMTP_USER || '',
         pass: smtpPassword,
       },
+      // Adicionar configurações de timeout e retry
+      connectionTimeout: 10000, // 10 segundos
+      greetingTimeout: 5000,
+      socketTimeout: 10000,
+      pool: true,
+      maxConnections: 5,
+      rateDelta: 20000,
+      rateLimit: 5,
     });
 
-    // Verificar conexão SMTP ao inicializar
+    // Verificar conexão SMTP ao inicializar (com timeout)
+    const verifyTimeout = setTimeout(() => {
+      console.warn("⚠️ Timeout ao verificar SMTP - continuando mesmo assim");
+      logger.warn('Timeout na verificação SMTP', 'EMAIL_SERVICE');
+    }, 8000);
+
     this.transporter.verify((error, success) => {
-          if (error) {
-            console.warn("⚠️ SMTP não configurado corretamente. Configure as credenciais nas variáveis de ambiente.");
-            logger.warn('SMTP não configurado', 'EMAIL_SERVICE', {
-              host: this.transporter.options.host,
-              port: this.transporter.options.port,
-              secure: this.transporter.options.secure,
-              user: this.transporter.options.auth?.user,
-              error: error.message
-            });
-          } else {
-            console.log("✅ Servidor SMTP pronto para enviar emails");
-            logger.info('SMTP configurado com sucesso', 'EMAIL_SERVICE');
-          }
+      clearTimeout(verifyTimeout);
+      if (error) {
+        console.warn("⚠️ SMTP não configurado corretamente. Configure as credenciais nas variáveis de ambiente.");
+        logger.warn('SMTP não configurado', 'EMAIL_SERVICE', {
+          host: this.transporter.options.host,
+          port: this.transporter.options.port,
+          secure: this.transporter.options.secure,
+          user: this.transporter.options.auth?.user,
+          error: error.message
         });
+      } else {
+        console.log("✅ Servidor SMTP pronto para enviar emails");
+        logger.info('SMTP configurado com sucesso', 'EMAIL_SERVICE');
+      }
+    });
   }
 
   // Template base para todos os emails
@@ -150,6 +164,18 @@ export class EmailService {
     `;
   }
 
+  private async sendMailSafely(mailOptions: any) {
+    try {
+      await this.transporter.sendMail(mailOptions);
+      return true;
+    } catch (error: any) {
+      console.error('❌ Erro ao enviar email:', error.message);
+      logger.error('Falha ao enviar email', 'EMAIL_SERVICE', { error: error.message });
+      // Não quebra a aplicação se o email falhar
+      return false;
+    }
+  }
+
   async sendPasswordResetCode(config: {
     to: string;
     userName: string;
@@ -210,7 +236,7 @@ export class EmailService {
 
     const html = this.getBaseTemplate(content, '#eff6ff');
 
-    await this.transporter.sendMail({
+    return await this.sendMailSafely({
       from: process.env.SMTP_FROM || 'Pavisoft Sistemas <noreply@pavisoft.com>',
       to: config.to,
       subject: '🔐 Código de Recuperação de Senha - Pavisoft Sistemas',
