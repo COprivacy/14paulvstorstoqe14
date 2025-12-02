@@ -36,12 +36,14 @@ export class EmailService {
 
     // Configurar com variáveis de ambiente
     // SEGURANÇA: Credenciais DEVEM vir apenas de variáveis de ambiente
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      logger.warn('SMTP não configurado - variáveis SMTP_USER e SMTP_PASS são obrigatórias', 'EMAIL_SERVICE');
+    const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS || '';
+    
+    if (!process.env.SMTP_USER || !smtpPassword) {
+      logger.warn('SMTP não configurado - variáveis SMTP_USER e SMTP_PASSWORD são obrigatórias', 'EMAIL_SERVICE');
       console.error('❌ ERRO SMTP: Credenciais não encontradas nas variáveis de ambiente');
       console.error('   SMTP_USER:', process.env.SMTP_USER ? '✓ Configurado' : '✗ Não encontrado');
-      console.error('   SMTP_PASS:', process.env.SMTP_PASS ? '✓ Configurado' : '✗ Não encontrado');
-      console.error('   Configure os Secrets do Replit com SMTP_USER e SMTP_PASS');
+      console.error('   SMTP_PASSWORD:', smtpPassword ? '✓ Configurado' : '✗ Não encontrado');
+      console.error('   Configure os Secrets do Replit com SMTP_USER e SMTP_PASSWORD');
     }
 
     this.transporter = nodemailer.createTransport({
@@ -50,7 +52,7 @@ export class EmailService {
       secure: false,
       auth: {
         user: process.env.SMTP_USER || '',
-        pass: process.env.SMTP_PASS || '',
+        pass: smtpPassword,
       },
     });
 
