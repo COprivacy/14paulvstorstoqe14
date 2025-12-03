@@ -28,6 +28,7 @@ export default function AddProductForm({ initialData, onSubmit, onCancel, isPend
   const [estoqueMinimo, setEstoqueMinimo] = useState(initialData?.estoque_minimo?.toString() || "");
   const [codigoBarras, setCodigoBarras] = useState(initialData?.codigo_barras || "");
   const [vencimento, setVencimento] = useState(initialData?.vencimento || "");
+  const [localizacao, setLocalizacao] = useState(initialData?.localizacao || "");
 
   // Atualizar campos quando initialData mudar (carregamento assíncrono)
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function AddProductForm({ initialData, onSubmit, onCancel, isPend
       setEstoqueMinimo(initialData.estoque_minimo?.toString() || "");
       setCodigoBarras(initialData.codigo_barras || "");
       setVencimento(initialData.vencimento || "");
+      setLocalizacao(initialData.localizacao || "");
     }
   }, [initialData]);
 
@@ -54,6 +56,7 @@ export default function AddProductForm({ initialData, onSubmit, onCancel, isPend
       estoque_minimo: parseInt(estoqueMinimo),
       ...(codigoBarras && { codigo_barras: codigoBarras }),
       ...(vencimento && { vencimento }),
+      ...(localizacao && { localizacao: localizacao }),
     };
     onSubmit?.(product);
     console.log("Produto adicionado:", product);
@@ -92,16 +95,33 @@ export default function AddProductForm({ initialData, onSubmit, onCancel, isPend
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="codigo-barras">Código de Barras (Opcional)</Label>
-            <Input
-              id="codigo-barras"
-              value={codigoBarras}
-              onChange={(e) => setCodigoBarras(e.target.value)}
-              placeholder="7891234567890"
-              disabled={isPending}
-              data-testid="input-barcode"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="codigo-barras">Código de Barras (Opcional)</Label>
+              <Input
+                id="codigo-barras"
+                value={codigoBarras}
+                onChange={(e) => setCodigoBarras(e.target.value)}
+                placeholder="7891234567890"
+                disabled={isPending}
+                data-testid="input-barcode"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="localizacao">Localização no Estoque (Opcional)</Label>
+              <Input
+                id="localizacao"
+                value={localizacao}
+                onChange={(e) => setLocalizacao(e.target.value)}
+                placeholder="Ex: Prateleira A3, Box 12, Corredor 5-B"
+                disabled={isPending}
+                data-testid="input-location"
+              />
+              <p className="text-xs text-muted-foreground">
+                Código ou endereço físico para localizar o produto no estoque
+              </p>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

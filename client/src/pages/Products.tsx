@@ -43,7 +43,9 @@ export default function Products() {
       return products;
     }
     return products.filter((product: any) =>
-      product.nome?.toLowerCase().includes(searchTerm.toLowerCase())
+      product.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.localizacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.codigo_barras?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [products, searchTerm]);
 
@@ -103,10 +105,10 @@ export default function Products() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary animate-pulse" />
             <Input
               type="text"
-              placeholder="Buscar produtos..."
+              placeholder="Buscar por nome, localização ou código..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-64 border-2 border-primary/20 focus:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg"
+              className="pl-9 w-80 border-2 border-primary/20 focus:border-primary/50 transition-all duration-300 shadow-md hover:shadow-lg"
               data-testid="input-search-products"
             />
           </div>
