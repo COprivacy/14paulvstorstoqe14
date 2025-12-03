@@ -1,7 +1,8 @@
 // Gerenciador centralizado de preços dos planos
+// IMPORTANTE: Mercado Pago exige valores mínimos (recomendado R$ 5,00+)
 export const DEFAULT_PLAN_PRICES = {
-  premium_mensal: 97.90,
-  premium_anual: 1175.00,
+  premium_mensal: 5.00,
+  premium_anual: 60.00,
 };
 
 // Cache dos preços (em memória)
