@@ -10,6 +10,16 @@ function getAuthHeaders(): Record<string, string> {
       "x-user-type": user.tipo || "usuario",
     };
     
+    // Verificação robusta para is_admin (pode ser boolean, string ou number)
+    const isAdmin = user.is_admin === true || 
+                    user.is_admin === "true" || 
+                    user.is_admin === 1 || 
+                    user.is_admin === "1";
+    
+    if (isAdmin) {
+      headers["x-is-admin"] = "true";
+    }
+    
     if (user.tipo === "funcionario" && user.conta_id) {
       headers["x-conta-id"] = user.conta_id;
     }
