@@ -3977,6 +3977,9 @@ export default function AdminPublico() {
                 </CardContent>
               </Card>
             </div>
+          ) : activeTab === 'promocoes' ? (
+            // Aba de Promoções e Cupons
+            <PromocoesTab />
           ) : (
             // Dashboard Principal
             <>
