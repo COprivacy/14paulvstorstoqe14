@@ -654,6 +654,7 @@ export default function Inventory() {
     const tableData = produtosFiltrados.map((produto) => [
       produto.nome,
       produto.categoria,
+      produto.localizacao || 'N/A',
       produto.quantidade.toString(),
       `R$ ${produto.preco.toFixed(2)}`,
       produto.codigo_barras || 'N/A',
@@ -663,7 +664,7 @@ export default function Inventory() {
 
     autoTable(doc, {
       startY: yPosition,
-      head: [['Produto', 'Categoria', 'Qtd Sistema', 'Preço', 'Cód. Barras', 'Contagem', 'Diferença']],
+      head: [['Produto', 'Categoria', 'Localização', 'Qtd Sistema', 'Preço', 'Cód. Barras', 'Contagem', 'Diferença']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -676,13 +677,14 @@ export default function Inventory() {
         cellPadding: 3,
       },
       columnStyles: {
-        0: { cellWidth: 40 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 22, halign: 'center' },
-        3: { cellWidth: 22, halign: 'right' },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 22, halign: 'center', fillColor: [240, 240, 240] },
-        6: { cellWidth: 22, halign: 'center', fillColor: [255, 250, 205] },
+        0: { cellWidth: 35 },
+        1: { cellWidth: 25 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 18, halign: 'center' },
+        4: { cellWidth: 18, halign: 'right' },
+        5: { cellWidth: 25 },
+        6: { cellWidth: 18, halign: 'center', fillColor: [240, 240, 240] },
+        7: { cellWidth: 18, halign: 'center', fillColor: [255, 250, 205] },
       },
     });
 
@@ -754,6 +756,7 @@ export default function Inventory() {
     const tableData = produtos.map((produto) => [
       produto.nome,
       produto.categoria,
+      produto.localizacao || 'N/A',
       produto.quantidade.toString(),
       `R$ ${produto.preco.toFixed(2)}`,
       `R$ ${(produto.preco * produto.quantidade).toFixed(2)}`,
@@ -763,7 +766,7 @@ export default function Inventory() {
 
     autoTable(doc, {
       startY: yPosition,
-      head: [['Produto', 'Categoria', 'Qtd Sistema', 'Preço Unit.', 'Valor Total', 'Cód. Barras', 'Contagem Real']],
+      head: [['Produto', 'Categoria', 'Localização', 'Qtd Sistema', 'Preço Unit.', 'Valor Total', 'Cód. Barras', 'Contagem Real']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -776,13 +779,14 @@ export default function Inventory() {
         cellPadding: 3,
       },
       columnStyles: {
-        0: { cellWidth: 35 },
-        1: { cellWidth: 25 },
-        2: { cellWidth: 20, halign: 'center' },
-        3: { cellWidth: 20, halign: 'right' },
-        4: { cellWidth: 25, halign: 'right' },
-        5: { cellWidth: 30 },
-        6: { cellWidth: 25, halign: 'center', fillColor: [240, 240, 240] },
+        0: { cellWidth: 30 },
+        1: { cellWidth: 22 },
+        2: { cellWidth: 22 },
+        3: { cellWidth: 18, halign: 'center' },
+        4: { cellWidth: 18, halign: 'right' },
+        5: { cellWidth: 22, halign: 'right' },
+        6: { cellWidth: 25 },
+        7: { cellWidth: 23, halign: 'center', fillColor: [240, 240, 240] },
       },
     });
 
@@ -1004,6 +1008,7 @@ export default function Inventory() {
                     <TableRow>
                       <TableHead>Produto</TableHead>
                       <TableHead>Categoria</TableHead>
+                      <TableHead>Localização</TableHead>
                       <TableHead className="text-center">Qtd Sistema</TableHead>
                       <TableHead className="text-center">Contagem Real</TableHead>
                       <TableHead className="text-center">Diferença</TableHead>
@@ -1034,6 +1039,11 @@ export default function Inventory() {
                               {produto.nome}
                             </TableCell>
                             <TableCell>{produto.categoria}</TableCell>
+                            <TableCell>
+                              <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                                {produto.localizacao || 'Sem localização'}
+                              </span>
+                            </TableCell>
                             <TableCell className="text-center font-semibold">{produto.quantidade}</TableCell>
                             <TableCell className="text-center">
                               <Input
@@ -1174,6 +1184,7 @@ export default function Inventory() {
                     <TableRow>
                       <TableHead>Produto</TableHead>
                       <TableHead>Categoria</TableHead>
+                      <TableHead>Localização</TableHead>
                       <TableHead className="text-center">Qtd Sistema</TableHead>
                       <TableHead className="text-center">Contagem Real</TableHead>
                       <TableHead className="text-center">Diferença</TableHead>
@@ -1197,6 +1208,11 @@ export default function Inventory() {
                           <TableRow key={produto.id} data-testid={`row-rotativo-${produto.id}`}>
                             <TableCell className="font-medium">{produto.nome}</TableCell>
                             <TableCell>{produto.categoria}</TableCell>
+                            <TableCell>
+                              <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                                {produto.localizacao || 'N/A'}
+                              </span>
+                            </TableCell>
                             <TableCell className="text-center font-semibold">{produto.quantidade}</TableCell>
                             <TableCell className="text-center">
                               <Input
