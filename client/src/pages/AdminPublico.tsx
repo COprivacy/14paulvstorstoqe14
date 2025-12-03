@@ -3006,7 +3006,90 @@ export default function AdminPublico() {
               {/* Filtros e Busca */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Filtros</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Filtros</CardTitle>
+                    <div className="flex gap-2">
+                      {subscriptions.filter(s => s.status === 'cancelado').length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700"
+                          onClick={async () => {
+                            const canceladas = subscriptions.filter(s => s.status === 'cancelado');
+                            if (confirm(`Tem certeza que deseja remover ${canceladas.length} assinatura(s) cancelada(s) do histórico?`)) {
+                              try {
+                                for (const sub of canceladas) {
+                                  await apiRequest("DELETE", `/api/subscriptions/${sub.id}`);
+                                }
+                                toast({
+                                  title: "Limpeza concluída",
+                                  description: `${canceladas.length} assinatura(s) cancelada(s) removida(s)`,
+                                });
+                                queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+                              } catch (error) {
+                                toast({
+                                  title: "Erro ao limpar",
+                                  description: "Não foi possível remover todas as assinaturas",
+                                  variant: "destructive",
+                                });
+                              }
+                            }
+                          }}
+                          data-testid="button-clean-cancelled"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Limpar Canceladas ({subscriptions.filter(s => s.status === 'cancelado').length})
+                        </Button>
+                      )}
+                      {subscriptions.filter(s => 
+                        s.status === 'pendente' && 
+                        s.prazo_limite_pagamento && 
+                        new Date(s.prazo_limite_pagamento) < new Date()
+                      ).length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-orange-600 hover:text-orange-700"
+                          onClick={async () => {
+                            const expiradas = subscriptions.filter(s => 
+                              s.status === 'pendente' && 
+                              s.prazo_limite_pagamento && 
+                              new Date(s.prazo_limite_pagamento) < new Date()
+                            );
+                            if (confirm(`Tem certeza que deseja cancelar ${expiradas.length} assinatura(s) pendente(s) com prazo expirado?`)) {
+                              try {
+                                for (const sub of expiradas) {
+                                  await apiRequest("PATCH", `/api/subscriptions/${sub.id}/status`, { 
+                                    status: 'cancelado',
+                                    motivo: 'Cancelado manualmente - prazo de pagamento expirado'
+                                  });
+                                }
+                                toast({
+                                  title: "Assinaturas canceladas",
+                                  description: `${expiradas.length} assinatura(s) pendente(s) expirada(s) cancelada(s)`,
+                                });
+                                queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+                              } catch (error) {
+                                toast({
+                                  title: "Erro ao cancelar",
+                                  description: "Não foi possível cancelar todas as assinaturas",
+                                  variant: "destructive",
+                                });
+                              }
+                            }
+                          }}
+                          data-testid="button-cancel-expired-pending"
+                        >
+                          <Clock className="h-4 w-4 mr-2" />
+                          Cancelar Expiradas ({subscriptions.filter(s => 
+                            s.status === 'pendente' && 
+                            s.prazo_limite_pagamento && 
+                            new Date(s.prazo_limite_pagamento) < new Date()
+                          ).length})
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-4">
@@ -3080,10 +3163,9 @@ export default function AdminPublico() {
                             <TableHead>Plano</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>Payment ID</TableHead>
-                            <TableHead>Data Pagamento</TableHead>
+                            <TableHead>Prazo Pagamento</TableHead>
+                            <TableHead>Data Criação</TableHead>
                             <TableHead>Forma Pagamento</TableHead>
-                            <TableHead>Vencimento</TableHead>
                             <TableHead className="text-right">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -3101,10 +3183,24 @@ export default function AdminPublico() {
 
                               return matchSearch && matchStatus;
                             })
+                            .sort((a, b) => {
+                              const statusOrder: Record<string, number> = { pendente: 0, ativo: 1, cancelado: 2, expirado: 3 };
+                              const orderA = statusOrder[a.status] ?? 99;
+                              const orderB = statusOrder[b.status] ?? 99;
+                              if (orderA !== orderB) return orderA - orderB;
+                              const dateA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
+                              const dateB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
+                              return dateB - dateA;
+                            })
                             .map((sub) => {
                               const user = users.find(u => u.id === sub.user_id);
+                              const prazoExpirado = sub.prazo_limite_pagamento && new Date(sub.prazo_limite_pagamento) < new Date();
+                              const diasRestantes = sub.prazo_limite_pagamento 
+                                ? Math.ceil((new Date(sub.prazo_limite_pagamento).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                                : null;
+                              
                               return (
-                                <TableRow key={sub.id}>
+                                <TableRow key={sub.id} className={prazoExpirado && sub.status === 'pendente' ? 'bg-red-50 dark:bg-red-950/20' : ''}>
                                   <TableCell>
                                     <div>
                                       <p className="font-medium">{user?.nome || 'Usuário Desconhecido'}</p>
@@ -3112,10 +3208,55 @@ export default function AdminPublico() {
                                     </div>
                                   </TableCell>
                                   <TableCell>
-                                    <Badge variant="outline">{sub.plano}</Badge>
+                                    <Badge variant="outline" className="capitalize">
+                                      {sub.plano.replace('_', ' ')}
+                                    </Badge>
                                   </TableCell>
                                   <TableCell className="font-semibold">{formatCurrency(sub.valor)}</TableCell>
                                   <TableCell>{getStatusBadge(sub.status)}</TableCell>
+                                  <TableCell>
+                                    {sub.status === 'pendente' ? (
+                                      sub.prazo_limite_pagamento ? (
+                                        <div className="space-y-1">
+                                          <div className={`text-sm font-medium ${prazoExpirado ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                                            {formatDate(sub.prazo_limite_pagamento)}
+                                          </div>
+                                          {prazoExpirado ? (
+                                            <Badge variant="destructive" className="text-xs">
+                                              Expirado
+                                            </Badge>
+                                          ) : diasRestantes !== null && diasRestantes <= 2 ? (
+                                            <Badge className="text-xs bg-orange-500">
+                                              {diasRestantes} dia(s) restante(s)
+                                            </Badge>
+                                          ) : (
+                                            <Badge variant="secondary" className="text-xs">
+                                              {diasRestantes} dias
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <Badge variant="secondary" className="text-xs">
+                                          Sem prazo
+                                        </Badge>
+                                      )
+                                    ) : sub.status === 'ativo' ? (
+                                      <div className="text-sm text-green-600 dark:text-green-400">
+                                        Pago
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {sub.data_criacao ? (
+                                      <div className="text-sm text-muted-foreground">
+                                        {formatDate(sub.data_criacao)}
+                                      </div>
+                                    ) : (
+                                      <span className="text-muted-foreground">-</span>
+                                    )}
+                                  </TableCell>
                                   <TableCell>
                                     {sub.mercadopago_payment_id ? (
                                       <Button
@@ -3125,33 +3266,16 @@ export default function AdminPublico() {
                                         onClick={() => handleViewSubscriptionDetails(sub.mercadopago_payment_id || '')}
                                         data-testid={`button-view-sub-details-${sub.id}`}
                                       >
-                                        {sub.mercadopago_payment_id.substring(0, 12)}...
+                                        {sub.mercadopago_payment_id.substring(0, 10)}...
                                       </Button>
                                     ) : (
                                       <Badge variant="secondary" className="font-mono text-xs">
-                                        MANUAL
+                                        {sub.forma_pagamento || 'MANUAL'}
                                       </Badge>
                                     )}
                                   </TableCell>
-                                  <TableCell>
-                                    {sub.data_inicio ? (
-                                      <div className="text-sm">
-                                        {formatDate(sub.data_inicio)}
-                                      </div>
-                                    ) : (
-                                      <Badge variant="secondary" className="text-xs">
-                                        Pendente
-                                      </Badge>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge variant="outline" className="text-xs">
-                                      {sub.forma_pagamento || 'N/A'}
-                                    </Badge>
-                                  </TableCell>
-                                  <TableCell>{formatDate(sub.data_vencimento)}</TableCell>
                                   <TableCell className="text-right">
-                                    <div className="flex gap-2 justify-end">
+                                    <div className="flex gap-1 justify-end flex-wrap">
                                       {sub.status === 'pendente' && sub.mercadopago_payment_id && (
                                         <Button
                                           size="sm"
@@ -3162,8 +3286,7 @@ export default function AdminPublico() {
                                           }}
                                           data-testid={`button-reprocess-sub-${sub.id}`}
                                         >
-                                          <RefreshCw className="h-3 w-3 mr-1" />
-                                          Reprocessar
+                                          <RefreshCw className="h-3 w-3" />
                                         </Button>
                                       )}
                                       {(sub.status === 'ativo' || sub.status === 'pendente') && (
@@ -3178,8 +3301,7 @@ export default function AdminPublico() {
                                           }}
                                           data-testid={`button-cancel-sub-${sub.id}`}
                                         >
-                                          <XCircle className="h-3 w-3 mr-1" />
-                                          Cancelar
+                                          <Ban className="h-3 w-3" />
                                         </Button>
                                       )}
                                       <Button
@@ -3187,8 +3309,7 @@ export default function AdminPublico() {
                                         size="sm"
                                         onClick={() => setSelectedClientFor360(sub.user_id)}
                                       >
-                                        <Eye className="h-4 w-4 mr-2" />
-                                        Ver Cliente
+                                        <Eye className="h-3 w-3" />
                                       </Button>
                                     </div>
                                   </TableCell>
