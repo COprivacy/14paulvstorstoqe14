@@ -4163,32 +4163,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const dataVencimento = new Date();
-      if (plano === "premium_mensal") {
-        dataVencimento.setMonth(dataVencimento.getMonth() + 1);
-      } else {
-        dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
+      // Verificar se existe assinatura pendente para este usuário
+      const subscriptions = await storage.getSubscriptions();
+      const assinaturasPendentes = subscriptions.filter(
+        (s) => s.user_id === user!.id && s.status === "pendente" && s.status_pagamento === "pending"
+      );
+
+      let subscription;
+      let reutilizandoAssinatura = false;
+      let assinaturaAnteriorCancelada = false;
+
+      if (assinaturasPendentes.length > 0) {
+        // Verificar se existe assinatura pendente do MESMO plano
+        const assinaturaMesmoPlano = assinaturasPendentes.find((s) => s.plano === plano);
+
+        if (assinaturaMesmoPlano) {
+          // Reutilizar a assinatura existente - apenas atualizar dados
+          const prazoLimite = assinaturaMesmoPlano.prazo_limite_pagamento 
+            ? new Date(assinaturaMesmoPlano.prazo_limite_pagamento)
+            : new Date(new Date(assinaturaMesmoPlano.data_criacao).getTime() + 7 * 24 * 60 * 60 * 1000);
+
+          // Verificar se o prazo ainda não expirou
+          if (prazoLimite > new Date()) {
+            reutilizandoAssinatura = true;
+            subscription = assinaturaMesmoPlano;
+
+            console.log(`🔄 [CHECKOUT] Reutilizando assinatura pendente existente - ID: ${subscription.id}, Plano: ${plano}`);
+            
+            logger.info('Reutilizando assinatura pendente existente', 'CHECKOUT', {
+              subscriptionId: subscription.id,
+              userId: user!.id,
+              plano,
+              prazoLimite: prazoLimite.toISOString()
+            });
+          }
+        }
+
+        // Se não encontrou assinatura do mesmo plano ou prazo expirou, cancelar as pendentes antigas
+        if (!reutilizandoAssinatura) {
+          for (const assinaturaPendente of assinaturasPendentes) {
+            await storage.updateSubscription(assinaturaPendente.id, {
+              status: 'cancelado',
+              status_pagamento: 'cancelled',
+              motivo_cancelamento: `Cancelado automaticamente - cliente escolheu outro plano (${plano})`,
+              data_atualizacao: new Date().toISOString(),
+            });
+
+            console.log(`❌ [CHECKOUT] Assinatura pendente anterior cancelada - ID: ${assinaturaPendente.id}, Plano anterior: ${assinaturaPendente.plano}`);
+            
+            logger.info('Assinatura pendente anterior cancelada', 'CHECKOUT', {
+              subscriptionId: assinaturaPendente.id,
+              planoAnterior: assinaturaPendente.plano,
+              novoPlano: plano,
+              userId: user!.id
+            });
+          }
+          assinaturaAnteriorCancelada = true;
+        }
       }
 
-      // Calcular prazo limite para pagamento (7 dias após criação)
-      const prazoLimitePagamento = new Date();
-      prazoLimitePagamento.setDate(prazoLimitePagamento.getDate() + 7);
+      // Se não está reutilizando, criar nova assinatura
+      if (!reutilizandoAssinatura) {
+        const dataVencimento = new Date();
+        if (plano === "premium_mensal") {
+          dataVencimento.setMonth(dataVencimento.getMonth() + 1);
+        } else {
+          dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
+        }
 
-      // Criar registro de assinatura
-      const subscription = await storage.createSubscription({
-        user_id: user.id,
-        plano,
-        status: "pendente",
-        valor: valorFinal, // Valor com desconto aplicado
-        data_vencimento: dataVencimento.toISOString(),
-        prazo_limite_pagamento: prazoLimitePagamento.toISOString(),
-        tentativas_cobranca: 0,
-        mercadopago_payment_id: preference.id,
-        forma_pagamento: formaPagamento,
-        status_pagamento: "pending",
-        init_point: preference.init_point,
-        external_reference: externalReference,
-      });
+        // Calcular prazo limite para pagamento (7 dias após criação)
+        const prazoLimitePagamento = new Date();
+        prazoLimitePagamento.setDate(prazoLimitePagamento.getDate() + 7);
+
+        // Criar registro de assinatura
+        subscription = await storage.createSubscription({
+          user_id: user.id,
+          plano,
+          status: "pendente",
+          valor: valorFinal,
+          data_vencimento: dataVencimento.toISOString(),
+          prazo_limite_pagamento: prazoLimitePagamento.toISOString(),
+          tentativas_cobranca: 0,
+          mercadopago_payment_id: preference.id,
+          forma_pagamento: formaPagamento,
+          status_pagamento: "pending",
+          init_point: preference.init_point,
+          external_reference: externalReference,
+        });
+      }
 
       // Registrar uso do cupom se foi aplicado
       if (cupomAplicado && storage.registrarUsoCupom) {
@@ -4211,22 +4273,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log(
-        `✅ Assinatura criada com sucesso - User: ${user.email}, Plano: ${planoNomes[plano as keyof typeof planoNomes]}, Forma: ${formaPagamento}${cupomAplicado ? `, Cupom: ${cupomAplicado.codigo}` : ''}`,
-      );
+      // Log apropriado baseado no tipo de operação
+      if (reutilizandoAssinatura) {
+        console.log(
+          `🔄 Reutilizando assinatura existente - User: ${user.email}, Plano: ${planoNomes[plano as keyof typeof planoNomes]}`,
+        );
+      } else {
+        console.log(
+          `✅ Assinatura criada com sucesso - User: ${user.email}, Plano: ${planoNomes[plano as keyof typeof planoNomes]}, Forma: ${formaPagamento}${cupomAplicado ? `, Cupom: ${cupomAplicado.codigo}` : ''}${assinaturaAnteriorCancelada ? ' (assinatura anterior cancelada)' : ''}`,
+        );
+      }
+
+      // Calcular prazo limite para exibição
+      const prazoLimiteExibicao = subscription.prazo_limite_pagamento 
+        ? new Date(subscription.prazo_limite_pagamento).toLocaleDateString('pt-BR')
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR');
+
+      // Mensagem personalizada baseada no cenário
+      let message = '';
+      if (reutilizandoAssinatura) {
+        message = `Você já possui um pedido pendente para o plano ${planoNomes[plano as keyof typeof planoNomes]}. Utilize o link de pagamento existente. Prazo limite: ${prazoLimiteExibicao}`;
+      } else if (assinaturaAnteriorCancelada) {
+        message = `Seu pedido anterior foi cancelado. Nova assinatura ${planoNomes[plano as keyof typeof planoNomes]} criada! Prazo para pagamento: ${prazoLimiteExibicao}`;
+      } else {
+        message = `Assinatura ${planoNomes[plano as keyof typeof planoNomes]} criada com sucesso! Prazo para pagamento: ${prazoLimiteExibicao}`;
+      }
 
       res.json({
         success: true,
         subscription,
         preference: {
-          id: preference.id,
-          init_point: preference.init_point,
+          id: reutilizandoAssinatura ? subscription.mercadopago_payment_id : preference.id,
+          init_point: reutilizandoAssinatura ? subscription.init_point : preference.init_point,
         },
         cupomAplicado: cupomAplicado ? {
           codigo: cupomAplicado.codigo,
           valorDesconto: valorDesconto.toFixed(2),
         } : null,
-        message: `Assinatura ${planoNomes[plano as keyof typeof planoNomes]} criada com sucesso! Você será redirecionado para o pagamento.`,
+        reutilizandoAssinatura,
+        assinaturaAnteriorCancelada,
+        prazoLimitePagamento: prazoLimiteExibicao,
+        message,
       });
     } catch (error: any) {
       console.error("❌ Erro ao criar checkout:", error);
