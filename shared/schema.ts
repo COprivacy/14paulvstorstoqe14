@@ -43,6 +43,7 @@ export const produtos = pgTable("produtos", {
   estoque_minimo: integer("estoque_minimo").notNull(),
   codigo_barras: text("codigo_barras"),
   vencimento: text("vencimento"),
+  localizacao: text("localizacao"),
 });
 
 // Declarar clientes e fornecedores ANTES de vendas e compras para evitar TDZ

@@ -14,6 +14,7 @@ interface AddProductFormProps {
     estoque_minimo: number;
     codigo_barras?: string;
     vencimento?: string;
+    localizacao?: string;
   }) => void;
   onCancel?: () => void;
   isPending?: boolean;
