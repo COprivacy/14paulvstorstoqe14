@@ -52,10 +52,14 @@ async function runMigration() {
 
   } catch (error) {
     console.error('❌ Erro ao executar migration:', error);
-    process.exit(1);
+    throw error;
   } finally {
     await pool.end();
+    process.exit(0);
   }
 }
 
-runMigration();
+runMigration().catch((error) => {
+  console.error('Erro fatal:', error);
+  process.exit(1);
+});

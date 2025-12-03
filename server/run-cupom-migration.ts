@@ -1,4 +1,3 @@
-
 import { Pool } from '@neondatabase/serverless';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -8,7 +7,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
 async function runMigration() {
   try {
     console.log('🔄 Executando migração de cupons...');
-    
+
     // Verificar se as colunas já existem
     const checkColumns = await pool.query(`
       SELECT column_name 
@@ -35,7 +34,7 @@ async function runMigration() {
     await pool.query(migrationSQL);
 
     console.log('✅ Migração de cupons executada com sucesso!');
-    
+
     // Verificar novamente
     const verify = await pool.query(`
       SELECT column_name 
@@ -47,12 +46,15 @@ async function runMigration() {
     console.log('✅ Verificação final:', verify.rows.map(r => r.column_name));
 
   } catch (error) {
-    console.error('❌ Erro ao executar migração:', error);
-    process.exit(1);
+    console.error('❌ Erro ao executar migration:', error);
+    throw error;
   } finally {
     await pool.end();
     process.exit(0);
   }
 }
 
-runMigration();
+runMigration().catch((error) => {
+  console.error('Erro fatal:', error);
+  process.exit(1);
+});

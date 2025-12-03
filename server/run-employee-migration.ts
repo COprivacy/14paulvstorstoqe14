@@ -1,4 +1,3 @@
-
 import { Pool } from '@neondatabase/serverless';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -22,14 +21,16 @@ async function runMigration() {
     console.log('- max_funcionarios_base');
     console.log('- data_expiracao_pacote_funcionarios');
 
-  } catch (error: any) {
-    console.error('❌ Erro ao executar migration:', error.message);
+  } catch (error) {
+    console.error('❌ Erro ao executar migration:', error);
     throw error;
   } finally {
     await pool.end();
+    process.exit(0);
   }
 }
 
-runMigration()
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
+runMigration().catch((error) => {
+  console.error('Erro fatal:', error);
+  process.exit(1);
+});

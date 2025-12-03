@@ -1,4 +1,3 @@
-
 import { Pool } from '@neondatabase/serverless';
 import ws from 'ws';
 
