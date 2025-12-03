@@ -18,7 +18,13 @@ function getAuthHeaders(): Record<string, string> {
       "x-user-type": user.tipo || "usuario",
     };
     
-    if (user.is_admin) {
+    // Verificação robusta para is_admin (pode ser boolean, string ou number)
+    const isAdmin = user.is_admin === true || 
+                    user.is_admin === "true" || 
+                    user.is_admin === 1 || 
+                    user.is_admin === "1";
+    
+    if (isAdmin) {
       headers["x-is-admin"] = "true";
     }
     
@@ -26,8 +32,11 @@ function getAuthHeaders(): Record<string, string> {
       headers["x-conta-id"] = user.conta_id;
     }
     
+    console.log("[AUTH_HEADERS] Headers gerados:", headers, "is_admin original:", user.is_admin);
+    
     return headers;
   } catch (e) {
+    console.error("[AUTH_HEADERS] Erro ao parsear user:", e);
     return {};
   }
 }
