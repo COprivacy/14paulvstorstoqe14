@@ -3016,23 +3016,45 @@ export default function AdminPublico() {
                           className="text-red-600 hover:text-red-700"
                           onClick={async () => {
                             const canceladas = subscriptions.filter(s => s.status === 'cancelado');
-                            if (confirm(`Tem certeza que deseja remover ${canceladas.length} assinatura(s) cancelada(s) do histórico?`)) {
-                              try {
-                                for (const sub of canceladas) {
-                                  await apiRequest("DELETE", `/api/subscriptions/${sub.id}`);
-                                }
-                                toast({
-                                  title: "Limpeza concluída",
-                                  description: `${canceladas.length} assinatura(s) cancelada(s) removida(s)`,
-                                });
-                                queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-                              } catch (error) {
-                                toast({
-                                  title: "Erro ao limpar",
-                                  description: "Não foi possível remover todas as assinaturas",
-                                  variant: "destructive",
-                                });
-                              }
+
+                            if (canceladas.length === 0) {
+                              toast({
+                                title: "Nenhuma assinatura",
+                                description: "Não há assinaturas canceladas para remover",
+                              });
+                              return;
+                            }
+
+                            if (!confirm(`Remover ${canceladas.length} assinatura(s) cancelada(s)?`)) {
+                              return;
+                            }
+
+                            try {
+                              await Promise.all(
+                                canceladas.map(s => 
+                                  fetch(`/api/subscriptions/${s.id}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'x-user-id': user?.id || '',
+                                      'x-is-admin': 'true',
+                                    },
+                                  })
+                                )
+                              );
+
+                              toast({
+                                title: "✅ Assinaturas removidas!",
+                                description: `${canceladas.length} assinatura(s) deletada(s)`,
+                              });
+
+                              queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+                            } catch (error: any) {
+                              toast({
+                                title: "❌ Erro ao limpar",
+                                description: error.message || "Não foi possível remover todas as assinaturas",
+                                variant: "destructive",
+                              });
                             }
                           }}
                           data-testid="button-clean-cancelled"
@@ -3198,7 +3220,7 @@ export default function AdminPublico() {
                               const diasRestantes = sub.prazo_limite_pagamento 
                                 ? Math.ceil((new Date(sub.prazo_limite_pagamento).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
                                 : null;
-                              
+
                               return (
                                 <TableRow key={sub.id} className={prazoExpirado && sub.status === 'pendente' ? 'bg-red-50 dark:bg-red-950/20' : ''}>
                                   <TableCell>
@@ -4030,7 +4052,7 @@ export default function AdminPublico() {
                       Distribuição de Planos
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>```javascript
+                  <CardContent>
                     <ChartContainer config={{}} className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
