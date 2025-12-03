@@ -3081,14 +3081,22 @@ export default function AdminPublico() {
                             if (confirm(`Tem certeza que deseja cancelar ${expiradas.length} assinatura(s) pendente(s) com prazo expirado?`)) {
                               try {
                                 for (const sub of expiradas) {
-                                  await apiRequest("PATCH", `/api/subscriptions/${sub.id}/status`, { 
-                                    status: 'cancelado',
-                                    motivo: 'Cancelado manualmente - prazo de pagamento expirado'
+                                  const response = await fetch(`/api/subscriptions/${sub.id}`, {
+                                    method: 'DELETE',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'x-user-id': user?.id || '',
+                                      'x-is-admin': 'true',
+                                    },
                                   });
+
+                                  if (!response.ok) {
+                                    throw new Error('Erro ao cancelar assinatura');
+                                  }
                                 }
                                 toast({
                                   title: "Assinaturas canceladas",
-                                  description: `${expiradas.length} assinatura(s) pendente(s) expirada(s) cancelada(s)`,
+                                  description: `${expiradas.length} assinatura(s) pendente(s) expirada(s) removida(s)`,
                                 });
                                 queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
                               } catch (error) {
