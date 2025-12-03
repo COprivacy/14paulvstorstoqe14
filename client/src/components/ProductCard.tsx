@@ -128,21 +128,21 @@ function ProductCard({
               )}
               {localizacao && (
                 <div className="flex items-center gap-1.5 text-xs bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-1 rounded font-medium">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="roundundund">
-                      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                      <circle cx="12" cy="10" r="3"/>
-                    </svg>
-                    <span>Loc: {localizacao}</span>
-                  </div>
-                )}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <span>Loc: {localizacao}</span>
+                </div>
+              )}
               {vencimento && (
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
                   <Calendar className="h-3.5 w-3.5" />
                   <span data-testid={`text-expiry-${id}`}>Venc: {formatDate(vencimento)}</span>
                 </div>
               )}
-            </div
             </div>
+          </div>
           </div>
           <div className="flex gap-2">
             <Button 
