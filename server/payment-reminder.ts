@@ -132,7 +132,7 @@ export class PaymentReminderService {
     const now = new Date();
     const daysSinceCreation = this.getDaysDifference(new Date(subscription.data_criacao), now);
 
-    // Calcular prazo limite se não existir
+    // Calcular prazo limite se não existir (7 dias por padrão)
     const prazoLimite = subscription.prazo_limite_pagamento
       ? new Date(subscription.prazo_limite_pagamento)
       : new Date(new Date(subscription.data_criacao).getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -164,27 +164,27 @@ export class PaymentReminderService {
       });
     }
 
-    // Cancelar automaticamente após o prazo limite
+    // Cancelar automaticamente após o prazo limite de 7 dias
     if (daysUntilDeadline < 0) {
       await storage.updateSubscription(subscription.id, {
         status: 'cancelado',
         status_pagamento: 'cancelled',
+        data_cancelamento: new Date().toISOString(),
         motivo_cancelamento: `Cancelado automaticamente - prazo de ${Math.abs(daysUntilDeadline)} dia(s) expirado sem pagamento`,
         data_atualizacao: new Date().toISOString(),
-      });
-
-      // Enviar email de cancelamento
-      await this.emailService.sendAccountBlocked({
-        to: user.email,
-        userName: user.nome,
-        planName: subscription.plano,
       });
 
       logger.warn('Assinatura cancelada automaticamente por prazo expirado', 'PAYMENT_REMINDER', {
         subscriptionId: subscription.id,
         userId: user.id,
+        plano: subscription.plano,
         diasAposLimite: Math.abs(daysUntilDeadline),
+        dataCriacao: subscription.data_criacao,
+        prazoLimite: prazoLimite.toISOString()
       });
+
+      // Nota: Não enviar email de bloqueio pois não há bloqueio de conta,
+      // apenas cancelamento do pedido pendente
     }
   }
 
