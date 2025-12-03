@@ -143,7 +143,6 @@ function ProductCard({
               )}
             </div>
           </div>
-          </div>
           <div className="flex gap-2">
             <Button 
               size="icon" 
