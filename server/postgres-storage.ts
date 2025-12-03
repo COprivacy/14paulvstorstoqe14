@@ -927,6 +927,13 @@ export class PostgresStorage implements IStorage {
     return result[0];
   }
 
+  async deleteSubscription(id: number): Promise<boolean> {
+    const result = await this.db.delete(subscriptions)
+      .where(eq(subscriptions.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
   async getFuncionarios(): Promise<Funcionario[]> {
     return await this.db.select().from(funcionarios);
   }

@@ -5642,6 +5642,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Deletar assinatura (para limpeza de canceladas) - RESTRITO a admins
+  app.delete("/api/subscriptions/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const subscriptionId = parseInt(id);
+
+      const subscriptions = await storage.getSubscriptions();
+      const subscription = subscriptions?.find((s) => s.id === subscriptionId);
+
+      if (!subscription) {
+        return res.status(404).json({ error: "Assinatura não encontrada" });
+      }
+
+      // Só permite deletar assinaturas canceladas ou expiradas
+      if (subscription.status !== 'cancelado' && subscription.status !== 'expirado') {
+        return res.status(400).json({ 
+          error: "Só é possível remover assinaturas canceladas ou expiradas" 
+        });
+      }
+
+      await storage.deleteSubscription(subscriptionId);
+
+      console.log(`🗑️ Assinatura ${subscriptionId} removida do histórico`);
+      logger.info("Assinatura removida", "SUBSCRIPTION", {
+        subscriptionId,
+        userId: subscription.user_id,
+        status: subscription.status,
+      });
+
+      res.json({
+        success: true,
+        message: "Assinatura removida com sucesso",
+      });
+    } catch (error: any) {
+      console.error("Erro ao deletar assinatura:", error);
+      logger.error("Erro ao deletar assinatura", "SUBSCRIPTION", {
+        error: error.message,
+      });
+      res.status(500).json({ error: error.message || "Erro ao deletar assinatura" });
+    }
+  });
+
+  // Atualizar status de assinatura - RESTRITO a admins
+  app.patch("/api/subscriptions/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, motivo } = req.body;
+      const subscriptionId = parseInt(id);
+
+      if (!status) {
+        return res.status(400).json({ error: "Status é obrigatório" });
+      }
+
+      const subscriptions = await storage.getSubscriptions();
+      const subscription = subscriptions?.find((s) => s.id === subscriptionId);
+
+      if (!subscription) {
+        return res.status(404).json({ error: "Assinatura não encontrada" });
+      }
+
+      const updateData: any = {
+        status,
+        data_atualizacao: new Date().toISOString(),
+      };
+
+      if (status === 'cancelado') {
+        updateData.data_cancelamento = new Date().toISOString();
+        updateData.motivo_cancelamento = motivo || 'Cancelado pelo administrador';
+        updateData.status_pagamento = 'cancelled';
+        
+        // Atualizar usuário para plano free
+        await storage.updateUser(subscription.user_id, {
+          plano: 'free',
+          status: 'ativo',
+        });
+      }
+
+      await storage.updateSubscription(subscriptionId, updateData);
+
+      console.log(`✅ Status da assinatura ${subscriptionId} atualizado para: ${status}`);
+      logger.info("Status de assinatura atualizado", "SUBSCRIPTION", {
+        subscriptionId,
+        userId: subscription.user_id,
+        oldStatus: subscription.status,
+        newStatus: status,
+        motivo,
+      });
+
+      res.json({
+        success: true,
+        message: `Status atualizado para ${status}`,
+      });
+    } catch (error: any) {
+      console.error("Erro ao atualizar status da assinatura:", error);
+      logger.error("Erro ao atualizar status da assinatura", "SUBSCRIPTION", {
+        error: error.message,
+      });
+      res.status(500).json({ error: error.message || "Erro ao atualizar status" });
+    }
+  });
+
   // Sistema de lembretes de pagamento
   app.post("/api/payment-reminders/check", requireAdmin, async (req, res) => {
     try {
