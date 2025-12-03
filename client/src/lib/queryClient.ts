@@ -19,7 +19,7 @@ function getAuthHeaders(): Record<string, string> {
     };
     
     if (user.is_admin) {
-      headers["x-is-admin"] = user.is_admin;
+      headers["x-is-admin"] = "true";
     }
     
     if (user.tipo === "funcionario" && user.conta_id) {
