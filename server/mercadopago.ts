@@ -45,8 +45,11 @@ export class MercadoPagoService {
   private client: MercadoPagoConfig;
   private preferenceClient: Preference;
   private paymentClient: Payment;
+  private accessToken: string;
 
   constructor(config: MercadoPagoConfigParams) {
+    this.accessToken = config.accessToken;
+    
     this.client = new MercadoPagoConfig({
       accessToken: config.accessToken,
       options: {
@@ -60,7 +63,7 @@ export class MercadoPagoService {
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      const accessToken = this.client.options.accessToken;
+      const accessToken = this.accessToken;
       const isTestToken = accessToken?.startsWith('TEST-');
       
       // Usa o endpoint payment_methods que requer apenas permissões básicas
