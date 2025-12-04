@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Shield,
   CheckCircle,
+  XCircle as XCircleIcon,
   XCircle,
   AlertCircle,
   Settings,
@@ -324,8 +325,8 @@ function UserEditDialog({
             {user ? "Salvar Alterações" : "Criar Usuário"}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </Dialog>
+    </div>
   );
 }
 
@@ -4156,7 +4157,7 @@ export default function AdminPublico() {
                             (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
                           )
                           .slice(0, 10)
-                          .map((user) => (
+                          .map((user                        ) => (
                             <TableRow key={user.id}>
                               <TableCell className="font-medium">{user.nome || '-'}</TableCell>
                               <TableCell>{user.email || '-'}</TableCell>
