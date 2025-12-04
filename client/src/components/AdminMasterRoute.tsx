@@ -63,14 +63,11 @@ export function AdminMasterRoute({ children }: AdminMasterRouteProps) {
       return;
     }
 
-    // Verificar se já está autenticado na sessão
-    const sessionAuth = sessionStorage.getItem("admin_master_auth");
-    if (sessionAuth === "true") {
-      console.log("✅ AdminMasterRoute: Sessão admin_master já autenticada");
-      setIsAuthenticated(true);
-    } else {
-      console.log("🔐 AdminMasterRoute: Sessão não autenticada, aguardando senha");
-    }
+    // SEMPRE LIMPAR sessionStorage ao carregar a página pela primeira vez
+    // Isso garante que a senha seja solicitada em cada novo acesso
+    console.log("🔐 AdminMasterRoute: Limpando sessão anterior e solicitando senha");
+    sessionStorage.removeItem("admin_master_auth");
+    setIsAuthenticated(false);
     
     setIsCheckingAuth(false);
   }, [user, isUserLoading, setLocation]);
