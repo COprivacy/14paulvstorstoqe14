@@ -2321,11 +2321,12 @@ export default function AdminPublico() {
   // Mutation para cancelar assinatura
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async (subscriptionId: number) => {
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
       const response = await fetch(`/api/admin/subscriptions/${subscriptionId}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': user?.id || '',
+          'x-user-id': currentUser?.id || user?.id || '',
           'x-is-admin': 'true',
         },
         body: JSON.stringify({}),
