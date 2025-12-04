@@ -60,19 +60,21 @@ export class MercadoPagoService {
 
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      // Testa a conexão fazendo uma busca simples de pagamentos
-      // Endpoint mais confiável que aceita credenciais de teste e produção
-      const response = await fetch('https://api.mercadopago.com/v1/payments/search?limit=1', {
+      const accessToken = this.client.options.accessToken;
+      const isTestToken = accessToken?.startsWith('TEST-');
+      
+      // Usa o endpoint payment_methods que requer apenas permissões básicas
+      // Este é o mesmo endpoint usado no teste do painel-publico
+      const response = await fetch('https://api.mercadopago.com/v1/payment_methods', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.client.options.accessToken}`,
+          'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        const isTestToken = this.client.options.accessToken?.startsWith('TEST-');
 
         if (response.status === 401) {
           return {
@@ -98,7 +100,6 @@ export class MercadoPagoService {
         };
       }
 
-      const isTestToken = this.client.options.accessToken?.startsWith('TEST-');
       return {
         success: true,
         message: isTestToken 

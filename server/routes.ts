@@ -5232,6 +5232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("  - Type:", type);
       console.log("  - Action:", action);
       console.log("  - Data ID:", data?.id);
+      console.log("  - Headers:", JSON.stringify(req.headers, null, 2));
       console.log("  - Body completo:", JSON.stringify(req.body, null, 2));
       console.log("========================================");
 
@@ -5239,7 +5240,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type,
         action,
         dataId: data?.id,
-        fullBody: req.body
+        fullBody: req.body,
+        headers: req.headers
       });
 
       // Processar notificação de pagamento
@@ -5469,6 +5471,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Processar status do pagamento
         if (status === "approved") {
+          console.log("💰 [WEBHOOK] Pagamento APROVADO - Iniciando atualização do banco...");
+          console.log("  - Subscription ID:", subscription.id);
+          console.log("  - User ID:", subscription.user_id);
+          console.log("  - Plano:", subscription.plano);
+          
           logger.info("Pagamento aprovado - Ativando assinatura", "MERCADOPAGO_WEBHOOK", {
             subscriptionId: subscription.id,
             userId: subscription.user_id,
@@ -5476,6 +5483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
 
           // Atualizar assinatura
+          console.log("📝 [WEBHOOK] Atualizando assinatura no banco...");
           await storage.updateSubscription?.(subscription.id, {
             status: "ativo",
             status_pagamento: "approved",
@@ -5483,13 +5491,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             data_inicio: new Date().toISOString(),
             data_atualizacao: new Date().toISOString(),
           });
+          console.log("✅ [WEBHOOK] Assinatura atualizada com sucesso");
 
           // Atualizar plano do usuário
+          console.log("📝 [WEBHOOK] Atualizando plano do usuário no banco...");
+          console.log("  - Novo plano:", subscription.plano);
+          console.log("  - Data expiração:", subscription.data_vencimento);
           await storage.updateUser?.(subscription.user_id, {
             plano: subscription.plano,
             data_expiracao_plano: subscription.data_vencimento,
             status: "ativo",
           });
+          console.log("✅ [WEBHOOK] Plano do usuário atualizado com sucesso");
 
           // CRÍTICO: Reativar todos os funcionários bloqueados desta conta
           if (storage.getFuncionarios) {
