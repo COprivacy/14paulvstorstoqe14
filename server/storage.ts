@@ -50,6 +50,7 @@ import {
 
 export interface IStorage {
   getUsers?(): Promise<User[]>;
+  getUserById?(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(insertUser: InsertUser): Promise<User>;
   updateUser?(id: string, updates: Partial<User>): Promise<User | undefined>;

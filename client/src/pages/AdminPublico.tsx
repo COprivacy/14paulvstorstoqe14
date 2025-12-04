@@ -357,8 +357,17 @@ function GestaoAvancadaTab({ users }: { users: User[] }) {
 
   const alterarPlanoEmLote = useMutation({
     mutationFn: async ({ userIds, novoPlano }: { userIds: string[], novoPlano: string }) => {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
       const promises = userIds.map(id =>
-        apiRequest("PATCH", `/api/users/${id}`, { plano: novoPlano })
+        fetch(`/api/users/${id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": user.id,
+            "x-is-admin": "true",
+          },
+          body: JSON.stringify({ plano: novoPlano }),
+        })
       );
       await Promise.all(promises);
     },
@@ -810,10 +819,12 @@ function PromocoesTab() {
   // Mutation para deletar cupom
   const deleteCupomMutation = useMutation({
     mutationFn: async (id: number) => {
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
       const response = await fetch(`/api/cupons/${id}`, {
         method: "DELETE",
         headers: {
-          "x-user-id": user.id,
+          "Content-Type": "application/json",
+          "x-user-id": currentUser.id || user.id,
           "x-is-admin": "true",
         },
       });

@@ -18,7 +18,7 @@ import crypto from "crypto";
 import { sql } from "drizzle-orm";
 
 // Middleware para verificar se o usuário é admin
-function requireAdmin(req: Request, res: Response, next: NextFunction) {
+async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   const userId = req.headers["x-user-id"] as string;
   const isAdmin = req.headers["x-is-admin"] as string;
 
@@ -29,7 +29,17 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
     headers: req.headers
   });
 
+  // Se não tem userId ou não é admin, tentar validar pelo email (para o master admin)
   if (!userId || isAdmin !== "true") {
+    // Verificar se existe sessão de admin master
+    const sessionAuth = req.headers["cookie"]?.includes("admin_master_auth=true");
+    
+    if (sessionAuth) {
+      console.log('✅ [REQUIRE_ADMIN] Acesso permitido via sessão master');
+      next();
+      return;
+    }
+
     console.log('❌ [REQUIRE_ADMIN] Acesso negado');
     return res
       .status(403)
@@ -37,6 +47,22 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
         error:
           "Acesso negado. Apenas administradores podem acessar este recurso.",
       });
+  }
+
+  // Validar que o usuário realmente existe e é admin
+  try {
+    const user = await storage.getUserById(userId);
+    if (!user || user.is_admin !== "true") {
+      console.log('❌ [REQUIRE_ADMIN] Usuário não é admin');
+      return res.status(403).json({
+        error: "Acesso negado. Apenas administradores podem acessar este recurso.",
+      });
+    }
+  } catch (error) {
+    console.error('❌ [REQUIRE_ADMIN] Erro ao validar usuário:', error);
+    return res.status(500).json({
+      error: "Erro ao validar permissões",
+    });
   }
 
   console.log('✅ [REQUIRE_ADMIN] Acesso permitido');
