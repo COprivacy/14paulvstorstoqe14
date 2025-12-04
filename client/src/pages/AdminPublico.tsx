@@ -3307,7 +3307,7 @@ export default function AdminPublico() {
                                   </TableCell>
                                   <TableCell className="text-right">
                                     <div className="flex gap-1 justify-end flex-wrap">
-                                      {sub.status === 'pendente' && sub.mercadopago_payment_id && (
+                                      {sub.status === 'pendente' && sub.mercadopago_payment_id ? (
                                         <Button
                                           size="sm"
                                           variant="ghost"
@@ -3315,21 +3315,71 @@ export default function AdminPublico() {
                                             setSubscriptionReprocessPaymentId(sub.mercadopago_payment_id || '');
                                             setSubscriptionReprocessDialogOpen(true);
                                           }}
+                                          title="Reprocessar Webhook (pagamento já criado)"
                                           data-testid={`button-reprocess-sub-${sub.id}`}
                                         >
                                           <RefreshCw className="h-3 w-3" />
                                         </Button>
-                                      )}
-                                      {(sub.status === 'ativo' || sub.status === 'pendente') && (
+                                      ) : sub.status === 'pendente' && !sub.mercadopago_payment_id ? (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                                          onClick={async () => {
+                                            if (confirm(
+                                              `⚠️ Cancelar assinatura pendente?\n\n` +
+                                              `Cliente: ${user?.nome}\n` +
+                                              `Plano: ${sub.plano}\n\n` +
+                                              `Esta assinatura nunca foi paga (sem Payment ID).\n` +
+                                              `Deseja removê-la do sistema?`
+                                            )) {
+                                              try {
+                                                const response = await fetch(`/api/subscriptions/${sub.id}`, {
+                                                  method: 'DELETE',
+                                                  headers: {
+                                                    'Content-Type': 'application/json',
+                                                    'x-user-id': user?.id || '',
+                                                    'x-is-admin': 'true',
+                                                  },
+                                                });
+
+                                                if (!response.ok) {
+                                                  const error = await response.json();
+                                                  throw new Error(error.error || 'Erro ao cancelar');
+                                                }
+
+                                                toast({
+                                                  title: "✅ Assinatura cancelada",
+                                                  description: "A assinatura pendente foi removida do sistema",
+                                                });
+
+                                                queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+                                              } catch (error: any) {
+                                                toast({
+                                                  title: "❌ Erro ao cancelar",
+                                                  description: error.message,
+                                                  variant: "destructive",
+                                                });
+                                              }
+                                            }
+                                          }}
+                                          title="Cancelar assinatura pendente (pagamento nunca foi feito)"
+                                          data-testid={`button-cancel-pending-sub-${sub.id}`}
+                                        >
+                                          <XCircleIcon className="h-3 w-3" />
+                                        </Button>
+                                      ) : null}
+                                      {sub.status === 'ativo' && (
                                         <Button
                                           size="sm"
                                           variant="ghost"
                                           className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                                           onClick={() => {
                                             if (confirm(`Tem certeza que deseja cancelar a assinatura de ${user?.nome}?`)) {
-                                              handleCancelSubscription(sub.id);
+                                              handleCancelSubscription(sub);
                                             }
                                           }}
+                                          title="Cancelar assinatura ativa"
                                           data-testid={`button-cancel-sub-${sub.id}`}
                                         >
                                           <Ban className="h-3 w-3" />
@@ -3339,6 +3389,7 @@ export default function AdminPublico() {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => setSelectedClientFor360(sub.user_id)}
+                                        title="Ver cliente 360°"
                                       >
                                         <Eye className="h-3 w-3" />
                                       </Button>
