@@ -48,6 +48,15 @@ export default function ReportsCard({
 
   return (
     <div className="space-y-6">
+      {(startDate && endDate) && (
+        <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+          <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <strong>Filtro ativo:</strong> {new Date(startDate).toLocaleDateString('pt-BR')} até {new Date(endDate).toLocaleDateString('pt-BR')}
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
