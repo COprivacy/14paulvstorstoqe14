@@ -213,12 +213,24 @@ export default function Reports() {
 
   // Filtrar vendas localmente
   const filteredVendas = vendas.filter((venda: any) => {
+    // Filtro de período customizado
+    let matchesPeriodo = true;
+    if (startDate && endDate && venda.data) {
+      try {
+        const vendaDate = new Date(venda.data).toISOString().split('T')[0];
+        matchesPeriodo = vendaDate >= startDate && vendaDate <= endDate;
+      } catch (error) {
+        console.error('Erro ao processar data da venda:', venda.data);
+        matchesPeriodo = false;
+      }
+    }
+
     const matchesFormaPagamento = filterFormaPagamento === "all" || venda.forma_pagamento === filterFormaPagamento;
     const matchesSearch = !searchTerm || 
       venda.produto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       venda.vendedor?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchesFormaPagamento && matchesSearch;
+    return matchesPeriodo && matchesFormaPagamento && matchesSearch;
   });
 
   const { data: expiringProducts = [] } = useQuery({
