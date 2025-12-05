@@ -2247,6 +2247,13 @@ export default function AdminPublico() {
   const [subscriptionReprocessPaymentId, setSubscriptionReprocessPaymentId] = useState("");
   const [subscriptionDetailsDialogOpen, setSubscriptionDetailsDialogOpen] = useState(false);
   const [subscriptionPaymentDetails, setSubscriptionPaymentDetails] = useState<any>(null);
+  
+  // Estados para ativação manual de assinatura
+  const [subscriptionActivateDialogOpen, setSubscriptionActivateDialogOpen] = useState(false);
+  const [subscriptionActivateUserId, setSubscriptionActivateUserId] = useState("");
+  const [subscriptionActivatePlano, setSubscriptionActivatePlano] = useState("premium_mensal");
+  const [subscriptionActivateValor, setSubscriptionActivateValor] = useState(49.90);
+  const [subscriptionActivateDias, setSubscriptionActivateDias] = useState(30);
 
   // Recupera o usuário logado do localStorage
   const user = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem("user") || "{}") : {};
@@ -2313,6 +2320,34 @@ export default function AdminPublico() {
       toast({ 
         title: "❌ Erro", 
         description: error.message || "Erro ao reprocessar webhook",
+        variant: "destructive"
+      });
+    },
+  });
+
+  // Mutation para ativação manual de assinatura
+  const subscriptionActivateMutation = useMutation({
+    mutationFn: async (data: { userId: string; plano: string; valor: number; dias: number }) => {
+      const response = await apiRequest("POST", "/api/admin/subscriptions/activate-manual", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ 
+        title: "✅ Assinatura ativada!", 
+        description: "A assinatura foi ativada manualmente com sucesso." 
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setSubscriptionActivateDialogOpen(false);
+      setSubscriptionActivateUserId("");
+      setSubscriptionActivatePlano("premium_mensal");
+      setSubscriptionActivateValor(49.90);
+      setSubscriptionActivateDias(30);
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: "❌ Erro ao ativar", 
+        description: error.message || "Não foi possível ativar a assinatura",
         variant: "destructive"
       });
     },
