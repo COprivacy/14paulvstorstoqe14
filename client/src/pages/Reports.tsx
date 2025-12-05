@@ -345,9 +345,14 @@ export default function Reports() {
   // Calcular devoluções por período
   const devolucoesDiarias = calcularDevolucoesPeriodo(today, today);
   const devolucoesSemanais = calcularDevolucoesPeriodo(weekAgo, today);
-  const devolucoeMensais = (startDate && endDate) 
-    ? calcularDevolucoesPeriodo(startDate, endDate)
-    : calcularDevolucoesPeriodo(monthAgo, today);
+  
+  // Calcular devoluções mensais baseado no filtro ativo
+  let devolucoeMensais = 0;
+  if (startDate && endDate) {
+    devolucoeMensais = calcularDevolucoesPeriodo(startDate, endDate);
+  } else {
+    devolucoeMensais = calcularDevolucoesPeriodo(monthAgo, today);
+  }
 
   // Calcular totais de vendas
   const dailyTotal = vendas
@@ -366,15 +371,19 @@ export default function Reports() {
     })
     .reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0) - devolucoesSemanais;
 
-  const monthlyTotal = (startDate && endDate)
-    ? vendas.reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0) - devolucoeMensais
-    : vendas
-        .filter((v: any) => {
-          if (!v.data) return false;
-          const vendaDate = new Date(v.data).toISOString().split('T')[0];
-          return vendaDate >= monthAgo && vendaDate <= today;
-        })
-        .reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0) - devolucoeMensais;
+  // Total mensal considera o filtro customizado se ativo
+  let monthlyTotal = 0;
+  if (startDate && endDate) {
+    monthlyTotal = vendas.reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0) - devolucoeMensais;
+  } else {
+    monthlyTotal = vendas
+      .filter((v: any) => {
+        if (!v.data) return false;
+        const vendaDate = new Date(v.data).toISOString().split('T')[0];
+        return vendaDate >= monthAgo && vendaDate <= today;
+      })
+      .reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0) - devolucoeMensais;
+  }
 
   const handleFilter = (filterStartDate: string, filterEndDate: string) => {
     setStartDate(filterStartDate);
