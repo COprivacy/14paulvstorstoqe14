@@ -1381,6 +1381,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ativar assinatura manualmente (apenas admin master)
+  app.post("/api/admin/subscriptions/activate-manual", requireAdmin, async (req, res) => {
+    try {
+      const { userId, plano, valor, dias } = req.body;
+      const adminId = req.headers["x-user-id"] as string;
+
+      if (!userId || !plano || !valor || !dias) {
+        return res.status(400).json({ 
+          error: "Dados obrigatórios: userId, plano, valor, dias" 
+        });
+      }
+
+      // Verificar se o usuário existe
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+
+      // Calcular data de expiração
+      const dataExpiracao = new Date();
+      dataExpiracao.setDate(dataExpiracao.getDate() + parseInt(dias));
+
+      // Criar a assinatura
+      const novaAssinatura = {
+        user_id: userId,
+        plano: plano,
+        valor: parseFloat(valor),
+        status: 'ativo' as const,
+        status_pagamento: 'approved',
+        forma_pagamento: 'ATIVACAO_MANUAL',
+        data_inicio: new Date().toISOString(),
+        data_expiracao: dataExpiracao.toISOString(),
+        data_criacao: new Date().toISOString(),
+        external_reference: `MANUAL_${Date.now()}_${userId}`,
+      };
+
+      const assinaturaCriada = await storage.createSubscription(novaAssinatura);
+
+      // Atualizar o plano do usuário
+      await storage.updateUser(userId, {
+        plano: plano,
+        status: 'ativo',
+        data_expiracao_plano: dataExpiracao.toISOString(),
+      });
+
+      // Log da ação
+      await storage.logAdminAction(
+        adminId,
+        "ASSINATURA_ATIVADA_MANUAL",
+        `Assinatura ${plano} ativada manualmente para ${user.email} - Valor: R$ ${valor} - Dias: ${dias}`,
+        req
+      );
+
+      logger.info('Assinatura ativada manualmente', 'ADMIN_SUBSCRIPTIONS', {
+        userId,
+        plano,
+        valor,
+        dias,
+        adminId,
+      });
+
+      res.json({
+        success: true,
+        message: "Assinatura ativada com sucesso",
+        subscription: assinaturaCriada,
+      });
+    } catch (error: any) {
+      logger.error('Erro ao ativar assinatura manualmente', 'ADMIN_SUBSCRIPTIONS', { error });
+      res.status(500).json({ error: error.message || "Erro ao ativar assinatura" });
+    }
+  });
+
   // Cancelar assinatura (apenas admin)
   app.post("/api/admin/subscriptions/:id/cancel", requireAdmin, async (req, res) => {
     try {

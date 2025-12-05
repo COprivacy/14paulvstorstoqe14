@@ -2565,6 +2565,30 @@ export default function AdminPublico() {
     }
   };
 
+  const handleActivateSubscription = () => {
+    if (!subscriptionActivateUserId) {
+      toast({ 
+        title: "Erro", 
+        description: "Selecione um cliente", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    subscriptionActivateMutation.mutate({
+      userId: subscriptionActivateUserId,
+      plano: subscriptionActivatePlano,
+      valor: subscriptionActivateValor,
+      dias: subscriptionActivateDias,
+    });
+  };
+
+  // Opções de planos para ativação manual
+  const planoOptions = [
+    { value: "premium_mensal", label: "Premium Mensal", valor: 49.90, dias: 30 },
+    { value: "premium_anual", label: "Premium Anual", valor: 399.90, dias: 365 },
+  ];
+
   if (isLoadingSubscriptions || isLoadingUsers) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
@@ -2992,6 +3016,169 @@ export default function AdminPublico() {
           ) : activeTab === 'assinaturas' ? (
             // Aba de Assinaturas
             <div className="space-y-6">
+              {/* Header com Título e Ações */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Gerenciamento de Assinaturas
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Controle total sobre assinaturas de planos
+                  </p>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <Dialog open={subscriptionActivateDialogOpen} onOpenChange={setSubscriptionActivateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="default" data-testid="button-activate-subscription-manual">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Ativar Manualmente
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Ativar Assinatura Manualmente</DialogTitle>
+                        <DialogDescription>
+                          Ative uma assinatura de plano para um cliente sem passar pelo gateway de pagamento
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Selecionar Cliente</Label>
+                          <Select value={subscriptionActivateUserId} onValueChange={setSubscriptionActivateUserId}>
+                            <SelectTrigger data-testid="select-subscription-user">
+                              <SelectValue placeholder="Escolha um cliente" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {users.map((u) => (
+                                <SelectItem key={u.id} value={u.id}>
+                                  {u.nome} ({u.email})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <Label>Tipo de Plano</Label>
+                          <Select 
+                            value={subscriptionActivatePlano} 
+                            onValueChange={(value) => {
+                              setSubscriptionActivatePlano(value);
+                              const opt = planoOptions.find(o => o.value === value);
+                              if (opt) {
+                                setSubscriptionActivateValor(opt.valor);
+                                setSubscriptionActivateDias(opt.dias);
+                              }
+                            }}
+                          >
+                            <SelectTrigger data-testid="select-subscription-plano">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {planoOptions.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  {opt.label} - {formatCurrency(opt.valor)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Dias de Assinatura</Label>
+                            <Input 
+                              type="number" 
+                              value={subscriptionActivateDias}
+                              onChange={(e) => setSubscriptionActivateDias(parseInt(e.target.value))}
+                              data-testid="input-subscription-dias"
+                            />
+                          </div>
+                          <div>
+                            <Label>Valor (R$)</Label>
+                            <Input 
+                              type="number" 
+                              step="0.01"
+                              value={subscriptionActivateValor}
+                              onChange={(e) => setSubscriptionActivateValor(parseFloat(e.target.value))}
+                              data-testid="input-subscription-valor"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <DialogFooter>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setSubscriptionActivateDialogOpen(false)}
+                          data-testid="button-cancel-subscription-activate"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button 
+                          onClick={handleActivateSubscription}
+                          disabled={subscriptionActivateMutation.isPending}
+                          data-testid="button-confirm-subscription-activate"
+                        >
+                          {subscriptionActivateMutation.isPending ? "Ativando..." : "Ativar Assinatura"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <Dialog open={subscriptionReprocessDialogOpen} onOpenChange={setSubscriptionReprocessDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" data-testid="button-reprocess-subscription-webhook">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Reprocessar Webhook
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Reprocessar Webhook</DialogTitle>
+                        <DialogDescription>
+                          Forçar o processamento de um pagamento já aprovado que não foi ativado automaticamente
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Payment ID</Label>
+                          <Input 
+                            placeholder="Ex: 1234567890"
+                            value={subscriptionReprocessPaymentId}
+                            onChange={(e) => setSubscriptionReprocessPaymentId(e.target.value)}
+                            data-testid="input-subscription-payment-id"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            ID do pagamento no Mercado Pago
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <DialogFooter>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setSubscriptionReprocessDialogOpen(false)}
+                          data-testid="button-cancel-subscription-reprocess"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button 
+                          onClick={handleReprocessSubscription}
+                          disabled={subscriptionReprocessMutation.isPending}
+                          data-testid="button-confirm-subscription-reprocess"
+                        >
+                          {subscriptionReprocessMutation.isPending ? "Reprocessando..." : "Reprocessar"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+
               {/* Alerta de Ajuda */}
               <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900">
                 <CardHeader className="pb-3">
@@ -2999,13 +3186,13 @@ export default function AdminPublico() {
                     <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
                     <div className="space-y-1">
                       <CardTitle className="text-base text-blue-900 dark:text-blue-100">
-                        Gerenciamento de Assinaturas
+                        Como usar esta ferramenta
                       </CardTitle>
                       <CardDescription className="text-sm text-blue-700 dark:text-blue-300">
                         <ul className="list-disc list-inside space-y-1 mt-2">
-                          <li><strong>Reprocessar Webhook:</strong> Forçar processamento de pagamentos aprovados</li>
+                          <li><strong>Ativar Manualmente:</strong> Cria uma assinatura sem pagamento (útil para bônus/cortesia)</li>
+                          <li><strong>Reprocessar Webhook:</strong> Processa pagamentos aprovados que falharam no webhook</li>
                           <li><strong>Ver Detalhes:</strong> Clique no Payment ID para ver status no gateway</li>
-                          <li><strong>Ver Cliente:</strong> Acesse a visão 360° do cliente</li>
                         </ul>
                       </CardDescription>
                     </div>
@@ -3215,25 +3402,14 @@ export default function AdminPublico() {
               {/* Tabela de Assinaturas */}
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <CreditCard className="h-5 w-5 text-purple-600" />
-                        Histórico Completo de Assinaturas
-                      </CardTitle>
-                      <CardDescription>
-                        Acompanhe todas as assinaturas de planos - ativas, pendentes e históricas
-                      </CardDescription>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSubscriptionReprocessDialogOpen(true);
-                      }}
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Reprocessar Webhook
-                    </Button>
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-purple-600" />
+                      Histórico Completo de Assinaturas
+                    </CardTitle>
+                    <CardDescription>
+                      Acompanhe todas as assinaturas de planos - ativas, pendentes e históricas
+                    </CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent>
