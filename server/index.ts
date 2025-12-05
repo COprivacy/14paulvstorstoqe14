@@ -15,6 +15,9 @@ import { validateEmail } from "./lib/validators";
 
 neonConfig.webSocketConstructor = ws;
 
+// Configurar timezone para São Paulo (UTC-3)
+process.env.TZ = 'America/Sao_Paulo';
+
 // Função para verificar e corrigir schema automaticamente
 async function autoFixDatabaseSchema() {
   if (!process.env.DATABASE_URL) {

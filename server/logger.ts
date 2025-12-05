@@ -87,6 +87,19 @@ class Logger {
     }
   }
 
+  private getTimestampSaoPaulo(): string {
+    return new Date().toLocaleString('sv-SE', { 
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      fractionalSecondDigits: 3
+    }).replace(' ', 'T') + 'Z';
+  }
+
   private writeLog(entry: LogEntry) {
     if (!this.shouldLog(entry.level)) return;
 
@@ -104,7 +117,7 @@ class Logger {
 
   error(message: string, context?: string, data?: any, userId?: string) {
     this.writeLog({
-      timestamp: new Date().toISOString(),
+      timestamp: this.getTimestampSaoPaulo(),
       level: LogLevel.ERROR,
       message,
       context,
@@ -115,7 +128,7 @@ class Logger {
 
   warn(message: string, context?: string, data?: any, userId?: string) {
     this.writeLog({
-      timestamp: new Date().toISOString(),
+      timestamp: this.getTimestampSaoPaulo(),
       level: LogLevel.WARN,
       message,
       context,
@@ -126,7 +139,7 @@ class Logger {
 
   info(message: string, context?: string, data?: any, userId?: string) {
     this.writeLog({
-      timestamp: new Date().toISOString(),
+      timestamp: this.getTimestampSaoPaulo(),
       level: LogLevel.INFO,
       message,
       context,
@@ -137,7 +150,7 @@ class Logger {
 
   debug(message: string, context?: string, data?: any, userId?: string) {
     this.writeLog({
-      timestamp: new Date().toISOString(),
+      timestamp: this.getTimestampSaoPaulo(),
       level: LogLevel.DEBUG,
       message,
       context,
