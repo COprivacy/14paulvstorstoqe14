@@ -2252,7 +2252,7 @@ export default function AdminPublico() {
   const [subscriptionActivateDialogOpen, setSubscriptionActivateDialogOpen] = useState(false);
   const [subscriptionActivateUserId, setSubscriptionActivateUserId] = useState("");
   const [subscriptionActivatePlano, setSubscriptionActivatePlano] = useState("premium_mensal");
-  const [subscriptionActivateValor, setSubscriptionActivateValor] = useState(49.90);
+  const [subscriptionActivateValor, setSubscriptionActivateValor] = useState(89.99);
   const [subscriptionActivateDias, setSubscriptionActivateDias] = useState(30);
 
   // Recupera o usuário logado do localStorage
@@ -2583,11 +2583,26 @@ export default function AdminPublico() {
     });
   };
 
-  // Opções de planos para ativação manual
+  // Opções de planos para ativação manual - buscar preços dinâmicos
+  const { data: planPrices } = useQuery<{ premium_mensal: number; premium_anual: number }>({
+    queryKey: ["/api/plan-prices"],
+  });
+  
   const planoOptions = [
-    { value: "premium_mensal", label: "Premium Mensal", valor: 49.90, dias: 30 },
-    { value: "premium_anual", label: "Premium Anual", valor: 399.90, dias: 365 },
+    { value: "premium_mensal", label: "Premium Mensal", valor: planPrices?.premium_mensal || 89.99, dias: 30 },
+    { value: "premium_anual", label: "Premium Anual", valor: planPrices?.premium_anual || 950.99, dias: 365 },
   ];
+
+  // Sincroniza os valores de ativação quando os preços são carregados
+  useEffect(() => {
+    if (planPrices) {
+      const selectedOption = planoOptions.find(o => o.value === subscriptionActivatePlano);
+      if (selectedOption) {
+        setSubscriptionActivateValor(selectedOption.valor);
+        setSubscriptionActivateDias(selectedOption.dias);
+      }
+    }
+  }, [planPrices, subscriptionActivatePlano]);
 
   if (isLoadingSubscriptions || isLoadingUsers) {
     return (
@@ -3270,13 +3285,14 @@ export default function AdminPublico() {
                             }
 
                             try {
+                              const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
                               await Promise.all(
                                 canceladas.map(s => 
                                   fetch(`/api/subscriptions/${s.id}`, {
                                     method: 'DELETE',
                                     headers: {
                                       'Content-Type': 'application/json',
-                                      'x-user-id': user?.id || '',
+                                      'x-user-id': currentUser.id || user?.id || '',
                                       'x-is-admin': 'true',
                                     },
                                   })
@@ -3320,12 +3336,13 @@ export default function AdminPublico() {
                             );
                             if (confirm(`Tem certeza que deseja cancelar ${expiradas.length} assinatura(s) pendente(s) com prazo expirado?`)) {
                               try {
+                                const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
                                 for (const sub of expiradas) {
                                   const response = await fetch(`/api/subscriptions/${sub.id}`, {
                                     method: 'DELETE',
                                     headers: {
                                       'Content-Type': 'application/json',
-                                      'x-user-id': user?.id || '',
+                                      'x-user-id': currentUser.id || user?.id || '',
                                       'x-is-admin': 'true',
                                     },
                                   });
@@ -3555,18 +3572,19 @@ export default function AdminPublico() {
                                           className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
                                           onClick={async () => {
                                             if (confirm(
-                                              `⚠️ Cancelar assinatura pendente?\n\n` +
+                                              `Cancelar assinatura pendente?\n\n` +
                                               `Cliente: ${user?.nome}\n` +
                                               `Plano: ${sub.plano}\n\n` +
                                               `Esta assinatura nunca foi paga (sem Payment ID).\n` +
                                               `Deseja removê-la do sistema?`
                                             )) {
                                               try {
+                                                const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
                                                 const response = await fetch(`/api/subscriptions/${sub.id}`, {
                                                   method: 'DELETE',
                                                   headers: {
                                                     'Content-Type': 'application/json',
-                                                    'x-user-id': user?.id || '',
+                                                    'x-user-id': currentUser.id || '',
                                                     'x-is-admin': 'true',
                                                   },
                                                 });
