@@ -54,7 +54,8 @@ import {
   Crown,
   Package,
   Info,
-  Building2 // Keep Building2 import, as it might be used elsewhere, though not in this file context anymore.
+  Building2, // Keep Building2 import, as it might be used elsewhere, though not in this file context anymore.
+  AlertTriangle // Added import
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -2247,7 +2248,7 @@ export default function AdminPublico() {
   const [subscriptionReprocessPaymentId, setSubscriptionReprocessPaymentId] = useState("");
   const [subscriptionDetailsDialogOpen, setSubscriptionDetailsDialogOpen] = useState(false);
   const [subscriptionPaymentDetails, setSubscriptionPaymentDetails] = useState<any>(null);
-  
+
   // Estados para ativação manual de assinatura
   const [subscriptionActivateDialogOpen, setSubscriptionActivateDialogOpen] = useState(false);
   const [subscriptionActivateUserId, setSubscriptionActivateUserId] = useState("");
@@ -2357,7 +2358,7 @@ export default function AdminPublico() {
   const cancelSubscriptionMutation = useMutation({
     mutationFn: async (subscriptionId: number) => {
       const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-      
+
       if (!currentUser?.id) {
         throw new Error('Usuário não autenticado');
       }
@@ -2587,7 +2588,7 @@ export default function AdminPublico() {
   const { data: planPrices } = useQuery<{ premium_mensal: number; premium_anual: number }>({
     queryKey: ["/api/plan-prices"],
   });
-  
+
   const planoOptions = [
     { value: "premium_mensal", label: "Premium Mensal", valor: planPrices?.premium_mensal || 89.99, dias: 30 },
     { value: "premium_anual", label: "Premium Anual", valor: planPrices?.premium_anual || 950.99, dias: 365 },
@@ -3041,7 +3042,7 @@ export default function AdminPublico() {
                     Controle total sobre assinaturas de planos
                   </p>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   <Dialog open={subscriptionActivateDialogOpen} onOpenChange={setSubscriptionActivateDialogOpen}>
                     <DialogTrigger asChild>
@@ -3057,7 +3058,7 @@ export default function AdminPublico() {
                           Ative uma assinatura de plano para um cliente sem passar pelo gateway de pagamento
                         </DialogDescription>
                       </DialogHeader>
-                      
+
                       <div className="space-y-4">
                         <div>
                           <Label>Selecionar Cliente</Label>
@@ -3074,7 +3075,7 @@ export default function AdminPublico() {
                             </SelectContent>
                           </Select>
                         </div>
-                        
+
                         <div>
                           <Label>Tipo de Plano</Label>
                           <Select 
@@ -3100,7 +3101,7 @@ export default function AdminPublico() {
                             </SelectContent>
                           </Select>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <Label>Dias de Assinatura</Label>
@@ -3123,7 +3124,7 @@ export default function AdminPublico() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <DialogFooter>
                         <Button 
                           variant="outline" 
@@ -3142,7 +3143,7 @@ export default function AdminPublico() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
-                  
+
                   <Dialog open={subscriptionReprocessDialogOpen} onOpenChange={setSubscriptionReprocessDialogOpen}>
                     <DialogTrigger asChild>
                       <Button variant="outline" data-testid="button-reprocess-subscription-webhook">
@@ -3157,7 +3158,7 @@ export default function AdminPublico() {
                           Forçar o processamento de um pagamento já aprovado que não foi ativado automaticamente
                         </DialogDescription>
                       </DialogHeader>
-                      
+
                       <div className="space-y-4">
                         <div>
                           <Label>Payment ID</Label>
@@ -3172,7 +3173,7 @@ export default function AdminPublico() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <DialogFooter>
                         <Button 
                           variant="outline" 
@@ -4275,9 +4276,6 @@ export default function AdminPublico() {
                 </CardContent>
               </Card>
             </div>
-          ) : activeTab === 'promocoes' ? (
-            // Aba de Promoções e Cupons
-            <PromocoesTab />
           ) : (
             // Dashboard Principal
             <>
