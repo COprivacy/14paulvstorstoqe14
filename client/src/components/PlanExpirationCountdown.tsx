@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, AlertTriangle, CheckCircle } from "lucide-react";
@@ -9,7 +8,11 @@ interface PlanExpirationCountdownProps {
   status: string;
 }
 
-export function PlanExpirationCountdown({ expirationDate, planName, status }: PlanExpirationCountdownProps) {
+export function PlanExpirationCountdown({
+  expirationDate,
+  planName,
+  status,
+}: PlanExpirationCountdownProps) {
   const [timeLeft, setTimeLeft] = useState<{
     days: number;
     hours: number;
@@ -25,8 +28,9 @@ export function PlanExpirationCountdown({ expirationDate, planName, status }: Pl
     }
 
     const calculateTimeLeft = () => {
-      const now = new Date();
-      const expiry = new Date(expirationDate);
+      // Usar timezone de São Paulo para consistência
+      const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+      const expiry = new Date(new Date(expirationDate).toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
       const diff = expiry.getTime() - now.getTime();
 
       if (diff <= 0) {
