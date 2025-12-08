@@ -991,7 +991,7 @@ export default function Admin() {
                   );
                   const isExpired = daysRemaining <= 0;
                   const daysOverdue = isExpired ? Math.abs(daysRemaining) : 0;
-                  const daysUntilBlock = isExpired ? Math.max(0, 7 - daysOverdue) : null;
+                  const daysUntilBlock = isExpired ? Math.max(0, 4 - daysOverdue) : null;
                   const isBlocked = currentUser.status === "bloqueado";
 
                   return (
@@ -1019,7 +1019,7 @@ export default function Admin() {
                           {!isBlocked && daysUntilBlock !== null && daysUntilBlock > 0 && (
                             <Alert className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20">
                               <AlertTriangle className="h-4 w-4 text-red-600" />
-                              <AlertTitle className="text-red-800 dark:text-red-200">Atenção: Bloqueio em {daysUntilBlock} dias</AlertTitle>
+                              <AlertTitle className="text-red-800 dark:text-red-200">Atenção: Bloqueio em {daysUntilBlock} dia{daysUntilBlock !== 1 ? 's' : ''}</AlertTitle>
                               <AlertDescription className="text-red-700 dark:text-red-300">
                                 Sua conta será bloqueada em {daysUntilBlock} dia{daysUntilBlock !== 1 ? 's' : ''} se o pagamento não for realizado.
                               </AlertDescription>
