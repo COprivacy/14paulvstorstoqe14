@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Users, UserPlus, Trash2, Shield, Building2, CreditCard, Edit, Power, Check, Crown, Zap, FileText, Clock, Download, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, UserPlus, Trash2, Shield, Building2, CreditCard, Edit, Power, Check, Crown, Zap, FileText, Clock, Download, Search, Filter, ChevronLeft, ChevronRight, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -985,18 +985,60 @@ export default function Admin() {
                     {!["trial", "free", "premium_mensal", "premium_anual"].includes(currentUser.plano) && "Gratuito"}
                   </Badge>
                 </div>
-                {(currentUser.data_expiracao_plano || currentUser.data_expiracao_trial) && (
-                  <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
-                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                      {currentUser.plano === "trial" ? "Trial" : "Expira em"}
-                    </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {calculateDaysRemaining(
-                        currentUser.data_expiracao_plano || currentUser.data_expiracao_trial
-                      )} <span className="text-base font-normal text-gray-600 dark:text-gray-400">dias restantes</span>
-                    </p>
-                  </div>
-                )}
+                {(currentUser.data_expiracao_plano || currentUser.data_expiracao_trial) && (() => {
+                  const daysRemaining = calculateDaysRemaining(
+                    currentUser.data_expiracao_plano || currentUser.data_expiracao_trial
+                  );
+                  const isExpired = daysRemaining <= 0;
+                  const daysOverdue = isExpired ? Math.abs(daysRemaining) : 0;
+                  const daysUntilBlock = isExpired ? Math.max(0, 7 - daysOverdue) : null;
+                  const isBlocked = currentUser.status === "bloqueado";
+
+                  return (
+                    <>
+                      {!isExpired ? (
+                        <div className="p-3 rounded-lg bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                            {currentUser.plano === "trial" ? "Trial expira em" : "Expira em"}
+                          </p>
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {daysRemaining} <span className="text-base font-normal text-gray-600 dark:text-gray-400">dias restantes</span>
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950/30 backdrop-blur-sm border border-orange-200 dark:border-orange-800">
+                            <p className="text-xs font-medium text-orange-700 dark:text-orange-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              Plano Expirado
+                            </p>
+                            <p className="text-2xl font-bold text-orange-900 dark:text-orange-300">
+                              {daysOverdue} <span className="text-base font-normal text-orange-700 dark:text-orange-400">dias em atraso</span>
+                            </p>
+                          </div>
+                          {!isBlocked && daysUntilBlock !== null && daysUntilBlock > 0 && (
+                            <Alert className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/20">
+                              <AlertTriangle className="h-4 w-4 text-red-600" />
+                              <AlertTitle className="text-red-800 dark:text-red-200">Atenção: Bloqueio em {daysUntilBlock} dias</AlertTitle>
+                              <AlertDescription className="text-red-700 dark:text-red-300">
+                                Sua conta será bloqueada em {daysUntilBlock} dia{daysUntilBlock !== 1 ? 's' : ''} se o pagamento não for realizado.
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                          {isBlocked && (
+                            <Alert className="border-red-500 bg-red-50 dark:bg-red-950/20">
+                              <AlertTriangle className="h-4 w-4 text-red-600" />
+                              <AlertTitle className="text-red-800 dark:text-red-200">Conta Bloqueada</AlertTitle>
+                              <AlertDescription className="text-red-700 dark:text-red-300">
+                                Sua conta foi bloqueada por falta de pagamento. Renove seu plano para continuar usando o sistema.
+                              </AlertDescription>
+                            </Alert>
+                          )}
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
           </div>
