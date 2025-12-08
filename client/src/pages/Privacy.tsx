@@ -268,7 +268,7 @@ export default function Privacy() {
                       5.4. Você pode cancelar sua assinatura a qualquer momento através das configurações da sua conta.
                     </p>
                     <p>
-                      5.5. <strong>Bloqueio por Inadimplência:</strong> Em caso de inadimplência ou expiração do plano principal (Trial, Premium Mensal ou Premium Anual), sua conta será bloqueada até a regularização do pagamento. <strong className="text-red-600">IMPORTANTE: Quando o plano principal é bloqueado ou expira, TODOS os funcionários cadastrados também são bloqueados automaticamente, mesmo que existam pacotes de funcionários ativos.</strong>
+                      5.5. <strong>Bloqueio por Inadimplência:</strong> Em caso de inadimplência ou expiração do plano principal (Trial, Premium Mensal ou Premium Anual), você tem 4 dias de tolerância para renovar. Após esse prazo, sua conta será bloqueada até a regularização do pagamento. <strong className="text-red-600">IMPORTANTE: Quando o plano principal é bloqueado ou expira após os 4 dias de tolerância, TODOS os funcionários cadastrados também são bloqueados automaticamente, mesmo que existam pacotes de funcionários ativos.</strong>
                     </p>
                     <p>
                       5.6. <strong>Pacotes de Funcionários:</strong> Os pacotes de funcionários (5, 10, 20 ou 50 funcionários) são complementares ao plano principal e só funcionam se houver um plano base ativo (Trial, Premium Mensal ou Premium Anual). Sem um plano principal ativo, os pacotes de funcionários não concedem acesso ao sistema. <strong className="text-blue-600">Os pacotes possuem renovação automática mensal</strong>, sendo cobrados mensalmente até o cancelamento.
@@ -291,7 +291,8 @@ export default function Privacy() {
                     <p>
                       6.2. <strong>Bloqueio Automático por Expiração do Plano Principal:</strong> 
                       <ul className="list-disc ml-6 mt-2 space-y-1">
-                        <li>Se o plano principal expirar ou for bloqueado por falta de pagamento, <strong className="text-red-600">TODOS os funcionários (incluindo o padrão e os extras) serão bloqueados imediatamente</strong></li>
+                        <li>Ao vencer o plano principal, você tem 4 dias de tolerância para renovar</li>
+                        <li>Se o plano não for renovado após os 4 dias, <strong className="text-red-600">TODOS os funcionários (incluindo o padrão e os extras) serão bloqueados</strong></li>
                         <li>Isso ocorre mesmo que existam pacotes de funcionários ativos e pagos</li>
                         <li>Os pacotes de funcionários são adicionais ao plano base, não substitutos</li>
                         <li>Para reativar os funcionários, é necessário regularizar o plano principal</li>

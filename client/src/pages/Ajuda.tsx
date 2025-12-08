@@ -79,12 +79,12 @@ export default function Ajuda() {
     },
     {
       question: "O que acontece se meu plano vencer?",
-      answer: "Você receberá avisos 7, 3 e 1 dia antes do vencimento. Se o plano vencer, sua conta será bloqueada até a renovação. Todos os dados são preservados e você terá acesso novamente assim que renovar o plano.",
+      answer: "Você receberá avisos 7, 3 e 1 dia antes do vencimento. Após o vencimento, você tem 4 dias de tolerância para renovar. Se não renovar nesse prazo, sua conta será bloqueada. Todos os dados são preservados e você terá acesso novamente assim que renovar o plano.",
       category: "planos"
     },
     {
       question: "Como funciona o bloqueio de funcionários?",
-      answer: "IMPORTANTE: Existem duas situações diferentes:\n\n1) Se o PLANO PRINCIPAL (Trial/Premium) expirar ou for bloqueado por falta de pagamento: TODOS os funcionários (incluindo o padrão e os extras) são bloqueados imediatamente, mesmo que existam pacotes de funcionários ativos. Os pacotes são complementares ao plano base.\n\n2) Se apenas o PACOTE DE FUNCIONÁRIOS vencer (mas o plano principal estiver ativo): apenas os funcionários extras são bloqueados. O funcionário padrão continua ativo se o plano principal estiver pago.",
+      answer: "IMPORTANTE: Existem duas situações diferentes:\n\n1) Se o PLANO PRINCIPAL (Trial/Premium) expirar ou for bloqueado por falta de pagamento após 4 dias de tolerância: TODOS os funcionários (incluindo o padrão e os extras) são bloqueados imediatamente, mesmo que existam pacotes de funcionários ativos. Os pacotes são complementares ao plano base.\n\n2) Se apenas o PACOTE DE FUNCIONÁRIOS vencer (mas o plano principal estiver ativo): apenas os funcionários extras são bloqueados. O funcionário padrão continua ativo se o plano principal estiver pago.",
       category: "admin"
     }
   ];
