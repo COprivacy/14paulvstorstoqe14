@@ -2188,6 +2188,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para forçar verificação e correção de status (apenas admin)
+  app.post("/api/admin/force-expiration-check/:userId", requireAdmin, async (req, res) => {
+    try {
+      const adminId = req.headers["x-user-id"] as string;
+      const { userId } = req.params;
+
+      const user = await storage.getUserById(userId);
+
+      if (!user) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+
+      const now = new Date();
+      let acoes: string[] = [];
+
+      // Verificar planos premium/mensal/anual que expiraram
+      const planosComExpiracao = ['premium_mensal', 'premium_anual', 'trial'];
+      if (planosComExpiracao.includes(user.plano) && user.is_admin !== 'true') {
+        const dataExpiracao = user.data_expiracao_plano;
+
+        if (dataExpiracao) {
+          const expirationDate = new Date(dataExpiracao);
+
+          if (now >= expirationDate && user.status !== 'bloqueado') {
+            await storage.updateUser(user.id, {
+              status: 'bloqueado'
+            });
+
+            // Bloquear funcionários
+            if (storage.getFuncionarios) {
+              const funcionarios = await storage.getFuncionarios();
+              const funcionariosDaConta = funcionarios.filter(f => f.conta_id === user.id);
+
+              for (const func of funcionariosDaConta) {
+                await storage.updateFuncionario(func.id, { status: 'bloqueado' });
+              }
+
+              acoes.push(`Conta bloqueada - ${funcionariosDaConta.length} funcionário(s) bloqueado(s)`);
+            } else {
+              acoes.push('Conta bloqueada');
+            }
+
+            logger.warn('[FORCE_EXPIRATION] Usuário bloqueado manualmente por admin', {
+              userId: user.id,
+              email: user.email,
+              plano: user.plano,
+              dataExpiracao,
+              adminId
+            });
+          } else if (user.status === 'bloqueado' && now < expirationDate) {
+            // Se está bloqueado mas não deveria estar (data não expirou), reativar
+            await storage.updateUser(user.id, {
+              status: 'ativo'
+            });
+
+            if (storage.getFuncionarios) {
+              const funcionarios = await storage.getFuncionarios();
+              const funcionariosDaConta = funcionarios.filter(f => f.conta_id === user.id);
+
+              for (const func of funcionariosDaConta) {
+                await storage.updateFuncionario(func.id, { status: 'ativo' });
+              }
+
+              acoes.push(`Conta reativada - ${funcionariosDaConta.length} funcionário(s) reativado(s)`);
+            } else {
+              acoes.push('Conta reativada');
+            }
+
+            logger.info('[FORCE_EXPIRATION] Usuário reativado manualmente por admin', {
+              userId: user.id,
+              email: user.email,
+              adminId
+            });
+          } else {
+            acoes.push('Status já está correto');
+          }
+        } else {
+          acoes.push('Sem data de expiração definida');
+        }
+      } else {
+        acoes.push('Plano não requer verificação de expiração');
+      }
+
+      await storage.logAdminAction?.(
+        adminId,
+        "FORCE_EXPIRATION_CHECK",
+        `Verificação forçada de expiração - ${user.email}: ${acoes.join(', ')}`,
+        req
+      );
+
+      const userAtualizado = await storage.getUserById(userId);
+
+      res.json({
+        success: true,
+        acoes,
+        user: userAtualizado
+      });
+
+    } catch (error: any) {
+      logger.error('[FORCE_EXPIRATION] Erro ao forçar verificação', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
 
   // Endpoint para testar configuração do Mercado Pago
   app.post("/api/config-mercadopago/test", async (req, res) => {
