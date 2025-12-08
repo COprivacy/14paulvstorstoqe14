@@ -11,7 +11,7 @@ export class PaymentReminderService {
   private emailService: EmailService;
   private config: PaymentReminderConfig = {
     daysBeforeExpiration: [7, 3, 1], // Avisos antes do vencimento
-    daysAfterExpiration: [1, 3, 7, 15], // Avisos após vencimento
+    daysAfterExpiration: [1, 3, 4], // Avisos após vencimento
   };
 
   constructor() {
@@ -67,8 +67,8 @@ export class PaymentReminderService {
             await this.sendOverdueNotice(subscription, daysAfterExpiration);
           }
 
-          // Bloqueio automático após 15 dias de atraso
-          if (daysUntilExpiration < -15) {
+          // Bloqueio automático após 4 dias de atraso
+          if (daysUntilExpiration < -4) {
             await this.blockExpiredSubscription(subscription);
           }
         }
