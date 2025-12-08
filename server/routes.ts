@@ -181,9 +181,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User registration
   app.post("/api/auth/register", async (req, res) => {
     try {
+      // Validar dados de entrada
       const userData = insertUserSchema.parse(req.body);
+      
+      // Verificar se email já existe
       const existingUser = await storage.getUserByEmail(userData.email);
-
       if (existingUser) {
         return res.status(400).json({ error: "Email já cadastrado" });
       }
@@ -191,13 +193,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash da senha ANTES de armazenar
       const hashedPassword = await bcrypt.hash(userData.senha, 10);
 
-      // Usar funções de timezone de São Paulo para evitar problemas de data
+      // Usar funções de timezone de São Paulo
       const dataCriacao = getNowISOSaoPaulo();
       const dataExpiracao = addDaysAndGetISOSaoPaulo(new Date(), 7);
 
       const userWithTrial = {
         ...userData,
-        senha: hashedPassword, // Senha com hash
+        senha: hashedPassword,
         plano: "trial",
         is_admin: "true",
         data_criacao: dataCriacao,
@@ -207,6 +209,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const user = await storage.createUser(userWithTrial);
+      
+      // Log da ação
+      await storage.logAdminAction?.(
+        user.id,
+        "USUARIO_CRIADO",
+        `Novo usuário registrado: ${user.email}`,
+        { ip: req.ip }
+      );
+
       res.json({
         id: user.id,
         email: user.email,
@@ -216,11 +227,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Erro ao registrar usuário:", error);
+      
       if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({ error: "Dados inválidos", details: error.errors });
+        // Erros de validação mais específicos
+        const errorMessages = error.errors.map(err => {
+          if (err.path[0] === 'senha') {
+            return 'A senha deve ter no mínimo 8 caracteres, incluindo letras maiúsculas, minúsculas e números';
+          }
+          if (err.path[0] === 'email') {
+            return 'Email inválido';
+          }
+          if (err.path[0] === 'nome') {
+            return 'Nome deve ter entre 3 e 100 caracteres';
+          }
+          return err.message;
+        });
+        
+        return res.status(400).json({ 
+          error: errorMessages[0] || "Dados inválidos"
+        });
       }
+      
       res.status(500).json({ error: "Erro ao criar usuário" });
     }
   });

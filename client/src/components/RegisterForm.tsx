@@ -22,6 +22,17 @@ export default function RegisterForm({ onRegister, onLoginClick, isLoading }: Re
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validação de nome
+    if (!name || name.trim().length < 3) {
+      alert("Nome deve ter no mínimo 3 caracteres");
+      return;
+    }
+
+    if (name.length > 100) {
+      alert("Nome deve ter no máximo 100 caracteres");
+      return;
+    }
+    
     // Validação de email
     const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(email)) {
@@ -37,7 +48,7 @@ export default function RegisterForm({ onRegister, onLoginClick, isLoading }: Re
 
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!passwordRegex.test(password)) {
-      alert("A senha deve conter letras maiúsculas, minúsculas e números");
+      alert("A senha deve conter:\n• Letras maiúsculas (A-Z)\n• Letras minúsculas (a-z)\n• Números (0-9)");
       return;
     }
     
