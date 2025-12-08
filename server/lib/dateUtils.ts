@@ -28,11 +28,14 @@ export function toISOStringSaoPaulo(date: Date = new Date()): string {
 /**
  * Converte uma data para string ISO com hora ao meio-dia no timezone de São Paulo
  * Isso evita problemas de mudança de dia devido a conversões de timezone
+ * Retorna 15:00Z que é equivalente a 12:00 em São Paulo (UTC-3)
  */
 export function toDateStringSaoPauloNoon(date: Date = new Date()): string {
   const saoPauloDate = new Date(date.toLocaleString('en-US', { timeZone: SAO_PAULO_TIMEZONE }));
   saoPauloDate.setHours(12, 0, 0, 0);
-  return saoPauloDate.toISOString();
+  // Ajustar para UTC considerando que SP é UTC-3
+  const utcDate = new Date(saoPauloDate.getTime() + (3 * 60 * 60 * 1000));
+  return utcDate.toISOString();
 }
 
 /**
@@ -166,11 +169,14 @@ export function isSameDaySaoPaulo(date1: Date, date2: Date): boolean {
 /**
  * Retorna a data atual no timezone de São Paulo como string ISO
  * com hora ao meio-dia para evitar problemas de timezone
+ * Retorna 15:00Z que é equivalente a 12:00 em São Paulo (UTC-3)
  */
 export function getNowISOSaoPaulo(): string {
   const now = getNowSaoPaulo();
   now.setHours(12, 0, 0, 0);
-  return now.toISOString();
+  // Ajustar para UTC considerando que SP é UTC-3
+  const utcDate = new Date(now.getTime() + (3 * 60 * 60 * 1000));
+  return utcDate.toISOString();
 }
 
 /**
@@ -186,4 +192,29 @@ export function getDaysDifferenceSaoPaulo(date1: Date | string, date2: Date | st
   
   const diffTime = sp2.getTime() - sp1.getTime();
   return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Adiciona meses a uma data (preserva incremento de calendário) e retorna string ISO segura
+ * Exemplo: 31/Jan + 1 mês = 28/Fev ou 29/Fev
+ */
+export function addMonthsAndGetISOSaoPaulo(date: Date, months: number): string {
+  const saoPauloDate = new Date(date.toLocaleString('en-US', { timeZone: SAO_PAULO_TIMEZONE }));
+  saoPauloDate.setMonth(saoPauloDate.getMonth() + months);
+  saoPauloDate.setHours(12, 0, 0, 0);
+  // Ajustar para UTC considerando que SP é UTC-3
+  const utcDate = new Date(saoPauloDate.getTime() + (3 * 60 * 60 * 1000));
+  return utcDate.toISOString();
+}
+
+/**
+ * Adiciona anos a uma data (preserva incremento de calendário) e retorna string ISO segura
+ */
+export function addYearsAndGetISOSaoPaulo(date: Date, years: number): string {
+  const saoPauloDate = new Date(date.toLocaleString('en-US', { timeZone: SAO_PAULO_TIMEZONE }));
+  saoPauloDate.setFullYear(saoPauloDate.getFullYear() + years);
+  saoPauloDate.setHours(12, 0, 0, 0);
+  // Ajustar para UTC considerando que SP é UTC-3
+  const utcDate = new Date(saoPauloDate.getTime() + (3 * 60 * 60 * 1000));
+  return utcDate.toISOString();
 }

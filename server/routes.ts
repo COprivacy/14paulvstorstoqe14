@@ -16,6 +16,13 @@ import { logger, LogLevel } from "./logger";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { sql } from "drizzle-orm";
+import { 
+  getNowISOSaoPaulo, 
+  addDaysAndGetISOSaoPaulo, 
+  addMonthsAndGetISOSaoPaulo,
+  addYearsAndGetISOSaoPaulo,
+  parseDateToISOSaoPaulo 
+} from "./lib/dateUtils";
 
 // Middleware para verificar se o usuário é admin
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -184,9 +191,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Hash da senha ANTES de armazenar
       const hashedPassword = await bcrypt.hash(userData.senha, 10);
 
-      const dataCriacao = new Date().toISOString();
-      const dataExpiracao = new Date();
-      dataExpiracao.setDate(dataExpiracao.getDate() + 7);
+      // Usar funções de timezone de São Paulo para evitar problemas de data
+      const dataCriacao = getNowISOSaoPaulo();
+      const dataExpiracao = addDaysAndGetISOSaoPaulo(new Date(), 7);
 
       const userWithTrial = {
         ...userData,
@@ -194,8 +201,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         plano: "trial",
         is_admin: "true",
         data_criacao: dataCriacao,
-        data_expiracao_trial: dataExpiracao.toISOString(),
-        data_expiracao_plano: dataExpiracao.toISOString(),
+        data_expiracao_trial: dataExpiracao,
+        data_expiracao_plano: dataExpiracao,
         status: "ativo",
       };
 
@@ -838,8 +845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .json({ error: "Configuração de segurança incompleta" });
         }
 
-        const dataExpiracao = new Date();
-        dataExpiracao.setFullYear(dataExpiracao.getFullYear() + 10);
+        const dataExpiracaoMaster = addDaysAndGetISOSaoPaulo(new Date(), 3650); // 10 anos
 
         masterUser = await storage.createUser({
           nome: "Admin Master",
@@ -849,7 +855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           is_admin: "true",
           status: "ativo",
           max_funcionarios: 999,
-          data_expiracao_plano: dataExpiracao.toISOString(),
+          data_expiracao_plano: dataExpiracaoMaster,
         });
         if (process.env.NODE_ENV === "development") {
           console.log("✅ Usuário master criado com sucesso");
@@ -1348,21 +1354,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'ativo',
         status_pagamento: 'approved',
         mercadopago_payment_id: paymentId,
-        data_inicio: new Date().toISOString(),
+        data_inicio: getNowISOSaoPaulo(),
       });
 
-      // Atualizar plano do usuário
-      const dataVencimento = new Date();
-      if (subscription.plano === 'premium_mensal') {
-        dataVencimento.setMonth(dataVencimento.getMonth() + 1);
-      } else {
-        dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
-      }
+      // Atualizar plano do usuário - usar incremento de calendário
+      const dataVencimentoPlano = subscription.plano === 'premium_mensal' 
+        ? addMonthsAndGetISOSaoPaulo(new Date(), 1)
+        : addYearsAndGetISOSaoPaulo(new Date(), 1);
 
       await storage.updateUser(subscription.user_id, {
         plano: subscription.plano,
         status: 'ativo',
-        data_expiracao_plano: dataVencimento.toISOString(),
+        data_expiracao_plano: dataVencimentoPlano,
       });
 
       logger.info('Webhook de assinatura reprocessado manualmente', 'ADMIN_SUBSCRIPTIONS', {
@@ -1399,9 +1402,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Usuário não encontrado" });
       }
 
-      // Calcular data de expiração
-      const dataExpiracao = new Date();
-      dataExpiracao.setDate(dataExpiracao.getDate() + parseInt(dias));
+      // Calcular data de expiração usando timezone de São Paulo
+      const dataExpiracaoManual = addDaysAndGetISOSaoPaulo(new Date(), parseInt(dias));
 
       // Criar a assinatura
       const novaAssinatura = {
@@ -1411,9 +1413,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'ativo' as const,
         status_pagamento: 'approved',
         forma_pagamento: 'ATIVACAO_MANUAL',
-        data_inicio: new Date().toISOString(),
-        data_expiracao: dataExpiracao.toISOString(),
-        data_criacao: new Date().toISOString(),
+        data_inicio: getNowISOSaoPaulo(),
+        data_expiracao: dataExpiracaoManual,
+        data_criacao: getNowISOSaoPaulo(),
         external_reference: `MANUAL_${Date.now()}_${userId}`,
       };
 
@@ -1423,7 +1425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.updateUser(userId, {
         plano: plano,
         status: 'ativo',
-        data_expiracao_plano: dataExpiracao.toISOString(),
+        data_expiracao_plano: dataExpiracaoManual,
       });
 
       // Log da ação
@@ -3701,7 +3703,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         user_id: effectiveUserId,
         status: "pendente",
-        data_cadastro: new Date().toISOString(),
+        data_cadastro: getNowISOSaoPaulo(),
+        data_vencimento: req.body.data_vencimento ? parseDateToISOSaoPaulo(req.body.data_vencimento) : undefined,
       };
 
       const conta = await storage.createContaPagar(contaData);
@@ -3865,7 +3868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const conta = await storage.updateContaPagar(id, {
         status: "pago",
-        data_pagamento: new Date().toISOString(),
+        data_pagamento: getNowISOSaoPaulo(),
       });
       console.log(`✅ Conta a pagar marcada como paga: ID ${id}`);
       res.json(conta);
@@ -3914,7 +3917,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         user_id: effectiveUserId,
         status: "pendente",
-        data_cadastro: new Date().toISOString(),
+        data_cadastro: getNowISOSaoPaulo(),
+        data_vencimento: req.body.data_vencimento ? parseDateToISOSaoPaulo(req.body.data_vencimento) : undefined,
       };
 
       const conta = await storage.createContaReceber(contaData);
@@ -3976,7 +3980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const conta = await storage.updateContaReceber(id, {
         status: "recebido",
-        data_recebimento: new Date().toISOString(),
+        data_recebimento: getNowISOSaoPaulo(),
       });
       console.log(`✅ Conta a receber marcada como recebida: ID ${id}`);
       res.json(conta);
@@ -4322,16 +4326,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Se não está reutilizando, criar nova assinatura
       if (!reutilizandoAssinatura) {
-        const dataVencimento = new Date();
-        if (plano === "premium_mensal") {
-          dataVencimento.setMonth(dataVencimento.getMonth() + 1);
-        } else {
-          dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
-        }
+        // Usar incremento de calendário para preservar lógica de mês/ano
+        const dataVencimentoNovo = plano === "premium_mensal" 
+          ? addMonthsAndGetISOSaoPaulo(new Date(), 1)
+          : addYearsAndGetISOSaoPaulo(new Date(), 1);
 
         // Calcular prazo limite para pagamento (7 dias após criação)
-        const prazoLimitePagamento = new Date();
-        prazoLimitePagamento.setDate(prazoLimitePagamento.getDate() + 7);
+        const prazoLimitePagamentoNovo = addDaysAndGetISOSaoPaulo(new Date(), 7);
 
         // Criar registro de assinatura
         subscription = await storage.createSubscription({
@@ -4339,8 +4340,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           plano,
           status: "pendente",
           valor: valorFinal,
-          data_vencimento: dataVencimento.toISOString(),
-          prazo_limite_pagamento: prazoLimitePagamento.toISOString(),
+          data_vencimento: dataVencimentoNovo,
+          prazo_limite_pagamento: prazoLimitePagamentoNovo,
           tentativas_cobranca: 0,
           mercadopago_payment_id: preference.id,
           forma_pagamento: formaPagamento,
@@ -4915,9 +4916,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limiteAtual = user.max_funcionarios || 1;
       const novoLimite = limiteAtual + quantity;
 
-      // Calcular data de vencimento (30 dias)
-      const dataVencimento = new Date();
-      dataVencimento.setDate(dataVencimento.getDate() + 30);
+      // Calcular data de vencimento (30 dias) usando timezone de São Paulo
+      const dataVencimentoPacote = addDaysAndGetISOSaoPaulo(new Date(), 30);
 
       // Registrar pacote comprado
       const newPackage = await storage.createEmployeePackage({
@@ -4927,14 +4927,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         price: price || 0,
         status: "ativo",
         payment_id: `MANUAL_${Date.now()}`,
-        data_vencimento: dataVencimento.toISOString(),
+        data_vencimento: dataVencimentoPacote,
       });
 
       // Atualizar usuário
       await storage.updateUser(userId, {
         max_funcionarios: novoLimite,
         max_funcionarios_base: user.max_funcionarios_base || 1,
-        data_expiracao_pacote_funcionarios: dataVencimento.toISOString(),
+        data_expiracao_pacote_funcionarios: dataVencimentoPacote,
       });
 
       // Reativar funcionários bloqueados
@@ -5169,8 +5169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const limiteAtual = user.max_funcionarios || 1;
         const novoLimite = limiteAtual + quantidadeAdicional;
-        const dataVencimento = new Date();
-        dataVencimento.setDate(dataVencimento.getDate() + 30);
+        const dataVencimentoReprocess = addDaysAndGetISOSaoPaulo(new Date(), 30);
 
         // Registrar pacote
         if (storage.createEmployeePackage) {
@@ -5181,7 +5180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
             status: "ativo",
             payment_id: paymentId.toString(),
-            data_vencimento: dataVencimento.toISOString(),
+            data_vencimento: dataVencimentoReprocess,
           });
         }
 
@@ -5189,7 +5188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateUser(userId, {
           max_funcionarios: novoLimite,
           max_funcionarios_base: user.max_funcionarios_base || 1,
-          data_expiracao_pacote_funcionarios: dataVencimento.toISOString(),
+          data_expiracao_pacote_funcionarios: dataVencimentoReprocess,
         });
 
         // Reativar funcionários bloqueados
@@ -5452,9 +5451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const limiteAtual = user.max_funcionarios || 1;
               const novoLimite = limiteAtual + quantidadeAdicional;
 
-              // Calcular data de vencimento (30 dias)
-              const dataVencimento = new Date();
-              dataVencimento.setDate(dataVencimento.getDate() + 30);
+              // Calcular data de vencimento (30 dias) usando timezone de São Paulo
+              const dataVencimentoWebhook = addDaysAndGetISOSaoPaulo(new Date(), 30);
 
               // Registrar pacote comprado (usar valor real do pagamento quando disponível)
               if (storage.createEmployeePackage) {
@@ -5465,7 +5463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   price: paymentData.transaction_amount || pacotePrecos[pacoteId] || 0,
                   status: "ativo",
                   payment_id: paymentId.toString(),
-                  data_vencimento: dataVencimento.toISOString(),
+                  data_vencimento: dataVencimentoWebhook,
                 });
               }
 
@@ -5473,7 +5471,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.updateUser(userId, {
                 max_funcionarios: novoLimite,
                 max_funcionarios_base: user.max_funcionarios_base || 1,
-                data_expiracao_pacote_funcionarios: dataVencimento.toISOString(),
+                data_expiracao_pacote_funcionarios: dataVencimentoWebhook,
               });
 
               // Reativar funcionários bloqueados POR FALTA DE LIMITE
