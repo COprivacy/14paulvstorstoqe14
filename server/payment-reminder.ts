@@ -11,7 +11,7 @@ export class PaymentReminderService {
   private emailService: EmailService;
   private config: PaymentReminderConfig = {
     daysBeforeExpiration: [7, 3, 1], // Avisos antes do vencimento
-    daysAfterExpiration: [1, 3], // Avisos após vencimento (dia 1 e 3)
+    daysAfterExpiration: [1, 3, 4], // Avisos após vencimento (ajustado para 4 dias)
   };
 
   constructor() {
