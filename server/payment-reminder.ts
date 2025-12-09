@@ -146,7 +146,7 @@ export class PaymentReminderService {
         userName: user.nome,
         planName: subscription.plano,
         daysWaiting: daysSinceCreation,
-        amount: subscription.valor,
+        amount: Number(subscription.valor) || 0,
       });
 
       // Incrementar tentativas de cobrança
@@ -201,7 +201,7 @@ export class PaymentReminderService {
       planName: subscription.plano,
       daysRemaining,
       expirationDate: new Date(subscription.data_vencimento!).toLocaleDateString('pt-BR'),
-      amount: subscription.valor,
+      amount: Number(subscription.valor) || 0,
     });
 
     logger.info('Aviso de vencimento enviado', 'PAYMENT_REMINDER', {
@@ -222,7 +222,7 @@ export class PaymentReminderService {
       userName: user.nome,
       planName: subscription.plano,
       daysOverdue,
-      amount: subscription.valor,
+      amount: Number(subscription.valor) || 0,
     });
 
     logger.warn('Notificação de atraso enviada', 'PAYMENT_REMINDER', {

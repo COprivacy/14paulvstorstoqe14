@@ -11,6 +11,21 @@ const logger = {
   error: (message: string, context: string, data?: any) => console.error(`[${context}] ${message}`, data),
 };
 
+/**
+ * Formata um valor monetário de forma segura, tratando null, undefined, strings e números
+ * Retorna sempre um número formatado com 2 casas decimais
+ */
+function formatCurrency(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) {
+    return '0,00';
+  }
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(numValue)) {
+    return '0,00';
+  }
+  return numValue.toFixed(2).replace('.', ',');
+}
+
 
 interface EmailConfig {
   from: string;
@@ -372,7 +387,7 @@ export class EmailService {
                       <span style="color: #0369a1; font-size: 14px;">Valor Total</span>
                     </td>
                     <td align="right" style="padding: 16px 0 0 0;">
-                      <strong style="color: #0ea5e9; font-size: 22px; font-weight: 700;">R$ ${config.price.toFixed(2)}</strong>
+                      <strong style="color: #0ea5e9; font-size: 22px; font-weight: 700;">R$ ${formatCurrency(config.price)}</strong>
                     </td>
                   </tr>
                 </table>
@@ -497,7 +512,7 @@ export class EmailService {
                       <span style="color: #64748b; font-size: 14px;">Valor Pago</span>
                     </td>
                     <td align="right" style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
-                      <strong style="color: #1e293b; font-size: 14px;">R$ ${config.price.toFixed(2)}</strong>
+                      <strong style="color: #1e293b; font-size: 14px;">R$ ${formatCurrency(config.price)}</strong>
                     </td>
                   </tr>
                   <tr>
@@ -698,7 +713,7 @@ export class EmailService {
                       <span style="color: #92400e; font-size: 14px;">Valor</span>
                     </td>
                     <td align="right" style="padding: 10px 0;">
-                      <strong style="color: #f59e0b; font-size: 22px;">R$ ${config.amount.toFixed(2)}</strong>
+                      <strong style="color: #f59e0b; font-size: 22px;">R$ ${formatCurrency(config.amount)}</strong>
                     </td>
                   </tr>
                   <tr>
@@ -816,7 +831,7 @@ export class EmailService {
                       <span style="color: #0369a1; font-size: 14px;">Valor da Renovação</span>
                     </td>
                     <td align="right" style="padding: 16px 0 0 0;">
-                      <strong style="color: #0ea5e9; font-size: 22px;">R$ ${config.amount.toFixed(2)}</strong>
+                      <strong style="color: #0ea5e9; font-size: 22px;">R$ ${formatCurrency(config.amount)}</strong>
                     </td>
                   </tr>
                 </table>
@@ -924,7 +939,7 @@ export class EmailService {
                       <span style="color: #991b1b; font-size: 14px;">Valor em Aberto</span>
                     </td>
                     <td align="right" style="padding: 16px 0 0 0;">
-                      <strong style="color: #ef4444; font-size: 22px;">R$ ${config.amount.toFixed(2)}</strong>
+                      <strong style="color: #ef4444; font-size: 22px;">R$ ${formatCurrency(config.amount)}</strong>
                     </td>
                   </tr>
                 </table>
