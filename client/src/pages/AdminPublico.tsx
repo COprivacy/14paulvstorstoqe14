@@ -695,12 +695,41 @@ function MercadoPagoConfigTab() {
               <div className="flex items-start gap-3">
                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5" />
                 <div className="flex-1">
-                  <p className="font-semibold text-green-700 dark:text-green-400">Webhook Configurado</p>
+                  <p className="font-semibold text-green-700 dark:text-green-400">Webhook Configurado no Sistema</p>
                   <p className="text-sm text-green-600 dark:text-green-300 mt-1 break-all">
                     {mpConfigData.webhook_url}
                   </p>
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-2">
-                    ✅ Configure esta URL no painel do Mercado Pago quando tiver seu domínio premium
+                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-900">
+                    <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 mb-2">
+                      📋 Passos para ativar webhooks no Mercado Pago:
+                    </p>
+                    <ol className="text-xs text-blue-600 dark:text-blue-300 space-y-1 ml-4 list-decimal">
+                      <li>Acesse <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" rel="noopener noreferrer" className="underline">Painel do Mercado Pago</a></li>
+                      <li>Vá em "Suas aplicações" → Selecione sua aplicação</li>
+                      <li>Clique em "Webhooks" no menu lateral</li>
+                      <li>Cole a URL acima no campo de webhook</li>
+                      <li>Marque os eventos: <strong>payment</strong> e <strong>merchant_order</strong></li>
+                      <li>Clique em "Salvar"</li>
+                    </ol>
+                  </div>
+                  <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-900">
+                    <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                      ⚠️ <strong>Importante:</strong> Tanto planos quanto pacotes de funcionários usam o mesmo webhook. Certifique-se de configurá-lo no Mercado Pago para ambos funcionarem.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(!mpConfigData || !mpConfigData.webhook_url) && (
+            <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-900">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-semibold text-yellow-700 dark:text-yellow-400">Webhook Não Configurado</p>
+                  <p className="text-sm text-yellow-600 dark:text-yellow-300 mt-1">
+                    Configure a URL do webhook acima para que os pagamentos de planos e pacotes de funcionários sejam processados automaticamente.
                   </p>
                 </div>
               </div>
