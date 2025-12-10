@@ -326,9 +326,8 @@ function UserEditDialog({
             {user ? "Salvar Alterações" : "Criar Usuário"}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+      </Dialog>
+    );
 }
 
 // Componente de Gestão Avançada de Usuários
@@ -3288,164 +3287,6 @@ export default function AdminPublico() {
                 </Card>
               </div>
 
-              {/* Filtros e Busca */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>Filtros</CardTitle>
-                    <div className="flex gap-2">
-                      {subscriptions.filter(s => s.status === 'cancelado').length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={async () => {
-                            const canceladas = subscriptions.filter(s => s.status === 'cancelado');
-
-                            if (canceladas.length === 0) {
-                              toast({
-                                title: "Nenhuma assinatura",
-                                description: "Não há assinaturas canceladas para remover",
-                              });
-                              return;
-                            }
-
-                            if (!confirm(`Remover ${canceladas.length} assinatura(s) cancelada(s)?`)) {
-                              return;
-                            }
-
-                            try {
-                              const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-                              await Promise.all(
-                                canceladas.map(s => 
-                                  fetch(`/api/subscriptions/${s.id}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      'x-user-id': currentUser.id || user?.id || '',
-                                      'x-is-admin': 'true',
-                                    },
-                                  })
-                                )
-                              );
-
-                              toast({
-                                title: "✅ Assinaturas removidas!",
-                                description: `${canceladas.length} assinatura(s) deletada(s)`,
-                              });
-
-                              queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-                            } catch (error: any) {
-                              toast({
-                                title: "❌ Erro ao limpar",
-                                description: error.message || "Não foi possível remover todas as assinaturas",
-                                variant: "destructive",
-                              });
-                            }
-                          }}
-                          data-testid="button-clean-cancelled"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Limpar Canceladas ({subscriptions.filter(s => s.status === 'cancelado').length})
-                        </Button>
-                      )}
-                      {subscriptions.filter(s => 
-                        s.status === 'pendente' && 
-                        s.prazo_limite_pagamento && 
-                        new Date(s.prazo_limite_pagamento) < new Date()
-                      ).length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-orange-600 hover:text-orange-700"
-                          onClick={async () => {
-                            const expiradas = subscriptions.filter(s => 
-                              s.status === 'pendente' && 
-                              s.prazo_limite_pagamento && 
-                              new Date(s.prazo_limite_pagamento) < new Date()
-                            );
-                            if (confirm(`Tem certeza que deseja cancelar ${expiradas.length} assinatura(s) pendente(s) com prazo expirado?`)) {
-                              try {
-                                const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-                                for (const sub of expiradas) {
-                                  const response = await fetch(`/api/subscriptions/${sub.id}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                      'Content-Type': 'application/json',
-                                      'x-user-id': currentUser.id || user?.id || '',
-                                      'x-is-admin': 'true',
-                                    },
-                                  });
-
-                                  if (!response.ok) {
-                                    throw new Error('Erro ao cancelar assinatura');
-                                  }
-                                }
-                                toast({
-                                  title: "Assinaturas canceladas",
-                                  description: `${expiradas.length} assinatura(s) pendente(s) expirada(s) removida(s)`,
-                                });
-                                queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-                              } catch (error) {
-                                toast({
-                                  title: "Erro ao cancelar",
-                                  description: "Não foi possível cancelar todas as assinaturas",
-                                  variant: "destructive",
-                                });
-                              }
-                            }
-                          }}
-                          data-testid="button-cancel-expired-pending"
-                        >
-                          <Clock className="h-4 w-4 mr-2" />
-                          Cancelar Expiradas ({subscriptions.filter(s => 
-                            s.status === 'pendente' && 
-                            s.prazo_limite_pagamento && 
-                            new Date(s.prazo_limite_pagamento) < new Date()
-                          ).length})
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex-1 min-w-[200px]">
-                      <Label>Buscar</Label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Nome, email ou payment ID..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-9"
-                          data-testid="input-search-subscriptions"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="w-[200px]">
-                      <Label>Status</Label>
-                      <Select 
-                        value={subscriptionFilterStatus} 
-                        onValueChange={setSubscriptionFilterStatus}
-                      >
-                        <SelectTrigger data-testid="select-filter-status-subscriptions">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="todos">Todos</SelectItem>
-                          <SelectItem value="ativo">Ativos</SelectItem>
-                          <SelectItem value="pendente">Pendentes</SelectItem>
-                          <SelectItem value="cancelado">Cancelados</SelectItem>
-                          <SelectItem value="expirado">Expirados</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Tabela de Assinaturas */}
               <Card>
                 <CardHeader>
@@ -4368,7 +4209,7 @@ export default function AdminPublico() {
                         <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Pendentes</p>
                         <p className="text-3xl font-bold text-slate-900 dark:text-white">{assinaturasPendentes}</p>
                         <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                          Aguardando pagamento
+                          Aguardandopagamento
                         </p>
                       </div>
                       <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-full">
