@@ -326,6 +326,7 @@ function UserEditDialog({
             {user ? "Salvar Alterações" : "Criar Usuário"}
           </Button>
         </DialogFooter>
+      </DialogContent>
       </Dialog>
     );
 }
