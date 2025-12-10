@@ -7,6 +7,13 @@ A web application for Brazilian small businesses, offering inventory management,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**2025-12-10:** Added System Maintenance Tab to Admin Panel:
+- New "Manutenção" tab in /admin-publico for database health monitoring
+- Added 4 maintenance API endpoints: analyze, fix-expired-users, cleanup-subscriptions, run-full
+- MaintenanceTab component shows statistics and allows running maintenance actions
+- Features: Analyze inconsistencies, block expired users, clean orphan subscriptions, run full maintenance
+- Displays detailed analysis results with color-coded severity levels
+
 **2025-11-30:** Fixed Dashboard and Devoluções integration:
 - Dashboard "Vendas Hoje" now correctly subtracts approved devoluções (returns)
 - All sales metrics (daily, weekly trends, monthly comparisons) now account for returns

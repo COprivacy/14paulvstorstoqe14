@@ -103,6 +103,7 @@ export interface IStorage {
   getSubscriptionsByUser?(userId: string): Promise<Subscription[]>;
   createSubscription?(subscription: InsertSubscription): Promise<Subscription>;
   updateSubscription?(id: number, updates: Partial<Subscription>): Promise<Subscription | undefined>;
+  deleteSubscription?(id: number): Promise<boolean>;
 
   // Métodos para Funcionários e Permissões
   getFuncionarios(): Promise<Funcionario[]>;

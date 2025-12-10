@@ -741,6 +741,401 @@ function MercadoPagoConfigTab() {
   );
 }
 
+// Componente de Manutenção do Sistema
+function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions: any[] }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isFixing, setIsFixing] = useState(false);
+  const [isCleaning, setIsCleaning] = useState(false);
+  const [isRunningFull, setIsRunningFull] = useState(false);
+
+  const [user] = useState(() => JSON.parse(localStorage.getItem("user") || "{}"));
+
+  const getAdminHeaders = () => ({
+    'Content-Type': 'application/json',
+    'x-user-id': user.id || '',
+    'x-user-type': 'usuario',
+    'x-is-admin': 'true',
+  });
+
+  const analyzeDatabase = async () => {
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch('/api/admin/maintenance/analyze', {
+        headers: getAdminHeaders(),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao analisar');
+      }
+      const data = await response.json();
+      setAnalysisData(data);
+      toast({
+        title: "Análise concluída",
+        description: `${data.resumo.totalInconsistencias} inconsistência(s) encontrada(s)`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro na análise",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const fixExpiredUsers = async () => {
+    setIsFixing(true);
+    try {
+      const response = await fetch('/api/admin/maintenance/fix-expired-users', {
+        method: 'POST',
+        headers: getAdminHeaders(),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao corrigir');
+      }
+      const data = await response.json();
+      toast({
+        title: "Correção concluída",
+        description: `${data.corrigidos} usuário(s) expirado(s) bloqueado(s)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      setAnalysisData(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro na correção",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsFixing(false);
+    }
+  };
+
+  const cleanupSubscriptions = async () => {
+    setIsCleaning(true);
+    try {
+      const response = await fetch('/api/admin/maintenance/cleanup-subscriptions', {
+        method: 'POST',
+        headers: getAdminHeaders(),
+        body: JSON.stringify({ removerOrfas: true, removerPendentesAntigas: true, diasPendente: 7 }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro ao limpar');
+      }
+      const data = await response.json();
+      toast({
+        title: "Limpeza concluída",
+        description: `${data.removidas} assinatura(s) removida(s)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/subscriptions'] });
+      setAnalysisData(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro na limpeza",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCleaning(false);
+    }
+  };
+
+  const runFullMaintenance = async () => {
+    setIsRunningFull(true);
+    try {
+      const response = await fetch('/api/admin/maintenance/run-full', {
+        method: 'POST',
+        headers: getAdminHeaders(),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro na manutenção');
+      }
+      const data = await response.json();
+      toast({
+        title: "Manutenção completa",
+        description: `${data.usuariosCorrigidos} usuário(s) corrigido(s), ${data.assinaturasLimpas} assinatura(s) limpa(s)`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/subscriptions'] });
+      setAnalysisData(null);
+    } catch (error: any) {
+      toast({
+        title: "Erro na manutenção",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsRunningFull(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-purple-200 dark:border-purple-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-6 w-6 text-purple-600" />
+            Manutenção do Sistema
+          </CardTitle>
+          <CardDescription>
+            Ferramentas para analisar e corrigir inconsistências no banco de dados, limpar dados órfãos e manter o sistema funcionando corretamente.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      {/* Estatísticas Rápidas */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{users.length}</p>
+              <p className="text-sm text-muted-foreground">Total Usuários</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{subscriptions.length}</p>
+              <p className="text-sm text-muted-foreground">Total Assinaturas</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-amber-600">
+                {subscriptions.filter(s => s.status === 'pendente').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Pendentes</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">
+                {users.filter(u => u.status === 'bloqueado').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Bloqueados</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Ações de Manutenção */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-blue-600" />
+            Ações de Manutenção
+          </CardTitle>
+          <CardDescription>
+            Execute análises e correções no banco de dados
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="border-dashed">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <Search className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Analisar Inconsistências</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Verifica usuários expirados, assinaturas órfãs, duplicadas e outros problemas.
+                    </p>
+                    <Button 
+                      onClick={analyzeDatabase} 
+                      disabled={isAnalyzing}
+                      className="w-full"
+                      data-testid="button-analyze"
+                    >
+                      {isAnalyzing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Analisar Banco de Dados
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-dashed">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                    <Ban className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Bloquear Usuários Expirados</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Bloqueia automaticamente contas com plano vencido que ainda estão ativas.
+                    </p>
+                    <Button 
+                      onClick={fixExpiredUsers} 
+                      disabled={isFixing}
+                      variant="outline"
+                      className="w-full"
+                      data-testid="button-fix-expired"
+                    >
+                      {isFixing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Corrigir Usuários Expirados
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-dashed">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Limpar Assinaturas</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Remove assinaturas órfãs e pendentes há mais de 7 dias.
+                    </p>
+                    <Button 
+                      onClick={cleanupSubscriptions} 
+                      disabled={isCleaning}
+                      variant="outline"
+                      className="w-full"
+                      data-testid="button-cleanup"
+                    >
+                      {isCleaning && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Limpar Assinaturas
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-dashed border-purple-200 dark:border-purple-800">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <Zap className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Manutenção Completa</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Executa todas as correções de uma só vez (recomendado).
+                    </p>
+                    <Button 
+                      onClick={runFullMaintenance} 
+                      disabled={isRunningFull}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                      data-testid="button-full-maintenance"
+                    >
+                      {isRunningFull && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      Executar Manutenção Completa
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Resultados da Análise */}
+      {analysisData && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-green-600" />
+              Resultado da Análise
+            </CardTitle>
+            <CardDescription>
+              Análise realizada em {format(new Date(analysisData.dataAnalise), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Resumo */}
+            <div className="grid gap-4 md:grid-cols-3 mb-6">
+              <div className={`p-4 rounded-lg ${analysisData.resumo.criticas > 0 ? 'bg-red-50 dark:bg-red-900/20 border border-red-200' : 'bg-green-50 dark:bg-green-900/20 border border-green-200'}`}>
+                <div className="flex items-center gap-2">
+                  <AlertCircle className={`h-5 w-5 ${analysisData.resumo.criticas > 0 ? 'text-red-600' : 'text-green-600'}`} />
+                  <span className="font-semibold">Problemas Críticos</span>
+                </div>
+                <p className="text-2xl font-bold mt-2">{analysisData.resumo.criticas}</p>
+              </div>
+              <div className={`p-4 rounded-lg ${analysisData.resumo.avisos > 0 ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200' : 'bg-green-50 dark:bg-green-900/20 border border-green-200'}`}>
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className={`h-5 w-5 ${analysisData.resumo.avisos > 0 ? 'text-amber-600' : 'text-green-600'}`} />
+                  <span className="font-semibold">Avisos</span>
+                </div>
+                <p className="text-2xl font-bold mt-2">{analysisData.resumo.avisos}</p>
+              </div>
+              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200">
+                <div className="flex items-center gap-2">
+                  <Trash2 className="h-5 w-5 text-blue-600" />
+                  <span className="font-semibold">Para Limpeza</span>
+                </div>
+                <p className="text-2xl font-bold mt-2">{analysisData.resumo.limpeza}</p>
+              </div>
+            </div>
+
+            {/* Lista de Inconsistências */}
+            {analysisData.inconsistencias.length > 0 ? (
+              <div className="space-y-2">
+                <h4 className="font-semibold mb-3">Detalhes das Inconsistências:</h4>
+                <div className="max-h-[400px] overflow-y-auto space-y-2">
+                  {analysisData.inconsistencias.map((item: any, index: number) => (
+                    <div 
+                      key={index} 
+                      className={`p-3 rounded-lg border ${
+                        item.tipo.includes('expirado') || item.tipo.includes('bloqueado') 
+                          ? 'bg-red-50 dark:bg-red-900/10 border-red-200' 
+                          : item.tipo.includes('pendente') || item.tipo.includes('duplicada')
+                          ? 'bg-amber-50 dark:bg-amber-900/10 border-amber-200'
+                          : 'bg-gray-50 dark:bg-gray-900/10 border-gray-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <Badge variant={
+                            item.tipo.includes('expirado') || item.tipo.includes('bloqueado') ? 'destructive' :
+                            item.tipo.includes('pendente') || item.tipo.includes('duplicada') ? 'secondary' : 'outline'
+                          }>
+                            {item.tipo.replace(/_/g, ' ')}
+                          </Badge>
+                          <p className="text-sm mt-1">{item.descricao}</p>
+                          {item.email && <p className="text-xs text-muted-foreground">Email: {item.email}</p>}
+                          {item.plano && <p className="text-xs text-muted-foreground">Plano: {item.plano}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Alert className="bg-green-50 border-green-200">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <AlertTitle className="text-green-800">Sistema Saudável</AlertTitle>
+                <AlertDescription className="text-green-700">
+                  Nenhuma inconsistência encontrada no banco de dados.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 // Componente de Promoções
 function PromocoesTab() {
   const { toast } = useToast();
@@ -2265,7 +2660,7 @@ export default function AdminPublico() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClientFor360, setSelectedClientFor360] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'assinaturas_funcionarios' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'assinaturas_funcionarios' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes' | 'manutencao'>('dashboard');
   const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('mercadopago');
   const [userEditDialogOpen, setUserEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -2783,6 +3178,18 @@ export default function AdminPublico() {
           >
             <DollarSign className="h-5 w-5 mr-3" />
             {sidebarOpen && "Promoções"}
+          </Button>
+          <Button
+            variant="ghost"
+            className={`w-full justify-start hover:bg-slate-700 ${!selectedClientFor360 && activeTab === 'manutencao' ? 'bg-slate-700' : ''}`}
+            onClick={() => {
+              setSelectedClientFor360(null);
+              setActiveTab('manutencao');
+            }}
+            data-testid="button-nav-manutencao"
+          >
+            <Zap className="h-5 w-5 mr-3" />
+            {sidebarOpen && "Manutenção"}
           </Button>
         </nav>
 
@@ -4150,6 +4557,9 @@ export default function AdminPublico() {
                 </CardContent>
               </Card>
             </div>
+          ) : activeTab === 'manutencao' ? (
+            // Aba de Manutenção do Sistema
+            <MaintenanceTab users={users} subscriptions={subscriptions} />
           ) : (
             // Dashboard Principal
             <>

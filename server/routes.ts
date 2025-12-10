@@ -23,6 +23,8 @@ import {
   addYearsAndGetISOSaoPaulo,
   parseDateToISOSaoPaulo 
 } from "./lib/dateUtils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Middleware para verificar se o usuário é admin
 async function requireAdmin(req: Request, res: Response, next: NextFunction) {
@@ -2292,6 +2294,344 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== ENDPOINTS DE MANUTENÇÃO DO SISTEMA ==========
+
+  // Endpoint para analisar inconsistências no banco de dados
+  app.get("/api/admin/maintenance/analyze", requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      const subscriptions = await storage.getSubscriptions();
+      const now = new Date();
+
+      const inconsistencias: any[] = [];
+      const estatisticas = {
+        totalUsuarios: users.length,
+        totalAssinaturas: subscriptions.length,
+        usuariosExpiradosAtivos: 0,
+        assinaturasPendentesAntigas: 0,
+        assinaturasOrfas: 0,
+        assinaturasDuplicadas: 0,
+        usuariosSemAtividade: 0,
+        contasBloqueadasComAssinaturaAtiva: 0
+      };
+
+      // 1. Verificar usuários com plano expirado mas status ativo
+      for (const user of users) {
+        if (user.is_admin === 'true') continue;
+        
+        const dataExp = user.data_expiracao_plano || user.data_expiracao_trial;
+        if (dataExp && user.status === 'ativo') {
+          const expDate = new Date(dataExp);
+          if (now > expDate) {
+            estatisticas.usuariosExpiradosAtivos++;
+            inconsistencias.push({
+              tipo: 'usuario_expirado_ativo',
+              userId: user.id,
+              email: user.email,
+              plano: user.plano,
+              dataExpiracao: dataExp,
+              status: user.status,
+              descricao: `Usuário com plano expirado (${format(expDate, 'dd/MM/yyyy', { locale: ptBR })}) mas ainda ativo`
+            });
+          }
+        }
+      }
+
+      // 2. Verificar assinaturas pendentes antigas (mais de 7 dias)
+      const seteDiasAtras = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      for (const sub of subscriptions) {
+        if (sub.status === 'pendente' && sub.data_criacao) {
+          const dataCriacao = new Date(sub.data_criacao);
+          if (dataCriacao < seteDiasAtras) {
+            estatisticas.assinaturasPendentesAntigas++;
+            inconsistencias.push({
+              tipo: 'assinatura_pendente_antiga',
+              subscriptionId: sub.id,
+              userId: sub.user_id,
+              plano: sub.plano,
+              valor: sub.valor,
+              dataCriacao: sub.data_criacao,
+              descricao: `Assinatura pendente há mais de 7 dias`
+            });
+          }
+        }
+      }
+
+      // 3. Verificar assinaturas órfãs (sem usuário correspondente)
+      const userIds = new Set(users.map(u => u.id));
+      for (const sub of subscriptions) {
+        if (!userIds.has(sub.user_id)) {
+          estatisticas.assinaturasOrfas++;
+          inconsistencias.push({
+            tipo: 'assinatura_orfa',
+            subscriptionId: sub.id,
+            userId: sub.user_id,
+            plano: sub.plano,
+            descricao: 'Assinatura sem usuário correspondente'
+          });
+        }
+      }
+
+      // 4. Verificar assinaturas duplicadas por usuário (múltiplas ativas)
+      const assinaturasAtivasPorUsuario: Record<string, any[]> = {};
+      for (const sub of subscriptions) {
+        if (sub.status === 'ativo') {
+          if (!assinaturasAtivasPorUsuario[sub.user_id]) {
+            assinaturasAtivasPorUsuario[sub.user_id] = [];
+          }
+          assinaturasAtivasPorUsuario[sub.user_id].push(sub);
+        }
+      }
+      for (const [userId, subs] of Object.entries(assinaturasAtivasPorUsuario)) {
+        if (subs.length > 1) {
+          estatisticas.assinaturasDuplicadas += subs.length - 1;
+          inconsistencias.push({
+            tipo: 'assinaturas_duplicadas',
+            userId,
+            quantidade: subs.length,
+            assinaturas: subs.map(s => ({ id: s.id, plano: s.plano, valor: s.valor })),
+            descricao: `Usuário com ${subs.length} assinaturas ativas`
+          });
+        }
+      }
+
+      // 5. Verificar contas bloqueadas com assinatura ativa
+      for (const user of users) {
+        if (user.status === 'bloqueado') {
+          const assinaturaAtiva = subscriptions.find(s => s.user_id === user.id && s.status === 'ativo');
+          if (assinaturaAtiva) {
+            estatisticas.contasBloqueadasComAssinaturaAtiva++;
+            inconsistencias.push({
+              tipo: 'bloqueado_com_assinatura_ativa',
+              userId: user.id,
+              email: user.email,
+              subscriptionId: assinaturaAtiva.id,
+              descricao: 'Usuário bloqueado mas com assinatura ativa'
+            });
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        dataAnalise: now.toISOString(),
+        estatisticas,
+        inconsistencias,
+        resumo: {
+          totalInconsistencias: inconsistencias.length,
+          criticas: estatisticas.usuariosExpiradosAtivos + estatisticas.contasBloqueadasComAssinaturaAtiva,
+          avisos: estatisticas.assinaturasPendentesAntigas + estatisticas.assinaturasDuplicadas,
+          limpeza: estatisticas.assinaturasOrfas
+        }
+      });
+
+    } catch (error: any) {
+      logger.error('[MAINTENANCE] Erro ao analisar inconsistências', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Endpoint para corrigir usuários expirados
+  app.post("/api/admin/maintenance/fix-expired-users", requireAdmin, async (req, res) => {
+    try {
+      const adminId = req.headers["x-user-id"] as string;
+      const users = await storage.getUsers();
+      const now = new Date();
+      let corrigidos = 0;
+      const detalhes: any[] = [];
+
+      for (const user of users) {
+        if (user.is_admin === 'true') continue;
+        
+        const dataExp = user.data_expiracao_plano || user.data_expiracao_trial;
+        if (dataExp && user.status === 'ativo') {
+          const expDate = new Date(dataExp);
+          if (now > expDate) {
+            await storage.updateUser(user.id, { status: 'bloqueado' });
+            
+            // Bloquear funcionários também
+            if (storage.getFuncionarios) {
+              const funcionarios = await storage.getFuncionarios();
+              const funcsDaConta = funcionarios.filter(f => f.conta_id === user.id);
+              for (const func of funcsDaConta) {
+                await storage.updateFuncionario(func.id, { status: 'bloqueado' });
+              }
+            }
+            
+            corrigidos++;
+            detalhes.push({
+              userId: user.id,
+              email: user.email,
+              plano: user.plano,
+              dataExpiracao: dataExp
+            });
+          }
+        }
+      }
+
+      await storage.logAdminAction?.(
+        adminId,
+        "MAINTENANCE_FIX_EXPIRED",
+        `Manutenção: ${corrigidos} usuário(s) expirado(s) bloqueado(s)`,
+        req
+      );
+
+      res.json({
+        success: true,
+        corrigidos,
+        detalhes
+      });
+
+    } catch (error: any) {
+      logger.error('[MAINTENANCE] Erro ao corrigir usuários expirados', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Endpoint para limpar assinaturas órfãs e pendentes antigas
+  app.post("/api/admin/maintenance/cleanup-subscriptions", requireAdmin, async (req, res) => {
+    try {
+      const adminId = req.headers["x-user-id"] as string;
+      const { removerOrfas = true, removerPendentesAntigas = true, diasPendente = 7 } = req.body;
+      
+      const users = await storage.getUsers();
+      const subscriptions = await storage.getSubscriptions();
+      const userIds = new Set(users.map(u => u.id));
+      const now = new Date();
+      const limiteData = new Date(now.getTime() - diasPendente * 24 * 60 * 60 * 1000);
+      
+      let removidas = 0;
+      const detalhes: any[] = [];
+
+      for (const sub of subscriptions) {
+        let remover = false;
+        let motivo = '';
+
+        // Remover assinaturas órfãs
+        if (removerOrfas && !userIds.has(sub.user_id)) {
+          remover = true;
+          motivo = 'órfã';
+        }
+
+        // Remover assinaturas pendentes antigas
+        if (removerPendentesAntigas && sub.status === 'pendente' && sub.data_criacao) {
+          const dataCriacao = new Date(sub.data_criacao);
+          if (dataCriacao < limiteData) {
+            remover = true;
+            motivo = `pendente há mais de ${diasPendente} dias`;
+          }
+        }
+
+        if (remover && storage.deleteSubscription) {
+          await storage.deleteSubscription(sub.id);
+          removidas++;
+          detalhes.push({
+            id: sub.id,
+            userId: sub.user_id,
+            plano: sub.plano,
+            motivo
+          });
+        }
+      }
+
+      await storage.logAdminAction?.(
+        adminId,
+        "MAINTENANCE_CLEANUP_SUBS",
+        `Manutenção: ${removidas} assinatura(s) removida(s)`,
+        req
+      );
+
+      res.json({
+        success: true,
+        removidas,
+        detalhes
+      });
+
+    } catch (error: any) {
+      logger.error('[MAINTENANCE] Erro ao limpar assinaturas', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Endpoint para executar manutenção completa
+  app.post("/api/admin/maintenance/run-full", requireAdmin, async (req, res) => {
+    try {
+      const adminId = req.headers["x-user-id"] as string;
+      const resultados: any = {
+        usuariosCorrigidos: 0,
+        assinaturasLimpas: 0,
+        erros: []
+      };
+
+      // 1. Corrigir usuários expirados
+      try {
+        const users = await storage.getUsers();
+        const now = new Date();
+        
+        for (const user of users) {
+          if (user.is_admin === 'true') continue;
+          
+          const dataExp = user.data_expiracao_plano || user.data_expiracao_trial;
+          if (dataExp && user.status === 'ativo') {
+            const expDate = new Date(dataExp);
+            if (now > expDate) {
+              await storage.updateUser(user.id, { status: 'bloqueado' });
+              resultados.usuariosCorrigidos++;
+            }
+          }
+        }
+      } catch (err: any) {
+        resultados.erros.push(`Erro ao corrigir usuários: ${err.message}`);
+      }
+
+      // 2. Limpar assinaturas problemáticas
+      try {
+        const users = await storage.getUsers();
+        const subscriptions = await storage.getSubscriptions();
+        const userIds = new Set(users.map(u => u.id));
+        const now = new Date();
+        const seteDiasAtras = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        for (const sub of subscriptions) {
+          let remover = false;
+
+          // Órfãs
+          if (!userIds.has(sub.user_id)) remover = true;
+
+          // Pendentes antigas
+          if (sub.status === 'pendente' && sub.data_criacao) {
+            const dataCriacao = new Date(sub.data_criacao);
+            if (dataCriacao < seteDiasAtras) remover = true;
+          }
+
+          if (remover && storage.deleteSubscription) {
+            await storage.deleteSubscription(sub.id);
+            resultados.assinaturasLimpas++;
+          }
+        }
+      } catch (err: any) {
+        resultados.erros.push(`Erro ao limpar assinaturas: ${err.message}`);
+      }
+
+      await storage.logAdminAction?.(
+        adminId,
+        "MAINTENANCE_FULL",
+        `Manutenção completa: ${resultados.usuariosCorrigidos} usuários corrigidos, ${resultados.assinaturasLimpas} assinaturas limpas`,
+        req
+      );
+
+      res.json({
+        success: true,
+        ...resultados
+      });
+
+    } catch (error: any) {
+      logger.error('[MAINTENANCE] Erro na manutenção completa', { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ========== FIM DOS ENDPOINTS DE MANUTENÇÃO ==========
 
   // Endpoint para testar configuração do Mercado Pago
   app.post("/api/config-mercadopago/test", async (req, res) => {
