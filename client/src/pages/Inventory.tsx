@@ -1530,44 +1530,44 @@ export default function Inventory() {
           )}
 
           {produtosVencimento.aVencer30Dias.length > 0 && (
-            <Card className="border-yellow-200">
+            <Card className="border-yellow-200 dark:border-yellow-800">
               <CardHeader>
-                <CardTitle className="text-yellow-900 flex items-center gap-2">
+                <CardTitle className="text-yellow-900 dark:text-yellow-100 flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
                   Produtos a Vencer (próximos 30 dias)
                 </CardTitle>
-                <CardDescription className="text-yellow-700">
+                <CardDescription className="text-yellow-700 dark:text-yellow-300">
                   Priorize a venda destes produtos
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border border-yellow-200">
+                <div className="rounded-md border border-yellow-200 dark:border-yellow-800">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Produto</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead className="text-center">Quantidade</TableHead>
-                        <TableHead>Data Vencimento</TableHead>
-                        <TableHead>Dias Restantes</TableHead>
-                        <TableHead className="text-right">Valor Total</TableHead>
+                      <TableRow className="bg-yellow-100 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-800">
+                        <TableHead className="text-yellow-900 dark:text-yellow-100">Produto</TableHead>
+                        <TableHead className="text-yellow-900 dark:text-yellow-100">Categoria</TableHead>
+                        <TableHead className="text-center text-yellow-900 dark:text-yellow-100">Quantidade</TableHead>
+                        <TableHead className="text-yellow-900 dark:text-yellow-100">Data Vencimento</TableHead>
+                        <TableHead className="text-yellow-900 dark:text-yellow-100">Dias Restantes</TableHead>
+                        <TableHead className="text-right text-yellow-900 dark:text-yellow-100">Valor Total</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {produtosVencimento.aVencer30Dias.map((produto) => {
                         const diasRestantes = Math.ceil((new Date(produto.vencimento!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
                         return (
-                          <TableRow key={produto.id} className="bg-yellow-50">
-                            <TableCell className="font-medium">{produto.nome}</TableCell>
-                            <TableCell>{produto.categoria}</TableCell>
-                            <TableCell className="text-center">{produto.quantidade}</TableCell>
-                            <TableCell>{new Date(produto.vencimento!).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableRow key={produto.id} className="bg-yellow-50 dark:bg-yellow-950/20 hover:bg-yellow-100 dark:hover:bg-yellow-950/30">
+                            <TableCell className="font-medium text-gray-900 dark:text-gray-100">{produto.nome}</TableCell>
+                            <TableCell className="text-gray-700 dark:text-gray-300">{produto.categoria}</TableCell>
+                            <TableCell className="text-center text-gray-900 dark:text-gray-100">{produto.quantidade}</TableCell>
+                            <TableCell className="text-gray-700 dark:text-gray-300">{new Date(produto.vencimento!).toLocaleDateString('pt-BR')}</TableCell>
                             <TableCell>
-                              <Badge variant={diasRestantes <= 7 ? "destructive" : "default"} className="bg-yellow-500">
+                              <Badge variant={diasRestantes <= 7 ? "destructive" : "default"} className={diasRestantes <= 7 ? "" : "bg-yellow-500 dark:bg-yellow-600 text-white"}>
                                 {diasRestantes} dias
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-right font-semibold text-yellow-600">
+                            <TableCell className="text-right font-semibold text-yellow-700 dark:text-yellow-400">
                               R$ {(produto.preco * produto.quantidade).toFixed(2)}
                             </TableCell>
                           </TableRow>
