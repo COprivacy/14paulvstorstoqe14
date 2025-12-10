@@ -3835,6 +3835,9 @@ export default function AdminPublico() {
                 </DialogContent>
               </Dialog>
             </div>
+          ) : activeTab === 'promocoes' ? (
+            // Aba de Promoções
+            <PromocoesTab />
           ) : activeTab === 'assinaturas_funcionarios' ? (
             // Aba de Assinaturas de Funcionários
             <div className="space-y-6">
