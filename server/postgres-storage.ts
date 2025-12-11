@@ -475,7 +475,7 @@ export class PostgresStorage implements IStorage {
       ...insertUser,
       id: randomUUID(),
       data_criacao: new Date().toISOString(),
-      plano: this.normalizePlanName(insertUser.plano || 'free'),
+      plano: this.normalizePlanName(insertUser.plano || 'trial'),
     };
     const result = await this.db.insert(users).values(newUser).returning();
     return result[0];
@@ -483,7 +483,6 @@ export class PostgresStorage implements IStorage {
 
   private normalizePlanName(plano: string): string {
     const planMap: Record<string, string> = {
-      'free': 'free',
       'trial': 'trial',
       'mensal': 'premium_mensal',
       'anual': 'premium_anual',
@@ -491,7 +490,7 @@ export class PostgresStorage implements IStorage {
       'premium_mensal': 'premium_mensal',
       'premium_anual': 'premium_anual'
     };
-    return planMap[plano.toLowerCase()] || 'free';
+    return planMap[plano.toLowerCase()] || 'trial';
   }
 
   async updateUser(id: string, updates: Partial<User>): Promise<User | undefined> {

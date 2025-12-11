@@ -116,7 +116,7 @@ function UserEditDialog({
     nome: user?.nome || "",
     email: user?.email || "",
     senha: "",
-    plano: user?.plano || "free",
+    plano: user?.plano || "trial",
     status: user?.status || "ativo",
     cpf_cnpj: user?.cpf_cnpj || "",
     telefone: user?.telefone || "",
@@ -131,7 +131,7 @@ function UserEditDialog({
         nome: user.nome || "",
         email: user.email || "",
         senha: "",
-        plano: user.plano || "free",
+        plano: user.plano || "trial",
         status: user.status || "ativo",
         cpf_cnpj: user.cpf_cnpj || "",
         telefone: user.telefone || "",
@@ -222,11 +222,9 @@ function UserEditDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
                   <SelectItem value="trial">Trial</SelectItem>
                   <SelectItem value="premium_mensal">Premium Mensal</SelectItem>
                   <SelectItem value="premium_anual">Premium Anual</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -475,11 +473,9 @@ function GestaoAvancadaTab({ users }: { users: User[] }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos os Planos</SelectItem>
-                  <SelectItem value="free">Free</SelectItem>
                   <SelectItem value="trial">Trial</SelectItem>
                   <SelectItem value="premium_mensal">Premium Mensal</SelectItem>
                   <SelectItem value="premium_anual">Premium Anual</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -2842,7 +2838,7 @@ export default function AdminPublico() {
       `⚠️ ATENÇÃO: Cancelamento Imediato\n\n` +
       `Ao cancelar esta assinatura:\n\n` +
       `✓ O usuário será BLOQUEADO IMEDIATAMENTE\n` +
-      `✓ Plano será revertido para FREE\n` +
+      `✓ Conta será BLOQUEADA\n` +
       `✓ TODOS os funcionários serão bloqueados\n` +
       `✓ Pacotes de funcionários serão cancelados\n` +
       `✓ Limite de funcionários será revertido para 1\n` +
@@ -2909,7 +2905,6 @@ export default function AdminPublico() {
     });
 
     const colors: Record<string, string> = {
-      free: "#94a3b8",
       trial: "#60a5fa",
       mensal: "#3b82f6",
       premium_mensal: "#3b82f6",
@@ -2960,7 +2955,7 @@ export default function AdminPublico() {
     return () => window.removeEventListener('open-limpar-logs', handleOpenLimparLogs);
   }, []);
 
-  const planosFreeCount = users.filter(u => u.plano === 'free' || u.plano === 'trial').length;
+  const planosTrialCount = users.filter(u => u.plano === 'trial').length;
 
   const handleLimparLogs = () => {
     limparLogsMutation.mutate();
@@ -3297,7 +3292,7 @@ export default function AdminPublico() {
                     return (
                       <PlanExpirationCountdown
                         expirationDate={cliente.data_expiracao_plano || cliente.data_expiracao_trial}
-                        planName={cliente.plano === "trial" ? "Trial" : cliente.plano === "premium_mensal" ? "Premium Mensal" : cliente.plano === "premium_anual" ? "Premium Anual" : "Free"}
+                        planName={cliente.plano === "trial" ? "Trial" : cliente.plano === "premium_mensal" ? "Premium Mensal" : cliente.plano === "premium_anual" ? "Premium Anual" : "Trial"}
                         status={cliente.status || "ativo"}
                       />
                     );
@@ -3328,7 +3323,7 @@ export default function AdminPublico() {
                         <>
                           <div>
                             <p className="text-sm text-muted-foreground">Plano Atual</p>
-                            <p className="font-semibold">{client.plano || 'Free'}</p>
+                            <p className="font-semibold">{client.plano || 'Trial'}</p>
                           </div>
                           <div>
                             <p className="text-sm text-muted-foreground">Status</p>
@@ -3425,10 +3420,9 @@ export default function AdminPublico() {
                               <TableCell>
                                 <Badge variant="outline">
                                   {user.plano === "trial" && "Trial"}
-                                  {user.plano === "free" && "Free"}
                                   {user.plano === "premium_mensal" && "Premium Mensal"}
                                   {user.plano === "premium_anual" && "Premium Anual"}
-                                  {!["trial", "free", "premium_mensal", "premium_anual"].includes(user.plano) && "Free"}
+                                  {!["trial", "premium_mensal", "premium_anual"].includes(user.plano) && "Trial"}
                                 </Badge>
                               </TableCell>
                               <TableCell>{getStatusBadge(user.status || 'expirado')}</TableCell>
@@ -4182,10 +4176,10 @@ export default function AdminPublico() {
 
                     <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20">
                       <div>
-                        <p className="font-semibold text-purple-900 dark:text-purple-100">Planos Free/Trial</p>
-                        <p className="text-xs text-purple-700 dark:text-purple-300">Usuários no plano gratuito</p>
+                        <p className="font-semibold text-purple-900 dark:text-purple-100">Planos Trial</p>
+                        <p className="text-xs text-purple-700 dark:text-purple-300">Usuários no período de teste</p>
                       </div>
-                      <Badge variant="secondary" className="text-lg">{planosFreeCount}</Badge>
+                      <Badge variant="secondary" className="text-lg">{planosTrialCount}</Badge>
                     </div>
 
                     <div className="flex items-center justify-between p-4 border rounded-lg hover:shadow-md transition-shadow bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20">
@@ -4440,7 +4434,7 @@ export default function AdminPublico() {
                                 <Badge variant={user?.plano === 'premium_mensal' || user?.plano === 'premium_anual' ? 'default' : 'secondary'}>
                                   {user?.plano === 'premium_mensal' ? 'Premium Mensal' :
                                    user?.plano === 'premium_anual' ? 'Premium Anual' :
-                                   user?.plano === 'trial' ? 'Trial' : 'Free'}
+                                   user?.plano === 'trial' ? 'Trial' : 'Trial'}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -4757,10 +4751,9 @@ export default function AdminPublico() {
                               <TableCell>
                                 <Badge variant="outline">
                                   {user.plano === "trial" && "Trial"}
-                                  {user.plano === "free" && "Free"}
                                   {user.plano === "premium_mensal" && "Premium Mensal"}
                                   {user.plano === "premium_anual" && "Premium Anual"}
-                                  {!["trial", "free", "premium_mensal", "premium_anual"].includes(user.plano) && "Free"}
+                                  {!["trial", "premium_mensal", "premium_anual"].includes(user.plano) && "Trial"}
                                 </Badge>
                               </TableCell>
                               <TableCell>{getStatusBadge(user.status || 'expirado')}</TableCell>

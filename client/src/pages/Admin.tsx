@@ -979,10 +979,9 @@ export default function Admin() {
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Plano</p>
                   <Badge variant={currentUser.plano === "premium_mensal" || currentUser.plano === "premium_anual" ? "default" : "secondary"} className="text-sm px-3 py-1 bg-gradient-to-r from-purple-600 to-pink-600 border-0">
                     {currentUser.plano === "trial" && "Trial (7 dias grátis)"}
-                    {currentUser.plano === "free" && "Gratuito"}
                     {currentUser.plano === "premium_mensal" && "Premium Mensal"}
                     {currentUser.plano === "premium_anual" && "Premium Anual"}
-                    {!["trial", "free", "premium_mensal", "premium_anual"].includes(currentUser.plano) && "Gratuito"}
+                    {!["trial", "premium_mensal", "premium_anual"].includes(currentUser.plano) && "Trial"}
                   </Badge>
                 </div>
                 {(currentUser.data_expiracao_plano || currentUser.data_expiracao_trial) && (() => {

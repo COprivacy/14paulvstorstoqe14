@@ -301,18 +301,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       let userAtualizado = user;
 
-      // Verificar se é trial ou free e se está expirado
-      if ((user.plano === 'trial' || user.plano === 'free') && !user.is_admin) {
+      // Verificar se é trial e se está expirado (não existe mais plano free)
+      if (user.plano === 'trial' && user.is_admin !== 'true') {
         const dataExpiracao = user.data_expiracao_plano || user.data_expiracao_trial;
 
         if (dataExpiracao) {
           const expirationDate = new Date(dataExpiracao);
 
           if (now >= expirationDate && user.status !== 'bloqueado') {
-            // Trial/Free expirado - bloquear usuário
+            // Trial expirado - bloquear usuário imediatamente (sem converter para free)
             await storage.updateUser(user.id, {
-              status: 'bloqueado',
-              plano: 'free'
+              status: 'bloqueado'
             });
 
             // Bloquear funcionários também
@@ -969,7 +968,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         email: user.email,
         nome: user.nome,
-        plano: user.plano || "free",
+        plano: user.plano || "trial",
         is_admin: user.is_admin || "false",
         data_criacao: user.data_criacao || null,
         data_expiracao_trial: user.data_expiracao_trial || null,
@@ -1516,9 +1515,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data_atualizacao: new Date().toISOString(),
       });
 
-      // 2. Bloquear usuário e reverter plano para free
+      // 2. Bloquear usuário (não converter para free - mantém plano anterior como referência)
       await storage.updateUser(subscription.user_id, {
-        plano: 'free',
         status: 'bloqueado',
         data_expiracao_plano: null,
         data_expiracao_trial: null,
@@ -1955,7 +1953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let fixedCount = 0;
 
       for (const user of users) {
-        if (user.data_expiracao_trial && user.plano === "free") {
+        if (user.data_expiracao_trial && user.status === "bloqueado") {
           const expirationDate = new Date(user.data_expiracao_trial);
           const now = new Date();
 
@@ -2119,8 +2117,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
       let statusAtualizado = false;
 
-      // Verificar expiração de plano
-      if ((user.plano === 'trial' || user.plano === 'free') && user.is_admin !== 'true') {
+      // Verificar expiração de plano (não existe mais plano free)
+      if (user.plano === 'trial' && user.is_admin !== 'true') {
         const dataExpiracao = user.data_expiracao_plano || user.data_expiracao_trial;
 
         if (dataExpiracao) {
@@ -4847,7 +4845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           nome,
           email,
           senha: senhaTemporaria,
-          plano: "free",
+          plano: "trial",
           is_admin: "false",
           status: "ativo",
         });
@@ -6309,10 +6307,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           reason || "Cancelado manualmente pelo administrador",
       });
 
-      // Atualizar usuário para plano free
+      // Bloquear usuário (não existe mais plano free)
       await storage.updateUser(subscription.user_id, {
-        plano: 'free',
-        status: 'ativo',
+        status: 'bloqueado',
       });
 
       console.log(
@@ -6409,10 +6406,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.motivo_cancelamento = motivo || 'Cancelado pelo administrador';
         updateData.status_pagamento = 'cancelled';
         
-        // Atualizar usuário para plano free
+        // Bloquear usuário (não existe mais plano free)
         await storage.updateUser(subscription.user_id, {
-          plano: 'free',
-          status: 'ativo',
+          status: 'bloqueado',
         });
       }
 

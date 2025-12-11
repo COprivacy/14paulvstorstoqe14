@@ -32,8 +32,8 @@ export function TrialExpiredModal() {
     // Usuários premium não expiram
     if (isPremium()) return false;
 
-    // Verificar expiração para trial e free
-    if (user.plano === 'trial' || user.plano === 'free') {
+    // Verificar expiração para trial (não existe mais plano free)
+    if (user.plano === 'trial') {
       if (user.data_expiracao_plano) {
         const now = new Date();
         const expirationDate = new Date(user.data_expiracao_plano);

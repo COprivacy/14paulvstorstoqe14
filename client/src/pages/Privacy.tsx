@@ -256,10 +256,10 @@ export default function Privacy() {
                   <h2 className="text-2xl font-semibold mb-4 text-blue-600">5. Planos e Pagamentos</h2>
                   <div className="space-y-3 text-gray-700">
                     <p>
-                      5.1. Oferecemos diferentes planos de assinatura (Trial, Free, Premium Mensal e Premium Anual).
+                      5.1. Oferecemos diferentes planos de assinatura (Trial, Premium Mensal e Premium Anual).
                     </p>
                     <p>
-                      5.2. O período de trial gratuito é de 7 dias. Após esse período, você pode escolher um plano pago ou continuar no plano gratuito com funcionalidades limitadas.
+                      5.2. O período de trial gratuito é de 7 dias. Após esse período, você deve escolher um plano pago para continuar usando o sistema. Caso contrário, sua conta será bloqueada.
                     </p>
                     <p>
                       5.3. Os pagamentos são processados através do Mercado Pago.
@@ -286,7 +286,7 @@ export default function Privacy() {
                   <h2 className="text-2xl font-semibold mb-4 text-blue-600">6. Gestão de Funcionários e Acessos</h2>
                   <div className="space-y-3 text-gray-700">
                     <p>
-                      6.1. <strong>Hierarquia de Planos:</strong> O plano principal (Trial, Free, Premium Mensal ou Premium Anual) é a base do sistema. Pacotes de funcionários são complementares e dependem de um plano base ativo.
+                      6.1. <strong>Hierarquia de Planos:</strong> O plano principal (Trial, Premium Mensal ou Premium Anual) é a base do sistema. Pacotes de funcionários são complementares e dependem de um plano base ativo.
                     </p>
                     <p>
                       6.2. <strong>Bloqueio Automático por Expiração do Plano Principal:</strong> 

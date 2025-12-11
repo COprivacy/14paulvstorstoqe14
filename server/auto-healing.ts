@@ -434,7 +434,7 @@ class AutoHealingService {
     try {
       const users = await storage.getUsers();
       const blockedWithActivePlan = users.filter(
-        u => u.status === 'bloqueado' && u.plano && u.plano !== 'free'
+        u => u.status === 'bloqueado' && u.plano && u.plano !== 'trial' && (u.plano === 'premium_mensal' || u.plano === 'premium_anual')
       );
 
       if (blockedWithActivePlan.length > 0) {
@@ -598,14 +598,14 @@ class AutoHealingService {
       logger.info('Corrigindo usuários sem plano...', 'AUTO_HEALING', { count: users.length });
 
       for (const user of users) {
-        await storage.updateUser(user.id, { plano: 'free' });
+        await storage.updateUser(user.id, { plano: 'trial' });
       }
 
       logger.info('✅ Planos corrigidos automaticamente', 'AUTO_HEALING', { count: users.length });
 
       return {
         success: true,
-        message: `${users.length} usuários corrigidos para plano free`,
+        message: `${users.length} usuários corrigidos para plano trial`,
         action: 'fix_user_plans'
       };
     } catch (error: any) {

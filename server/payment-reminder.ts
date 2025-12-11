@@ -76,8 +76,8 @@ export class PaymentReminderService {
 
       // Verificar usuários trial expirados (sem assinatura)
       for (const user of users) {
-        // Apenas usuários trial ou free
-        if (user.plano === 'trial' || user.plano === 'free') {
+        // Apenas usuários trial (não existe mais plano free)
+        if (user.plano === 'trial') {
           const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
 
           if (expirationDate) {
@@ -360,15 +360,14 @@ export class PaymentReminderService {
 
   /**
    * Bloqueia usuário trial expirado
-   * IMPORTANTE: Quando o trial expira, TODOS os funcionários devem ser bloqueados,
-   * independente de pacotes de funcionários. O trial é o plano base.
+   * IMPORTANTE: Quando o trial expira, a conta é bloqueada IMEDIATAMENTE.
+   * Não existe mais o plano "free" - o usuário deve contratar um plano pago.
    */
   private async blockExpiredTrialUser(user: any): Promise<void> {
     await storage.updateUser(user.id, {
       status: 'bloqueado',
-      plano: 'free',
-      data_expiracao_trial: null,
-      data_expiracao_plano: null,
+      // NÃO converter para 'free' - manter como trial bloqueado
+      // O usuário precisa contratar um plano para reativar
     });
 
     // REGRA CRÍTICA: Bloquear TODOS os funcionários quando trial expira

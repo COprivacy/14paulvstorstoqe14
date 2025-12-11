@@ -74,7 +74,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
                   <span className="font-semibold text-gray-900 dark:text-white">
                     {user?.plano === "trial" ? "Trial Gratuito" : 
                      user?.plano === "premium_mensal" ? "Premium Mensal" :
-                     user?.plano === "premium_anual" ? "Premium Anual" : "Free"}
+                     user?.plano === "premium_anual" ? "Premium Anual" : "Trial"}
                   </span>
                 </div>
                 {user?.data_expiracao_plano && (

@@ -9,7 +9,7 @@ async function normalizePlans() {
     let fixedCount = 0;
     
     const planMap: Record<string, string> = {
-      'free': 'free',
+      'free': 'trial',  // Migrar plano free para trial (free não existe mais)
       'trial': 'trial',
       'mensal': 'premium_mensal',
       'anual': 'premium_anual',
@@ -20,10 +20,15 @@ async function normalizePlans() {
     
     for (const user of users) {
       if (!user.plano || user.plano === '') {
-        // Usuários sem plano viram free
-        await storage.updateUser(user.id, { plano: 'free' });
+        // Usuários sem plano viram trial (não existe mais free)
+        await storage.updateUser(user.id, { plano: 'trial' });
         fixedCount++;
-        console.log(`✅ Usuário ${user.email} atualizado: (vazio) → free`);
+        console.log(`✅ Usuário ${user.email} atualizado: (vazio) → trial`);
+      } else if (user.plano === 'free') {
+        // Migrar usuários com plano 'free' para 'trial'
+        await storage.updateUser(user.id, { plano: 'trial' });
+        fixedCount++;
+        console.log(`✅ Usuário ${user.email} atualizado: free → trial`);
       } else if (planMap[user.plano.toLowerCase()] && planMap[user.plano.toLowerCase()] !== user.plano) {
         // Normalizar planos antigos
         const newPlan = planMap[user.plano.toLowerCase()];
