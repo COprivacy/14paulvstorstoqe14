@@ -742,7 +742,7 @@ function MercadoPagoConfigTab() {
 }
 
 // Componente de Manutenção do Sistema
-function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions: any[] }) {
+function MaintenanceTab({ users, subscriptions, employeePackages = [] }: { users: User[], subscriptions: any[], employeePackages?: any[] }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [analysisData, setAnalysisData] = useState<any>(null);
@@ -822,18 +822,20 @@ function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions
       const response = await fetch('/api/admin/maintenance/cleanup-subscriptions', {
         method: 'POST',
         headers: getAdminHeaders(),
-        body: JSON.stringify({ removerOrfas: true, removerPendentesAntigas: true, diasPendente: 7 }),
+        body: JSON.stringify({ removerOrfas: true, removerPendentesAntigas: true, diasPendente: 7, incluirPacotesFuncionarios: true }),
       });
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || 'Erro ao limpar');
       }
       const data = await response.json();
+      const pacotesMsg = data.pacotesRemovidos > 0 ? `, ${data.pacotesRemovidos} pacote(s) de funcionários` : '';
       toast({
         title: "Limpeza concluída",
-        description: `${data.removidas} assinatura(s) removida(s)`,
+        description: `${data.removidas} assinatura(s) removida(s)${pacotesMsg}`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/employee-packages'] });
       setAnalysisData(null);
     } catch (error: any) {
       toast({
@@ -858,12 +860,16 @@ function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions
         throw new Error(errorData.error || 'Erro na manutenção');
       }
       const data = await response.json();
+      const pacotesMsg = (data.pacotesFuncionariosLimpos > 0 || data.pacotesFuncionariosExpiradosCorrigidos > 0) 
+        ? `, ${data.pacotesFuncionariosLimpos || 0} pacote(s) limpo(s), ${data.pacotesFuncionariosExpiradosCorrigidos || 0} expirado(s)` 
+        : '';
       toast({
         title: "Manutenção completa",
-        description: `${data.usuariosCorrigidos} usuário(s) corrigido(s), ${data.assinaturasLimpas} assinatura(s) limpa(s)`,
+        description: `${data.usuariosCorrigidos} usuário(s), ${data.assinaturasLimpas} assinatura(s)${pacotesMsg}`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/subscriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/employee-packages'] });
       setAnalysisData(null);
     } catch (error: any) {
       toast({
@@ -892,7 +898,7 @@ function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions
       </Card>
 
       {/* Estatísticas Rápidas */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
@@ -905,7 +911,15 @@ function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-green-600">{subscriptions.length}</p>
-              <p className="text-sm text-muted-foreground">Total Assinaturas</p>
+              <p className="text-sm text-muted-foreground">Assinaturas Plano</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">{employeePackages.length}</p>
+              <p className="text-sm text-muted-foreground">Pacotes Funcionários</p>
             </div>
           </CardContent>
         </Card>
@@ -913,9 +927,9 @@ function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions
           <CardContent className="pt-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-amber-600">
-                {subscriptions.filter(s => s.status === 'pendente').length}
+                {subscriptions.filter(s => s.status === 'pendente').length + employeePackages.filter(p => p.status === 'pendente').length}
               </p>
-              <p className="text-sm text-muted-foreground">Pendentes</p>
+              <p className="text-sm text-muted-foreground">Pendentes (Total)</p>
             </div>
           </CardContent>
         </Card>
@@ -953,7 +967,7 @@ function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions
                   <div className="flex-1">
                     <h4 className="font-semibold">Analisar Inconsistências</h4>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Verifica usuários expirados, assinaturas órfãs, duplicadas e outros problemas.
+                      Verifica usuários expirados, assinaturas órfãs, duplicadas, pacotes de funcionários e outros problemas.
                     </p>
                     <Button 
                       onClick={analyzeDatabase} 
@@ -1002,9 +1016,9 @@ function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions
                     <Trash2 className="h-6 w-6 text-red-600" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold">Limpar Assinaturas</h4>
+                    <h4 className="font-semibold">Limpar Assinaturas e Pacotes</h4>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Remove assinaturas órfãs e pendentes há mais de 7 dias.
+                      Remove assinaturas e pacotes de funcionários órfãos ou pendentes há mais de 7 dias.
                     </p>
                     <Button 
                       onClick={cleanupSubscriptions} 
@@ -1030,7 +1044,7 @@ function MaintenanceTab({ users, subscriptions }: { users: User[], subscriptions
                   <div className="flex-1">
                     <h4 className="font-semibold">Manutenção Completa</h4>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Executa todas as correções de uma só vez (recomendado).
+                      Executa todas as correções de uma só vez, incluindo assinaturas e pacotes de funcionários (recomendado).
                     </p>
                     <Button 
                       onClick={runFullMaintenance} 
@@ -4559,7 +4573,7 @@ export default function AdminPublico() {
             </div>
           ) : activeTab === 'manutencao' ? (
             // Aba de Manutenção do Sistema
-            <MaintenanceTab users={users} subscriptions={subscriptions} />
+            <MaintenanceTab users={users} subscriptions={subscriptions} employeePackages={employeePackages} />
           ) : (
             // Dashboard Principal
             <>

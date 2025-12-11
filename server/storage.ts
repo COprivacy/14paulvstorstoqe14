@@ -207,7 +207,9 @@ export interface IStorage {
   // Employee Packages - Pacotes de funcionários
   createEmployeePackage?(data: any): Promise<any>;
   getEmployeePackages?(userId: string): Promise<any[]>;
+  getAllEmployeePackages?(): Promise<any[]>;
   updateEmployeePackageStatus?(packageId: number, status: string, dataCancelamento?: string): Promise<any>;
+  deleteEmployeePackage?(packageId: number): Promise<boolean>;
 
   // Cupons e Promoções
   getCupons?(): Promise<any[]>;

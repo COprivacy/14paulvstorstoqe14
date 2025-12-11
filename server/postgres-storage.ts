@@ -1815,6 +1815,34 @@ export class PostgresStorage implements IStorage {
     }
   }
 
+  async getAllEmployeePackages(): Promise<any[]> {
+    try {
+      const result = await this.db.execute(sql`
+        SELECT * FROM employee_packages 
+        ORDER BY data_compra DESC
+      `);
+      return result.rows;
+    } catch (error) {
+      logger.error('[DB] Erro ao buscar todos os pacotes de funcionários:', { error });
+      return [];
+    }
+  }
+
+  async deleteEmployeePackage(packageId: number): Promise<boolean> {
+    try {
+      const result = await this.db
+        .delete(employeePackages)
+        .where(eq(employeePackages.id, packageId))
+        .returning();
+      
+      logger.info('[DB] Pacote de funcionários deletado', { packageId });
+      return result.length > 0;
+    } catch (error: any) {
+      logger.error('[DB] Erro ao deletar pacote de funcionários:', { error: error.message, packageId });
+      return false;
+    }
+  }
+
   async getClientInteractions(userId: string, limit = 50, offset = 0): Promise<ClientInteraction[]> {
     const results = await this.db
       .select()

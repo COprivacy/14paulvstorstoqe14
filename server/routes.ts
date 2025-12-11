@@ -2304,15 +2304,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const now = new Date();
 
       const inconsistencias: any[] = [];
+      
+      // Obter pacotes de funcionários para análise
+      const employeePackages = storage.getAllEmployeePackages ? await storage.getAllEmployeePackages() : [];
+      
       const estatisticas = {
         totalUsuarios: users.length,
         totalAssinaturas: subscriptions.length,
+        totalPacotesFuncionarios: employeePackages.length,
         usuariosExpiradosAtivos: 0,
         assinaturasPendentesAntigas: 0,
         assinaturasOrfas: 0,
         assinaturasDuplicadas: 0,
         usuariosSemAtividade: 0,
-        contasBloqueadasComAssinaturaAtiva: 0
+        contasBloqueadasComAssinaturaAtiva: 0,
+        pacotesFuncionariosExpirados: 0,
+        pacotesFuncionariosOrfaos: 0,
+        pacotesFuncionariosPendentes: 0
       };
 
       // 1. Verificar usuários com plano expirado mas status ativo
@@ -2412,6 +2420,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // 6. Verificar pacotes de funcionários expirados mas ainda ativos
+      for (const pkg of employeePackages) {
+        if (pkg.status === 'ativo' && pkg.data_vencimento) {
+          const dataVenc = new Date(pkg.data_vencimento);
+          if (now > dataVenc) {
+            estatisticas.pacotesFuncionariosExpirados++;
+            inconsistencias.push({
+              tipo: 'pacote_funcionario_expirado',
+              packageId: pkg.id,
+              userId: pkg.user_id,
+              packageType: pkg.package_type,
+              dataVencimento: pkg.data_vencimento,
+              descricao: `Pacote de funcionário expirado (${format(dataVenc, 'dd/MM/yyyy', { locale: ptBR })}) mas ainda ativo`
+            });
+          }
+        }
+      }
+
+      // 7. Verificar pacotes de funcionários órfãos (sem usuário correspondente)
+      for (const pkg of employeePackages) {
+        if (!userIds.has(pkg.user_id)) {
+          estatisticas.pacotesFuncionariosOrfaos++;
+          inconsistencias.push({
+            tipo: 'pacote_funcionario_orfao',
+            packageId: pkg.id,
+            userId: pkg.user_id,
+            packageType: pkg.package_type,
+            descricao: 'Pacote de funcionário sem usuário correspondente'
+          });
+        }
+      }
+
+      // 8. Verificar pacotes de funcionários pendentes antigos (mais de 7 dias)
+      for (const pkg of employeePackages) {
+        if (pkg.status === 'pendente' && pkg.data_compra) {
+          const dataCompra = new Date(pkg.data_compra);
+          if (dataCompra < seteDiasAtras) {
+            estatisticas.pacotesFuncionariosPendentes++;
+            inconsistencias.push({
+              tipo: 'pacote_funcionario_pendente_antigo',
+              packageId: pkg.id,
+              userId: pkg.user_id,
+              packageType: pkg.package_type,
+              dataCompra: pkg.data_compra,
+              descricao: 'Pacote de funcionário pendente há mais de 7 dias'
+            });
+          }
+        }
+      }
+
       res.json({
         success: true,
         dataAnalise: now.toISOString(),
@@ -2419,9 +2477,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inconsistencias,
         resumo: {
           totalInconsistencias: inconsistencias.length,
-          criticas: estatisticas.usuariosExpiradosAtivos + estatisticas.contasBloqueadasComAssinaturaAtiva,
-          avisos: estatisticas.assinaturasPendentesAntigas + estatisticas.assinaturasDuplicadas,
-          limpeza: estatisticas.assinaturasOrfas
+          criticas: estatisticas.usuariosExpiradosAtivos + estatisticas.contasBloqueadasComAssinaturaAtiva + estatisticas.pacotesFuncionariosExpirados,
+          avisos: estatisticas.assinaturasPendentesAntigas + estatisticas.assinaturasDuplicadas + estatisticas.pacotesFuncionariosPendentes,
+          limpeza: estatisticas.assinaturasOrfas + estatisticas.pacotesFuncionariosOrfaos
         }
       });
 
@@ -2488,21 +2546,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para limpar assinaturas órfãs e pendentes antigas
+  // Endpoint para limpar assinaturas órfãs e pendentes antigas (inclui pacotes de funcionários)
   app.post("/api/admin/maintenance/cleanup-subscriptions", requireAdmin, async (req, res) => {
     try {
       const adminId = req.headers["x-user-id"] as string;
-      const { removerOrfas = true, removerPendentesAntigas = true, diasPendente = 7 } = req.body;
+      const { removerOrfas = true, removerPendentesAntigas = true, diasPendente = 7, incluirPacotesFuncionarios = true } = req.body;
       
       const users = await storage.getUsers();
       const subscriptions = await storage.getSubscriptions();
+      const employeePackages = storage.getAllEmployeePackages ? await storage.getAllEmployeePackages() : [];
       const userIds = new Set(users.map(u => u.id));
       const now = new Date();
       const limiteData = new Date(now.getTime() - diasPendente * 24 * 60 * 60 * 1000);
       
       let removidas = 0;
+      let pacotesRemovidos = 0;
       const detalhes: any[] = [];
 
+      // Limpar assinaturas do plano principal
       for (const sub of subscriptions) {
         let remover = false;
         let motivo = '';
@@ -2526,6 +2587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.deleteSubscription(sub.id);
           removidas++;
           detalhes.push({
+            tipo: 'assinatura',
             id: sub.id,
             userId: sub.user_id,
             plano: sub.plano,
@@ -2534,16 +2596,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Limpar pacotes de funcionários
+      if (incluirPacotesFuncionarios && storage.deleteEmployeePackage) {
+        for (const pkg of employeePackages) {
+          let remover = false;
+          let motivo = '';
+
+          // Remover pacotes órfãos
+          if (removerOrfas && !userIds.has(pkg.user_id)) {
+            remover = true;
+            motivo = 'órfão';
+          }
+
+          // Remover pacotes pendentes antigos
+          if (removerPendentesAntigas && pkg.status === 'pendente' && pkg.data_compra) {
+            const dataCompra = new Date(pkg.data_compra);
+            if (dataCompra < limiteData) {
+              remover = true;
+              motivo = `pendente há mais de ${diasPendente} dias`;
+            }
+          }
+
+          if (remover) {
+            await storage.deleteEmployeePackage(pkg.id);
+            pacotesRemovidos++;
+            detalhes.push({
+              tipo: 'pacote_funcionario',
+              id: pkg.id,
+              userId: pkg.user_id,
+              packageType: pkg.package_type,
+              motivo
+            });
+          }
+        }
+      }
+
       await storage.logAdminAction?.(
         adminId,
         "MAINTENANCE_CLEANUP_SUBS",
-        `Manutenção: ${removidas} assinatura(s) removida(s)`,
+        `Manutenção: ${removidas} assinatura(s) e ${pacotesRemovidos} pacote(s) de funcionários removido(s)`,
         req
       );
 
       res.json({
         success: true,
         removidas,
+        pacotesRemovidos,
+        totalRemovidos: removidas + pacotesRemovidos,
         detalhes
       });
 
@@ -2553,13 +2652,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para executar manutenção completa
+  // Endpoint para executar manutenção completa (inclui pacotes de funcionários)
   app.post("/api/admin/maintenance/run-full", requireAdmin, async (req, res) => {
     try {
       const adminId = req.headers["x-user-id"] as string;
       const resultados: any = {
         usuariosCorrigidos: 0,
         assinaturasLimpas: 0,
+        pacotesFuncionariosLimpos: 0,
+        pacotesFuncionariosExpiradosCorrigidos: 0,
         erros: []
       };
 
@@ -2613,10 +2714,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         resultados.erros.push(`Erro ao limpar assinaturas: ${err.message}`);
       }
 
+      // 3. Corrigir e limpar pacotes de funcionários
+      try {
+        if (storage.getAllEmployeePackages) {
+          const users = await storage.getUsers();
+          const employeePackages = await storage.getAllEmployeePackages();
+          const userIds = new Set(users.map(u => u.id));
+          const now = new Date();
+          const seteDiasAtras = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+          for (const pkg of employeePackages) {
+            // Corrigir pacotes expirados ainda ativos
+            if (pkg.status === 'ativo' && pkg.data_vencimento) {
+              const dataVenc = new Date(pkg.data_vencimento);
+              if (now > dataVenc && storage.updateEmployeePackageStatus) {
+                await storage.updateEmployeePackageStatus(pkg.id, 'expirado', now.toISOString());
+                resultados.pacotesFuncionariosExpiradosCorrigidos++;
+                continue;
+              }
+            }
+
+            // Limpar pacotes órfãos ou pendentes antigos
+            let remover = false;
+            
+            if (!userIds.has(pkg.user_id)) remover = true;
+            
+            if (pkg.status === 'pendente' && pkg.data_compra) {
+              const dataCompra = new Date(pkg.data_compra);
+              if (dataCompra < seteDiasAtras) remover = true;
+            }
+
+            if (remover && storage.deleteEmployeePackage) {
+              await storage.deleteEmployeePackage(pkg.id);
+              resultados.pacotesFuncionariosLimpos++;
+            }
+          }
+        }
+      } catch (err: any) {
+        resultados.erros.push(`Erro ao processar pacotes de funcionários: ${err.message}`);
+      }
+
       await storage.logAdminAction?.(
         adminId,
         "MAINTENANCE_FULL",
-        `Manutenção completa: ${resultados.usuariosCorrigidos} usuários corrigidos, ${resultados.assinaturasLimpas} assinaturas limpas`,
+        `Manutenção completa: ${resultados.usuariosCorrigidos} usuários, ${resultados.assinaturasLimpas} assinaturas, ${resultados.pacotesFuncionariosLimpos} pacotes de funcionários limpos, ${resultados.pacotesFuncionariosExpiradosCorrigidos} pacotes corrigidos`,
         req
       );
 
