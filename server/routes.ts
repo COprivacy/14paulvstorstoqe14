@@ -4337,30 +4337,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Listar todos os pacotes de funcionários (apenas admin master)
-  app.get("/api/admin/employee-packages", requireAdmin, async (req, res) => {
-    try {
-      const userId = req.headers["x-user-id"] as string;
-      const user = await storage.getUserById(userId);
-      const isMasterAdmin = user?.email === 'pavisoft.suporte@gmail.com';
-
-      if (!isMasterAdmin) {
-        return res.status(403).json({ error: "Acesso negado - apenas master admin" });
-      }
-
-      // Buscar todos os pacotes de funcionários do sistema
-      const packages = await storage.db.execute(sql`
-        SELECT * FROM employee_packages
-        ORDER BY data_compra DESC
-      `);
-
-      res.json(packages.rows || []);
-    } catch (error: any) {
-      logger.error('Erro ao buscar pacotes de funcionários:', error);
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // ============================================
   // ROTAS DE SYSTEM OWNER (DONO DO SISTEMA)
   // ============================================
