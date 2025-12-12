@@ -1085,10 +1085,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('📋 [PLAN_PRICES] Buscando preços dos planos...');
 
-      // Definir preços padrão
+      // Definir preços padrão (devem corresponder aos valores do painel admin)
       const DEFAULT_PRICES = {
-        premium_mensal: 79.99,
-        premium_anual: 767.04,
+        premium_mensal: 89.99,
+        premium_anual: 951.00,
       };
 
       // Tentar buscar preços customizados do banco
@@ -1128,8 +1128,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('❌ [PLAN_PRICES] Erro crítico:', error);
       res.setHeader('Content-Type', 'application/json');
       return res.status(200).json({
-        premium_mensal: 79.99,
-        premium_anual: 767.04,
+        premium_mensal: 89.99,
+        premium_anual: 951.00,
       });
     }
   });
@@ -1874,8 +1874,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Buscar preços dinâmicos do banco de dados
       let planoValues = {
-        premium_mensal: 79.99,
-        premium_anual: 767.04,
+        premium_mensal: 89.99,
+        premium_anual: 951.00,
       };
 
       try {
@@ -1893,7 +1893,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calcular valor do desconto baseado no plano (preços dinâmicos)
-      const valorPlano = planoValues[plano as keyof typeof planoValues] || 79.99;
+      const valorPlano = planoValues[plano as keyof typeof planoValues] || 89.99;
 
       if (cupom.tipo === 'percentual') {
         valorDesconto = (valorPlano * cupom.valor) / 100;
@@ -4710,8 +4710,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar preços atualizados do banco de dados
       const precosConfig = await storage.getSystemConfig('planos_precos');
       let planoValues = {
-        premium_mensal: 79.99,
-        premium_anual: 767.04,
+        premium_mensal: 89.99,
+        premium_anual: 951.00,
       };
 
       if (precosConfig && precosConfig.valor) {

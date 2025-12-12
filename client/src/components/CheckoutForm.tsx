@@ -83,8 +83,8 @@ export function CheckoutForm({
   const [cupomValidado, setCupomValidado] = useState<any>(null);
   // Buscar preços dinâmicos do backend
   const [precos, setPrecos] = useState({
-    premium_mensal: 79.99,
-    premium_anual: 767.04,
+    premium_mensal: 89.99,
+    premium_anual: 951.00,
   });
 
   useEffect(() => {
