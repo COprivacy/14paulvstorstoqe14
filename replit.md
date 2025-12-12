@@ -7,6 +7,16 @@ A web application for Brazilian small businesses, offering inventory management,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**2025-12-12:** Implemented Device Fingerprinting and Session Management:
+- Created `user_sessions` table to track active sessions with fingerprint, token, device info
+- Implemented client-side fingerprinting using Web Crypto API (browser, OS, screen, canvas hash)
+- Session token stored in localStorage and sent via `x-session-token` header with all API requests
+- Added `validateSession` middleware for session validation on all /api routes (except auth)
+- Session limit: Maximum 3 simultaneous sessions per user (oldest automatically invalidated)
+- 24-hour inactivity timeout with automatic session expiration
+- Endpoints: `/api/sessions/logout`, `/api/sessions/my-sessions`, `/api/sessions/invalidate`
+- Gradual rollout approach: Old sessions without tokens still work during transition period
+
 **2025-12-10:** Added System Maintenance Tab to Admin Panel:
 - New "Manutenção" tab in /admin-publico for database health monitoring
 - Added 4 maintenance API endpoints: analyze, fix-expired-users, cleanup-subscriptions, run-full
