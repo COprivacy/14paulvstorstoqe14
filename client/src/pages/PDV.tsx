@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import PDVScanner from "@/components/PDVScanner";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Crown, FileText, Loader2, ExternalLink, Copy, CheckCircle, Receipt, Printer, Wallet, Menu } from "lucide-react";
+import { Crown, FileText, Loader2, ExternalLink, Copy, CheckCircle, Receipt, Printer, Wallet, Menu, Settings } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
@@ -42,6 +43,15 @@ export default function PDV() {
   const [isEmittingNF, setIsEmittingNF] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showCaixaAlert, setShowCaixaAlert] = useState(false);
+  const [showCupomEditor, setShowCupomEditor] = useState(false);
+  const [cupomPersonalizado, setCupomPersonalizado] = useState(() => {
+    const saved = localStorage.getItem("cupomPersonalizado");
+    return saved ? JSON.parse(saved) : {
+      cabecalho: "CUPOM NÃO-FISCAL",
+      rodape: "Obrigado pela preferência!",
+      avisoFiscal: "DOCUMENTO SEM VALOR FISCAL\nEste cupom não substitui nota fiscal"
+    };
+  });
 
   const { data: configFiscal } = useQuery<ConfigFiscal | null>({
     queryKey: ["/api/config-fiscal"],
@@ -453,14 +463,7 @@ export default function PDV() {
               </div>
             </AlertDialogTitle>
 
-            {!configFiscal || !configFiscal.focus_nfe_api_key ? (
-              <div className="rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 p-3">
-                <p className="text-sm text-red-600 dark:text-red-500 font-medium flex items-center gap-2">
-                  <span className="text-lg">⚠️</span>
-                  Configure a emissão fiscal em "Config. Fiscal" primeiro
-                </p>
-              </div>
-            ) : configFiscal?.ambiente === 'homologacao' ? (
+            {configFiscal?.ambiente === 'homologacao' ? (
               <div className="rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900 p-3">
                 <p className="text-sm text-yellow-700 dark:text-yellow-500 font-medium flex items-center gap-2">
                   <span className="text-lg">ℹ️</span>
@@ -519,34 +522,6 @@ export default function PDV() {
               </div>
             </Button>
 
-            <Button
-              onClick={() => handleEmissaoNF('automatica')}
-              className="w-full justify-start h-auto py-4 px-5 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all group shadow-lg hover:shadow-xl"
-              disabled={isEmittingNF}
-              data-testid="button-emit-nf"
-            >
-              {isEmittingNF ? (
-                <>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 mr-4">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  </div>
-                  <div className="flex flex-col items-start gap-0.5 text-left">
-                    <span className="font-semibold text-base">Emitindo...</span>
-                    <span className="text-xs opacity-90 font-normal">Aguarde o processamento</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 mr-4 group-hover:scale-110 transition-transform">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div className="flex flex-col items-start gap-0.5 text-left">
-                    <span className="font-semibold text-base">Emissão Automática</span>
-                    <span className="text-xs opacity-90 font-normal">Emitir NFCe automaticamente via Focus NFe</span>
-                  </div>
-                </>
-              )}
-            </Button>
           </div>
         </AlertDialogContent>
       </AlertDialog>
@@ -794,9 +769,19 @@ export default function PDV() {
       <Dialog open={showCupomNaoFiscal} onOpenChange={setShowCupomNaoFiscal}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-primary" />
-              Cupom Não-Fiscal
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-5 w-5 text-primary" />
+                Cupom Não-Fiscal
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCupomEditor(true)}
+                data-testid="button-editar-cupom"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
             </DialogTitle>
             <DialogDescription>
               Comprovante de venda sem valor fiscal
@@ -808,7 +793,7 @@ export default function PDV() {
               <>
                 <div className="bg-white dark:bg-gray-900 p-6 rounded border-2 border-dashed border-gray-300 dark:border-gray-700 font-mono text-sm">
                   <div className="text-center border-b-2 border-dashed border-gray-300 dark:border-gray-700 pb-3 mb-3">
-                    <p className="font-bold text-base">CUPOM NÃO-FISCAL</p>
+                    <p className="font-bold text-base">{cupomPersonalizado.cabecalho}</p>
                     {configFiscal?.razao_social && (
                       <p className="text-xs mt-2">{configFiscal.razao_social}</p>
                     )}
@@ -854,10 +839,9 @@ export default function PDV() {
                     </div>
                   </div>
 
-                  <div className="text-center border-t-2 border-dashed border-gray-300 dark:border-gray-700 mt-3 pt-3 text-xs">
-                    <p className="font-bold">⚠️ DOCUMENTO SEM VALOR FISCAL</p>
-                    <p className="mt-1">Este cupom não substitui nota fiscal</p>
-                    <p className="mt-2">Obrigado pela preferência!</p>
+                  <div className="text-center border-t-2 border-dashed border-gray-300 dark:border-gray-700 mt-3 pt-3 text-xs whitespace-pre-line">
+                    <p className="font-bold">{cupomPersonalizado.avisoFiscal}</p>
+                    <p className="mt-2">{cupomPersonalizado.rodape}</p>
                   </div>
                 </div>
 
@@ -868,7 +852,7 @@ export default function PDV() {
                     onClick={() => {
                       const cupomTexto = `
 ═══════════════════════════════════
-    CUPOM NÃO-FISCAL
+    ${cupomPersonalizado.cabecalho}
 ${configFiscal?.razao_social || 'Estabelecimento'}
 ${configFiscal?.cnpj ? `CNPJ: ${configFiscal.cnpj}` : ''}
 ${new Date().toLocaleString('pt-BR')}
@@ -887,10 +871,9 @@ ${lastSale.itens.map((item: any, index: number) => {
 TOTAL: R$ ${lastSale.valorTotal.toFixed(2)}
 ═══════════════════════════════════
 
-⚠️ DOCUMENTO SEM VALOR FISCAL
-Este cupom não substitui nota fiscal
+${cupomPersonalizado.avisoFiscal}
 
-Obrigado pela preferência!
+${cupomPersonalizado.rodape}
 ═══════════════════════════════════
                       `.trim();
 
@@ -921,7 +904,7 @@ Obrigado pela preferência!
                     onClick={() => {
                       setShowCupomNaoFiscal(false);
                       toast({
-                        title: "✅ Cupom gerado!",
+                        title: "Cupom gerado!",
                         description: "Cupom não-fiscal disponível",
                       });
                     }}
@@ -933,6 +916,93 @@ Obrigado pela preferência!
                 </div>
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showCupomEditor} onOpenChange={setShowCupomEditor}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-primary" />
+              Personalizar Cupom
+            </DialogTitle>
+            <DialogDescription>
+              Edite os textos do cupom não-fiscal para futuras impressões
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cabecalho">Título do Cupom</Label>
+              <Input
+                id="cabecalho"
+                value={cupomPersonalizado.cabecalho}
+                onChange={(e) => setCupomPersonalizado((prev: typeof cupomPersonalizado) => ({ ...prev, cabecalho: e.target.value }))}
+                placeholder="CUPOM NÃO-FISCAL"
+                data-testid="input-cupom-cabecalho"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="avisoFiscal">Aviso Fiscal</Label>
+              <Textarea
+                id="avisoFiscal"
+                value={cupomPersonalizado.avisoFiscal}
+                onChange={(e) => setCupomPersonalizado((prev: typeof cupomPersonalizado) => ({ ...prev, avisoFiscal: e.target.value }))}
+                placeholder="DOCUMENTO SEM VALOR FISCAL"
+                rows={3}
+                data-testid="input-cupom-aviso"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="rodape">Mensagem de Rodapé</Label>
+              <Input
+                id="rodape"
+                value={cupomPersonalizado.rodape}
+                onChange={(e) => setCupomPersonalizado((prev: typeof cupomPersonalizado) => ({ ...prev, rodape: e.target.value }))}
+                placeholder="Obrigado pela preferência!"
+                data-testid="input-cupom-rodape"
+              />
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setCupomPersonalizado({
+                    cabecalho: "CUPOM NÃO-FISCAL",
+                    rodape: "Obrigado pela preferência!",
+                    avisoFiscal: "DOCUMENTO SEM VALOR FISCAL\nEste cupom não substitui nota fiscal"
+                  });
+                  localStorage.removeItem("cupomPersonalizado");
+                  toast({
+                    title: "Configuração restaurada",
+                    description: "Os valores padrão foram restaurados",
+                  });
+                }}
+                data-testid="button-restaurar-cupom"
+              >
+                Restaurar Padrão
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  localStorage.setItem("cupomPersonalizado", JSON.stringify(cupomPersonalizado));
+                  setShowCupomEditor(false);
+                  toast({
+                    title: "Configuração salva!",
+                    description: "As alterações serão aplicadas nos próximos cupons",
+                  });
+                }}
+                data-testid="button-salvar-cupom"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Salvar
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
