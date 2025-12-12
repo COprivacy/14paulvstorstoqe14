@@ -586,6 +586,7 @@ export class PostgresStorage implements IStorage {
           cliente_id: vendas.cliente_id,
           orcamento_id: vendas.orcamento_id,
           vendedor: vendas.vendedor,
+          cupom_texto: vendas.cupom_texto,
           orcamento_numero: orcamentos.numero,
         })
         .from(vendas)
