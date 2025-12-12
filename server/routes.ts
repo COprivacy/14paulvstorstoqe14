@@ -78,6 +78,78 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// Middleware para validar sessão ativa (fingerprint e token)
+async function validateSession(req: Request, res: Response, next: NextFunction) {
+  const sessionToken = req.headers["x-session-token"] as string;
+  const userId = req.headers["x-user-id"] as string;
+  
+  // Se não houver token de sessão, apenas logar e continuar (compatibilidade retroativa)
+  if (!sessionToken) {
+    console.log('[SESSION] Requisição sem token de sessão - modo compatibilidade');
+    return next();
+  }
+  
+  try {
+    // Verificar se a sessão existe e está ativa
+    const session = await storage.getSessionByToken(sessionToken);
+    
+    if (!session) {
+      console.log('[SESSION] Token de sessão inválido ou expirado');
+      return res.status(401).json({ 
+        error: "Sessão inválida ou expirada. Faça login novamente.",
+        code: "SESSION_INVALID"
+      });
+    }
+    
+    // Verificar se a sessão pertence ao usuário correto
+    if (session.user_id !== userId) {
+      console.log('[SESSION] Token de sessão não pertence ao usuário');
+      return res.status(401).json({ 
+        error: "Sessão inválida. Faça login novamente.",
+        code: "SESSION_USER_MISMATCH"
+      });
+    }
+    
+    // Verificar se a sessão ainda está ativa (não expirada)
+    if (!session.is_active) {
+      console.log('[SESSION] Sessão foi invalidada');
+      return res.status(401).json({ 
+        error: "Sessão foi encerrada. Faça login novamente.",
+        code: "SESSION_EXPIRED"
+      });
+    }
+    
+    // Verificar expiração baseada no last_activity (24 horas de inatividade)
+    const lastActivity = new Date(session.last_activity);
+    const now = new Date();
+    const hoursSinceActivity = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
+    
+    if (hoursSinceActivity > 24) {
+      console.log('[SESSION] Sessão expirada por inatividade');
+      await storage.invalidateSession(sessionToken);
+      return res.status(401).json({ 
+        error: "Sessão expirou por inatividade. Faça login novamente.",
+        code: "SESSION_TIMEOUT"
+      });
+    }
+    
+    // Atualizar último acesso (a cada 5 minutos para não sobrecarregar o DB)
+    if (hoursSinceActivity > 0.083) { // 5 minutos
+      await storage.updateSessionActivity(sessionToken);
+    }
+    
+    // Anexar informações da sessão ao request
+    (req as any).session = session;
+    
+    console.log('[SESSION] Sessão validada com sucesso');
+  } catch (error) {
+    console.error('[SESSION] Erro ao validar sessão:', error);
+    // Em caso de erro, continuar (não bloquear completamente)
+  }
+  
+  next();
+}
+
 // Middleware para verificar autenticação geral (necessário para endpoints de config)
 async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const userId = req.headers["x-user-id"] as string;
@@ -179,6 +251,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader("Surrogate-Control", "no-store");
     next();
   });
+  
+  // Middleware para validar sessões (exceto rotas de autenticação)
+  app.use("/api", (req, res, next) => {
+    // Excluir rotas de autenticação da validação de sessão
+    const authPaths = ['/api/auth/login', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password'];
+    if (authPaths.some(path => req.path === path || req.path.startsWith(path))) {
+      return next();
+    }
+    return validateSession(req, res, next);
+  });
 
   // User registration
   app.post("/api/auth/register", async (req, res) => {
@@ -254,12 +336,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Constantes para limite de sessões simultâneas
+  const MAX_SIMULTANEOUS_SESSIONS = 3;
+  const SESSION_DURATION_HOURS = 24;
+
   app.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, senha } = req.body;
+      const { email, senha, device_fingerprint, device_info } = req.body;
 
       if (process.env.NODE_ENV === "development") {
         console.log(`🔐 Tentativa de login - Email: ${email}`);
+      }
+
+      // Validar fingerprint (obrigatório para segurança)
+      if (!device_fingerprint) {
+        logger.warn('[SECURITY] Login sem fingerprint', 'AUTH', { email, ip: req.ip });
       }
 
       // Busca o usuário pelo email
@@ -352,9 +443,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       );
 
+      // ============================================
+      // GERENCIAMENTO DE SESSÕES COM FINGERPRINT
+      // ============================================
+      let sessionToken: string | null = null;
+      
+      if (device_fingerprint && storage.createSession) {
+        try {
+          // Limpar sessões expiradas
+          await storage.cleanExpiredSessions?.();
+          
+          // Verificar número de sessões ativas
+          const activeSessions = await storage.getActiveSessionCount?.(userAtualizado.id, "usuario") || 0;
+          
+          // Se excedeu o limite, invalidar a sessão mais antiga
+          if (activeSessions >= MAX_SIMULTANEOUS_SESSIONS) {
+            await storage.invalidateOldestSession?.(userAtualizado.id, "usuario");
+            logger.info('[SESSION] Limite de sessões atingido, sessão mais antiga invalidada', 'AUTH', {
+              userId: userAtualizado.id,
+              activeSessions,
+              maxSessions: MAX_SIMULTANEOUS_SESSIONS
+            });
+          }
+          
+          // Gerar token de sessão único
+          sessionToken = crypto.randomBytes(32).toString('hex');
+          
+          // Criar nova sessão
+          const expiresAt = new Date();
+          expiresAt.setHours(expiresAt.getHours() + SESSION_DURATION_HOURS);
+          
+          await storage.createSession({
+            user_id: userAtualizado.id,
+            user_type: "usuario",
+            session_token: sessionToken,
+            device_fingerprint: device_fingerprint,
+            device_info: device_info || {},
+            ip_address: req.ip || req.connection?.remoteAddress || 'unknown',
+            user_agent: req.get("user-agent") || 'unknown',
+            expires_at: expiresAt
+          });
+          
+          logger.info('[SESSION] Nova sessão criada para usuário', 'AUTH', {
+            userId: userAtualizado.id,
+            fingerprint: device_fingerprint.substring(0, 16) + '...',
+            expiresAt: expiresAt.toISOString()
+          });
+        } catch (sessionError) {
+          logger.error('[SESSION] Erro ao criar sessão (continuando login)', 'AUTH', { error: sessionError });
+          // Não bloquear login se falhar criação de sessão
+        }
+      }
+
       // NUNCA retornar senha para o frontend
       const { senha: _, ...userWithoutPassword } = userAtualizado;
-      res.json(userWithoutPassword);
+      res.json({
+        ...userWithoutPassword,
+        session_token: sessionToken
+      });
     } catch (error: any) {
       console.error("Erro no login:", error);
       res.status(500).json({ error: "Erro ao fazer login" });
@@ -363,7 +509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/login-funcionario", async (req, res) => {
     try {
-      const { email, senha } = req.body;
+      const { email, senha, device_fingerprint, device_info } = req.body;
 
       if (process.env.NODE_ENV === "development") {
         console.log(`🔐 Tentativa de login de funcionário - Email: ${email}`);
@@ -373,6 +519,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res
           .status(400)
           .json({ error: "Email e senha são obrigatórios" });
+      }
+      
+      // Validar fingerprint (obrigatório para segurança)
+      if (!device_fingerprint) {
+        logger.warn('[SECURITY] Login funcionário sem fingerprint', 'AUTH', { email, ip: req.ip });
       }
 
       const funcionario = await storage.getFuncionarioByEmail(email);
@@ -428,17 +579,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Login realizado - ${funcionario.nome} (${funcionario.email})`
       );
 
+      // ============================================
+      // GERENCIAMENTO DE SESSÕES COM FINGERPRINT (FUNCIONÁRIO)
+      // ============================================
+      let sessionToken: string | null = null;
+      
+      if (device_fingerprint && storage.createSession) {
+        try {
+          // Limpar sessões expiradas
+          await storage.cleanExpiredSessions?.();
+          
+          // Verificar número de sessões ativas
+          const activeSessions = await storage.getActiveSessionCount?.(funcionario.id, "funcionario") || 0;
+          
+          // Se excedeu o limite, invalidar a sessão mais antiga
+          if (activeSessions >= MAX_SIMULTANEOUS_SESSIONS) {
+            await storage.invalidateOldestSession?.(funcionario.id, "funcionario");
+            logger.info('[SESSION] Limite de sessões atingido (funcionário), sessão mais antiga invalidada', 'AUTH', {
+              funcionarioId: funcionario.id,
+              activeSessions,
+              maxSessions: MAX_SIMULTANEOUS_SESSIONS
+            });
+          }
+          
+          // Gerar token de sessão único
+          sessionToken = crypto.randomBytes(32).toString('hex');
+          
+          // Criar nova sessão
+          const expiresAt = new Date();
+          expiresAt.setHours(expiresAt.getHours() + SESSION_DURATION_HOURS);
+          
+          await storage.createSession({
+            user_id: funcionario.id,
+            user_type: "funcionario",
+            session_token: sessionToken,
+            device_fingerprint: device_fingerprint,
+            device_info: device_info || {},
+            ip_address: req.ip || req.connection?.remoteAddress || 'unknown',
+            user_agent: req.get("user-agent") || 'unknown',
+            expires_at: expiresAt
+          });
+          
+          logger.info('[SESSION] Nova sessão criada para funcionário', 'AUTH', {
+            funcionarioId: funcionario.id,
+            fingerprint: device_fingerprint.substring(0, 16) + '...',
+            expiresAt: expiresAt.toISOString()
+          });
+        } catch (sessionError) {
+          logger.error('[SESSION] Erro ao criar sessão funcionário (continuando login)', 'AUTH', { error: sessionError });
+        }
+      }
+
       const { senha: _, ...funcionarioSemSenha } = funcionario;
       const funcionarioResponse = {
         ...funcionarioSemSenha,
         tipo: "funcionario",
         permissoes: permissoes || {},
+        session_token: sessionToken
       };
 
       res.json(funcionarioResponse);
     } catch (error: any) {
       console.error("Erro no login de funcionário:", error);
       res.status(500).json({ error: "Erro ao fazer login" });
+    }
+  });
+
+  // ============================================
+  // ENDPOINTS DE GERENCIAMENTO DE SESSÕES
+  // ============================================
+  
+  // Logout - invalida a sessão atual
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      const sessionToken = req.headers["x-session-token"] as string;
+      
+      if (sessionToken && storage.invalidateSession) {
+        await storage.invalidateSession(sessionToken);
+        logger.info('[SESSION] Logout realizado', 'AUTH', { token: sessionToken.substring(0, 16) + '...' });
+      }
+      
+      res.json({ success: true, message: "Logout realizado com sucesso" });
+    } catch (error) {
+      logger.error('[SESSION] Erro no logout', 'AUTH', { error });
+      res.status(500).json({ error: "Erro ao fazer logout" });
+    }
+  });
+
+  // Listar sessões ativas do usuário
+  app.get("/api/auth/sessions", requireAuth, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const userType = req.headers["x-user-type"] as string || "usuario";
+      
+      if (!storage.getActiveSessionsByUser) {
+        return res.json({ sessions: [] });
+      }
+      
+      const sessions = await storage.getActiveSessionsByUser(userId, userType);
+      
+      // Não retornar o token completo por segurança
+      const sanitizedSessions = sessions.map(s => ({
+        id: s.id,
+        device_info: s.device_info,
+        ip_address: s.ip_address,
+        user_agent: s.user_agent,
+        created_at: s.created_at,
+        last_activity: s.last_activity,
+        is_current: s.session_token === req.headers["x-session-token"]
+      }));
+      
+      res.json({ 
+        sessions: sanitizedSessions,
+        max_sessions: MAX_SIMULTANEOUS_SESSIONS
+      });
+    } catch (error) {
+      logger.error('[SESSION] Erro ao listar sessões', 'AUTH', { error });
+      res.status(500).json({ error: "Erro ao listar sessões" });
+    }
+  });
+
+  // Invalidar sessão específica
+  app.delete("/api/auth/sessions/:sessionId", requireAuth, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.headers["x-user-id"] as string;
+      const userType = req.headers["x-user-type"] as string || "usuario";
+      
+      if (!storage.getActiveSessionsByUser || !storage.invalidateSession) {
+        return res.status(400).json({ error: "Funcionalidade não disponível" });
+      }
+      
+      // Verificar se a sessão pertence ao usuário
+      const sessions = await storage.getActiveSessionsByUser(userId, userType);
+      const session = sessions.find(s => s.id === parseInt(sessionId));
+      
+      if (!session) {
+        return res.status(404).json({ error: "Sessão não encontrada" });
+      }
+      
+      await storage.invalidateSession(session.session_token);
+      
+      logger.info('[SESSION] Sessão invalidada pelo usuário', 'AUTH', { userId, sessionId });
+      res.json({ success: true, message: "Sessão encerrada com sucesso" });
+    } catch (error) {
+      logger.error('[SESSION] Erro ao invalidar sessão', 'AUTH', { error });
+      res.status(500).json({ error: "Erro ao encerrar sessão" });
+    }
+  });
+
+  // Invalidar todas as outras sessões (manter apenas a atual)
+  app.post("/api/auth/sessions/invalidate-others", requireAuth, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"] as string;
+      const userType = req.headers["x-user-type"] as string || "usuario";
+      const currentToken = req.headers["x-session-token"] as string;
+      
+      if (!storage.getActiveSessionsByUser || !storage.invalidateSession) {
+        return res.status(400).json({ error: "Funcionalidade não disponível" });
+      }
+      
+      const sessions = await storage.getActiveSessionsByUser(userId, userType);
+      let invalidatedCount = 0;
+      
+      for (const session of sessions) {
+        if (session.session_token !== currentToken) {
+          await storage.invalidateSession(session.session_token);
+          invalidatedCount++;
+        }
+      }
+      
+      logger.info('[SESSION] Outras sessões invalidadas', 'AUTH', { userId, invalidatedCount });
+      res.json({ 
+        success: true, 
+        message: `${invalidatedCount} sessão(ões) encerrada(s)`,
+        invalidated_count: invalidatedCount
+      });
+    } catch (error) {
+      logger.error('[SESSION] Erro ao invalidar outras sessões', 'AUTH', { error });
+      res.status(500).json({ error: "Erro ao encerrar outras sessões" });
     }
   });
 

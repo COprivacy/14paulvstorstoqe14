@@ -221,6 +221,28 @@ export interface IStorage {
   validarCupom?(codigo: string, plano: string, userId: string): Promise<{ valido: boolean; cupom?: any; erro?: string }>;
   usarCupom?(cupomId: number, userId: string, subscriptionId: number, valorDesconto: number): Promise<any>;
   getUsoCupons?(cupomId?: number): Promise<any[]>;
+
+  // ============================================
+  // MÉTODOS PARA SESSÕES E FINGERPRINTING
+  // ============================================
+  createSession?(data: {
+    user_id: string;
+    user_type: string;
+    session_token: string;
+    device_fingerprint: string;
+    device_info?: any;
+    ip_address?: string;
+    user_agent?: string;
+    expires_at: Date;
+  }): Promise<any>;
+  getSessionByToken?(token: string): Promise<any | undefined>;
+  getActiveSessionsByUser?(userId: string, userType?: string): Promise<any[]>;
+  getActiveSessionCount?(userId: string, userType?: string): Promise<number>;
+  updateSessionActivity?(token: string): Promise<void>;
+  invalidateSession?(token: string): Promise<void>;
+  invalidateAllUserSessions?(userId: string, userType?: string): Promise<void>;
+  invalidateOldestSession?(userId: string, userType?: string): Promise<void>;
+  cleanExpiredSessions?(): Promise<number>;
 }
 
 export abstract class Storage {

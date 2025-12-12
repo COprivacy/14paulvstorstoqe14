@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getStoredSessionToken } from "./fingerprint";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -30,6 +31,12 @@ function getAuthHeaders(): Record<string, string> {
     
     if (user.tipo === "funcionario" && user.conta_id) {
       headers["x-conta-id"] = user.conta_id;
+    }
+    
+    // Adicionar token de sessão se disponível
+    const sessionToken = getStoredSessionToken();
+    if (sessionToken) {
+      headers["x-session-token"] = sessionToken;
     }
     
     console.log("[AUTH_HEADERS] Headers gerados:", headers, "is_admin original:", user.is_admin);

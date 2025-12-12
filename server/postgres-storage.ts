@@ -2043,4 +2043,198 @@ export class PostgresStorage implements IStorage {
       throw error;
     }
   }
+
+  // ============================================
+  // MÉTODOS PARA SESSÕES E FINGERPRINTING
+  // ============================================
+
+  async createSession(data: {
+    user_id: string;
+    user_type: string;
+    session_token: string;
+    device_fingerprint: string;
+    device_info?: any;
+    ip_address?: string;
+    user_agent?: string;
+    expires_at: Date;
+  }): Promise<any> {
+    try {
+      const result = await this.db.execute(sql`
+        INSERT INTO user_sessions (
+          user_id, user_type, session_token, device_fingerprint,
+          device_info, ip_address, user_agent, expires_at, is_active
+        ) VALUES (
+          ${data.user_id},
+          ${data.user_type},
+          ${data.session_token},
+          ${data.device_fingerprint},
+          ${JSON.stringify(data.device_info || {})}::jsonb,
+          ${data.ip_address || null},
+          ${data.user_agent || null},
+          ${data.expires_at.toISOString()},
+          'true'
+        )
+        RETURNING *
+      `);
+      logger.info('[SESSION] Nova sessão criada', { 
+        userId: data.user_id, 
+        userType: data.user_type,
+        fingerprint: data.device_fingerprint.substring(0, 16) + '...'
+      });
+      return result.rows[0];
+    } catch (error) {
+      logger.error('[SESSION] Erro ao criar sessão:', { error });
+      throw error;
+    }
+  }
+
+  async getSessionByToken(token: string): Promise<any | undefined> {
+    try {
+      const result = await this.db.execute(sql`
+        SELECT * FROM user_sessions 
+        WHERE session_token = ${token} AND is_active = 'true'
+        LIMIT 1
+      `);
+      return result.rows[0];
+    } catch (error) {
+      logger.error('[SESSION] Erro ao buscar sessão:', { error });
+      return undefined;
+    }
+  }
+
+  async getActiveSessionsByUser(userId: string, userType?: string): Promise<any[]> {
+    try {
+      if (userType) {
+        const result = await this.db.execute(sql`
+          SELECT * FROM user_sessions 
+          WHERE user_id = ${userId} 
+            AND user_type = ${userType}
+            AND is_active = 'true'
+            AND expires_at > NOW()
+          ORDER BY created_at DESC
+        `);
+        return result.rows as any[];
+      } else {
+        const result = await this.db.execute(sql`
+          SELECT * FROM user_sessions 
+          WHERE user_id = ${userId} 
+            AND is_active = 'true'
+            AND expires_at > NOW()
+          ORDER BY created_at DESC
+        `);
+        return result.rows as any[];
+      }
+    } catch (error) {
+      logger.error('[SESSION] Erro ao buscar sessões ativas:', { error });
+      return [];
+    }
+  }
+
+  async getActiveSessionCount(userId: string, userType?: string): Promise<number> {
+    try {
+      const sessions = await this.getActiveSessionsByUser(userId, userType);
+      return sessions.length;
+    } catch (error) {
+      logger.error('[SESSION] Erro ao contar sessões:', { error });
+      return 0;
+    }
+  }
+
+  async updateSessionActivity(token: string): Promise<void> {
+    try {
+      await this.db.execute(sql`
+        UPDATE user_sessions 
+        SET last_activity = NOW()
+        WHERE session_token = ${token} AND is_active = 'true'
+      `);
+    } catch (error) {
+      logger.error('[SESSION] Erro ao atualizar atividade:', { error });
+    }
+  }
+
+  async invalidateSession(token: string): Promise<void> {
+    try {
+      await this.db.execute(sql`
+        UPDATE user_sessions 
+        SET is_active = 'false'
+        WHERE session_token = ${token}
+      `);
+      logger.info('[SESSION] Sessão invalidada', { token: token.substring(0, 16) + '...' });
+    } catch (error) {
+      logger.error('[SESSION] Erro ao invalidar sessão:', { error });
+    }
+  }
+
+  async invalidateAllUserSessions(userId: string, userType?: string): Promise<void> {
+    try {
+      if (userType) {
+        await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_active = 'false'
+          WHERE user_id = ${userId} AND user_type = ${userType}
+        `);
+      } else {
+        await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_active = 'false'
+          WHERE user_id = ${userId}
+        `);
+      }
+      logger.info('[SESSION] Todas as sessões invalidadas', { userId, userType });
+    } catch (error) {
+      logger.error('[SESSION] Erro ao invalidar sessões:', { error });
+    }
+  }
+
+  async invalidateOldestSession(userId: string, userType?: string): Promise<void> {
+    try {
+      if (userType) {
+        await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_active = 'false'
+          WHERE id = (
+            SELECT id FROM user_sessions 
+            WHERE user_id = ${userId} 
+              AND user_type = ${userType}
+              AND is_active = 'true'
+            ORDER BY created_at ASC
+            LIMIT 1
+          )
+        `);
+      } else {
+        await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_active = 'false'
+          WHERE id = (
+            SELECT id FROM user_sessions 
+            WHERE user_id = ${userId} AND is_active = 'true'
+            ORDER BY created_at ASC
+            LIMIT 1
+          )
+        `);
+      }
+      logger.info('[SESSION] Sessão mais antiga invalidada', { userId, userType });
+    } catch (error) {
+      logger.error('[SESSION] Erro ao invalidar sessão antiga:', { error });
+    }
+  }
+
+  async cleanExpiredSessions(): Promise<number> {
+    try {
+      const result = await this.db.execute(sql`
+        UPDATE user_sessions 
+        SET is_active = 'false'
+        WHERE expires_at < NOW() AND is_active = 'true'
+        RETURNING id
+      `);
+      const count = result.rows.length;
+      if (count > 0) {
+        logger.info('[SESSION] Sessões expiradas limpas', { count });
+      }
+      return count;
+    } catch (error) {
+      logger.error('[SESSION] Erro ao limpar sessões expiradas:', { error });
+      return 0;
+    }
+  }
 }

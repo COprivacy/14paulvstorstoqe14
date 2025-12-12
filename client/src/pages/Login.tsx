@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import LoginForm from "@/components/LoginForm";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { generateFingerprint, getDeviceInfo, setStoredSessionToken } from "@/lib/fingerprint";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -12,12 +13,25 @@ export default function Login() {
   const handleLogin = async (email: string, password: string, isFuncionario: boolean) => {
     setIsLoading(true);
     try {
+      // Gerar fingerprint do dispositivo para segurança
+      let deviceFingerprint = '';
+      let deviceInfo = {};
+      
+      try {
+        deviceFingerprint = await generateFingerprint();
+        deviceInfo = getDeviceInfo();
+      } catch (fingerprintError) {
+        console.warn('Erro ao gerar fingerprint:', fingerprintError);
+      }
+
       // Escolhe a rota correta baseado no tipo de usuário
       const endpoint = isFuncionario ? "/api/auth/login-funcionario" : "/api/auth/login";
       
       const response = await apiRequest("POST", endpoint, {
         email,
-        senha: password
+        senha: password,
+        device_fingerprint: deviceFingerprint,
+        device_info: deviceInfo
       });
 
       if (!response.ok) {
@@ -25,6 +39,12 @@ export default function Login() {
       }
 
       const userData = await response.json();
+      
+      // Armazenar token de sessão se recebido
+      if (userData.session_token) {
+        setStoredSessionToken(userData.session_token);
+      }
+      
       localStorage.setItem("user", JSON.stringify(userData));
       console.log("🔄 Atualizando localStorage do usuário logado:", userData);
 
