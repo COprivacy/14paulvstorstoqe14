@@ -122,94 +122,15 @@ export default function Devolucoes() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    let produtoId: number | undefined;
-    let produto: Produto | undefined;
-    let produtoNome: string;
-    let valorUnitario: number;
-    let quantidade: number;
-
-    if (vendaSelecionada) {
-      // Validar quantidade selecionada dos itens
-      quantidade = itensSelecionados['item-principal'] || 0;
-
-      if (!quantidade || quantidade <= 0) {
-        toast({
-          title: "Erro",
-          description: "Informe a quantidade a devolver (deve ser maior que 0)",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const quantidadeVendida = vendaSelecionada.quantidade_vendida || 0;
-      if (quantidade > quantidadeVendida) {
-        toast({
-          title: "Erro",
-          description: `Quantidade não pode ser maior que ${quantidadeVendida} (quantidade vendida)`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Buscar produto pelo nome da venda ou usar dados da venda
-      const produtoEncontrado = produtos.find(p => 
-        p.nome.toLowerCase() === vendaSelecionada.produto?.toLowerCase()
-      );
-
-      if (produtoEncontrado) {
-        produtoId = produtoEncontrado.id;
-        produto = produtoEncontrado;
-        produtoNome = produtoEncontrado.nome;
-        valorUnitario = produtoEncontrado.preco;
-      } else {
-        // Se não encontrar o produto, usar dados da venda
-        produtoNome = vendaSelecionada.produto || 'Produto';
-        valorUnitario = (vendaSelecionada.valor_total || 0) / (vendaSelecionada.quantidade_vendida || 1);
-      }
-    } else {
-      const produtoIdStr = formData.get("produto_id") as string;
-      if (!produtoIdStr) {
-        toast({
-          title: "Erro",
-          description: "Selecione um produto",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      produtoId = parseInt(produtoIdStr);
-      produto = produtos.find(p => p.id === produtoId);
-
-      if (!produto) {
-        toast({
-          title: "Erro",
-          description: "Produto não encontrado",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      produtoNome = produto.nome;
-      valorUnitario = produto.preco;
-
-      const quantidadeStr = formData.get("quantidade") as string;
-      quantidade = parseInt(quantidadeStr);
-
-      if (!quantidade || quantidade <= 0) {
-        toast({
-          title: "Erro",
-          description: "Quantidade inválida",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    const valorTotal = valorUnitario * quantidade;
+    // Get common form fields
+    const motivo = formData.get("motivo") as string;
+    const status = formData.get("status") as string;
+    const observacoes = formData.get("observacoes") as string || null;
+    const cliente_nome = formData.get("cliente_nome") as string || null;
 
     // Buscar usuário logado do localStorage
     const userStr = localStorage.getItem("user");
@@ -226,31 +147,200 @@ export default function Devolucoes() {
       }
     }
 
-    const data: any = {
-      produto_nome: produtoNome,
-      quantidade,
-      valor_total: valorTotal,
-      motivo: formData.get("motivo") as string,
-      status: formData.get("status") as string,
-      observacoes: formData.get("observacoes") as string || null,
-      cliente_nome: formData.get("cliente_nome") as string || null,
-      operador_nome: operadorNome,
-      operador_id: operadorId,
-    };
+    if (vendaSelecionada) {
+      // Multi-item return from a sale
+      const itensVenda = parseItensVenda(vendaSelecionada);
+      
+      // Collect all items to return with validation
+      const itensParaDevolver: Array<{
+        produto_nome: string;
+        produto_id?: number;
+        quantidade: number;
+        valor_unitario: number;
+        valor_total: number;
+      }> = [];
 
-    // Adicionar produto_id se disponível
-    if (produtoId) {
-      data.produto_id = produtoId;
-    }
+      const errosValidacao: string[] = [];
 
-    // Vincular devolução à venda original (importante para relatórios)
-    if (vendaSelecionada && vendaSelecionada.id) {
-      data.venda_id = vendaSelecionada.id;
-    }
+      itensVenda.forEach((item) => {
+        const qtdDevolver = itensSelecionados[item.uniqueKey] || 0;
+        
+        if (qtdDevolver > 0) {
+          // Validate quantity
+          if (qtdDevolver > item.quantidade) {
+            errosValidacao.push(`${item.nome}: máximo ${item.quantidade} un.`);
+            return;
+          }
 
-    if (editingDevolucao) {
+          // Resolve product ID from catalog
+          const produtoId = resolveProdutoId(item);
+
+          itensParaDevolver.push({
+            produto_nome: item.nome || 'Produto',
+            produto_id: produtoId,
+            quantidade: qtdDevolver,
+            valor_unitario: item.preco || 0,
+            valor_total: (item.preco || 0) * qtdDevolver
+          });
+        }
+      });
+
+      if (errosValidacao.length > 0) {
+        toast({
+          title: "Erro de validação",
+          description: errosValidacao.join('; '),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (itensParaDevolver.length === 0) {
+        toast({
+          title: "Erro",
+          description: "Selecione pelo menos um item para devolver",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create a devolucao for each item
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const item of itensParaDevolver) {
+        const data: any = {
+          produto_nome: item.produto_nome,
+          quantidade: item.quantidade,
+          valor_total: item.valor_total,
+          motivo,
+          status,
+          observacoes,
+          cliente_nome,
+          operador_nome: operadorNome,
+          operador_id: operadorId,
+          venda_id: vendaSelecionada.id,
+        };
+
+        if (item.produto_id) {
+          data.produto_id = item.produto_id;
+        }
+
+        try {
+          await apiRequest("POST", "/api/devolucoes", data);
+          successCount++;
+        } catch (error) {
+          console.error("Erro ao criar devolução:", error);
+          errorCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        queryClient.invalidateQueries({ queryKey: ["/api/devolucoes"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/produtos"] });
+        toast({
+          title: "Devoluções registradas!",
+          description: `${successCount} item(ns) devolvido(s) com sucesso${errorCount > 0 ? `. ${errorCount} erro(s).` : ''}`,
+        });
+        setDialogOpen(false);
+        setEditingDevolucao(null);
+        setVendaSelecionada(null);
+        setItensSelecionados({});
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível registrar as devoluções",
+          variant: "destructive",
+        });
+      }
+    } else if (editingDevolucao) {
+      // Editing existing devolucao
+      const produtoIdStr = formData.get("produto_id") as string;
+      const produtoId = produtoIdStr ? parseInt(produtoIdStr) : editingDevolucao.produto_id;
+      const produto = produtos.find(p => p.id === produtoId);
+      
+      const quantidadeStr = formData.get("quantidade") as string;
+      const quantidade = parseInt(quantidadeStr);
+
+      if (!quantidade || quantidade <= 0) {
+        toast({
+          title: "Erro",
+          description: "Quantidade inválida",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const valorUnitario = produto?.preco || (editingDevolucao.valor_total / editingDevolucao.quantidade);
+      const valorTotal = valorUnitario * quantidade;
+
+      const data: any = {
+        produto_nome: produto?.nome || editingDevolucao.produto_nome,
+        quantidade,
+        valor_total: valorTotal,
+        motivo,
+        status,
+        observacoes,
+        cliente_nome,
+        operador_nome: operadorNome,
+        operador_id: operadorId,
+      };
+
+      if (produtoId) {
+        data.produto_id = produtoId;
+      }
+
       updateMutation.mutate({ id: editingDevolucao.id, data });
     } else {
+      // New manual devolucao (not from a sale)
+      const produtoIdStr = formData.get("produto_id") as string;
+      if (!produtoIdStr) {
+        toast({
+          title: "Erro",
+          description: "Selecione um produto",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const produtoId = parseInt(produtoIdStr);
+      const produto = produtos.find(p => p.id === produtoId);
+
+      if (!produto) {
+        toast({
+          title: "Erro",
+          description: "Produto não encontrado",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const quantidadeStr = formData.get("quantidade") as string;
+      const quantidade = parseInt(quantidadeStr);
+
+      if (!quantidade || quantidade <= 0) {
+        toast({
+          title: "Erro",
+          description: "Quantidade inválida",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const valorTotal = produto.preco * quantidade;
+
+      const data: any = {
+        produto_nome: produto.nome,
+        produto_id: produtoId,
+        quantidade,
+        valor_total: valorTotal,
+        motivo,
+        status,
+        observacoes,
+        cliente_nome,
+        operador_nome: operadorNome,
+        operador_id: operadorId,
+      };
+
       createMutation.mutate(data);
     }
   };
@@ -318,6 +408,101 @@ export default function Devolucoes() {
   };
 
   const [itensSelecionados, setItensSelecionados] = useState<{[key: string]: number}>({});
+
+  // Helper to parse itens from venda - can be JSON string or array
+  // Returns items with stable unique keys for state management
+  const parseItensVenda = (venda: any): Array<{
+    produto_id?: number;
+    nome: string;
+    quantidade: number;
+    preco: number;
+    subtotal?: number;
+    codigo_barras?: string;
+    uniqueKey: string; // Stable key for state management
+  }> => {
+    if (!venda) return [];
+    
+    let itens = venda.itens;
+    
+    // Parse if it's a string
+    if (typeof itens === 'string') {
+      try {
+        itens = JSON.parse(itens);
+      } catch (e) {
+        console.error('Error parsing itens:', e);
+        itens = null;
+      }
+    }
+    
+    // If itens is a valid array, return with stable keys
+    if (Array.isArray(itens) && itens.length > 0) {
+      return itens.map((item, idx) => ({
+        ...item,
+        // Use codigo_barras or produto_id or nome as stable key, fallback to index
+        uniqueKey: item.codigo_barras || `pid-${item.produto_id}` || `name-${item.nome}-${idx}`
+      }));
+    }
+    
+    // Fallback to single product format from venda fields
+    if (venda.produto && venda.quantidade_vendida) {
+      const valorUnitario = (venda.valor_total || 0) / (venda.quantidade_vendida || 1);
+      return [{
+        nome: venda.produto,
+        quantidade: venda.quantidade_vendida,
+        preco: valorUnitario,
+        subtotal: venda.valor_total,
+        uniqueKey: `single-${venda.id}`
+      }];
+    }
+    
+    return [];
+  };
+
+  // Resolve produto_id from catalog based on item data
+  const resolveProdutoId = (item: any): number | undefined => {
+    // First try direct produto_id
+    if (item.produto_id && typeof item.produto_id === 'number') {
+      const exists = produtos.find(p => p.id === item.produto_id);
+      if (exists) return item.produto_id;
+    }
+    
+    // Try matching by codigo_barras
+    if (item.codigo_barras) {
+      const byBarcode = produtos.find(p => p.codigo_barras === item.codigo_barras);
+      if (byBarcode) return byBarcode.id;
+    }
+    
+    // Try matching by exact name (case insensitive)
+    if (item.nome) {
+      const byName = produtos.find(p => 
+        p.nome.toLowerCase().trim() === item.nome.toLowerCase().trim()
+      );
+      if (byName) return byName.id;
+    }
+    
+    return undefined;
+  };
+
+  // Calculate total value to return based on selected items
+  const calcularValorDevolucao = () => {
+    if (!vendaSelecionada) return 0;
+    const itensVenda = parseItensVenda(vendaSelecionada);
+    let total = 0;
+    
+    itensVenda.forEach((item) => {
+      const qtdDevolver = itensSelecionados[item.uniqueKey] || 0;
+      if (qtdDevolver > 0) {
+        total += (item.preco || 0) * qtdDevolver;
+      }
+    });
+    
+    return total;
+  };
+
+  // Check if any items are selected for return
+  const hasItensSelecionados = () => {
+    return Object.values(itensSelecionados).some(qtd => qtd > 0);
+  };
 
   const handleNewDevolucao = () => {
     setEditingDevolucao(null);
@@ -795,49 +980,69 @@ export default function Devolucoes() {
                     <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">
                       Selecione os itens para devolver:
                     </Label>
-                    <div className="bg-white dark:bg-blue-900 rounded-md border border-blue-200 dark:border-blue-700 p-3 space-y-2">
-                      <div className="flex items-center justify-between pb-2 border-b">
-                        <span className="text-xs font-medium text-blue-900 dark:text-blue-100">
-                          {vendaSelecionada.produto || 'Produto'}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor="qtd-devolver" className="text-xs text-blue-700 dark:text-blue-300">
-                            Qtd a devolver:
-                          </Label>
-                          <Input
-                            id="qtd-devolver"
-                            type="number"
-                            min="0"
-                            max={vendaSelecionada.quantidade_vendida || 1}
-                            value={itensSelecionados['item-principal'] || 0}
-                            onChange={(e) => {
-                              const valor = parseInt(e.target.value);
-                              if (!isNaN(valor) && valor >= 0) {
-                                const qtdMaxima = vendaSelecionada.quantidade_vendida || 1;
-                                setItensSelecionados({ 
-                                  'item-principal': Math.min(Math.max(0, valor), qtdMaxima)
-                                });
-                              }
-                            }}
-                            className="w-20 h-8 text-center"
-                            placeholder="0"
-                          />
-                          <span className="text-xs text-blue-700 dark:text-blue-300">
-                            de {vendaSelecionada.quantidade_vendida || 1}
+                    <div className="bg-white dark:bg-blue-900 rounded-md border border-blue-200 dark:border-blue-700 p-3 space-y-3 max-h-[250px] overflow-y-auto">
+                      {parseItensVenda(vendaSelecionada).map((item, index) => {
+                        const qtdSelecionada = itensSelecionados[item.uniqueKey] || 0;
+                        const valorItem = (item.preco || 0) * qtdSelecionada;
+                        
+                        return (
+                          <div key={item.uniqueKey} className="pb-2 border-b last:border-b-0 last:pb-0">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex-1 min-w-0">
+                                <span className="text-sm font-medium text-blue-900 dark:text-blue-100 block truncate">
+                                  {item.nome || 'Produto'}
+                                </span>
+                                <span className="text-xs text-blue-600 dark:text-blue-400">
+                                  R$ {(item.preco || 0).toFixed(2)} / un
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  id={`qtd-${item.uniqueKey}`}
+                                  type="number"
+                                  min="0"
+                                  max={item.quantidade}
+                                  value={qtdSelecionada}
+                                  onChange={(e) => {
+                                    const valor = parseInt(e.target.value) || 0;
+                                    const qtdMaxima = item.quantidade;
+                                    setItensSelecionados(prev => ({
+                                      ...prev,
+                                      [item.uniqueKey]: Math.min(Math.max(0, valor), qtdMaxima)
+                                    }));
+                                  }}
+                                  className="w-16 h-8 text-center"
+                                  placeholder="0"
+                                  data-testid={`input-qtd-${index}`}
+                                />
+                                <span className="text-xs text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                                  de {item.quantidade}
+                                </span>
+                              </div>
+                            </div>
+                            {qtdSelecionada > 0 && (
+                              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                Subtotal: R$ {valorItem.toFixed(2)}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Total summary */}
+                    <div className="bg-white dark:bg-blue-900 rounded-md border border-blue-200 dark:border-blue-700 p-3">
+                      {hasItensSelecionados() ? (
+                        <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 flex items-center justify-between">
+                          <span>Total a devolver:</span>
+                          <span className="text-green-600 dark:text-green-400">
+                            R$ {calcularValorDevolucao().toFixed(2)}
                           </span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">
-                        Valor unitário: R$ {((vendaSelecionada.valor_total || 0) / (vendaSelecionada.quantidade_vendida || 1)).toFixed(2)}
-                      </p>
-                      {itensSelecionados['item-principal'] && itensSelecionados['item-principal'] > 0 ? (
-                        <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 pt-1 border-t">
-                          Valor a devolver: R$ {(((vendaSelecionada.valor_total || 0) / (vendaSelecionada.quantidade_vendida || 1)) * itensSelecionados['item-principal']).toFixed(2)}
                         </p>
                       ) : (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 pt-1 border-t flex items-center gap-1">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                           <AlertTriangle className="h-3 w-3" />
-                          Informe a quantidade para devolver (maior que 0)
+                          Informe a quantidade de pelo menos um item para devolver
                         </p>
                       )}
                     </div>
@@ -887,13 +1092,6 @@ export default function Devolucoes() {
                   </div>
                 )}
 
-                {vendaSelecionada && (
-                  <input 
-                    type="hidden" 
-                    name="quantidade" 
-                    value={itensSelecionados['item-principal'] || 0}
-                  />
-                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="cliente_nome">Nome do Cliente</Label>
@@ -975,7 +1173,7 @@ export default function Devolucoes() {
                     disabled={
                       createMutation.isPending || 
                       updateMutation.isPending ||
-                      (vendaSelecionada && (!itensSelecionados['item-principal'] || itensSelecionados['item-principal'] <= 0))
+                      (vendaSelecionada && !hasItensSelecionados())
                     }
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                     data-testid="button-save"
@@ -986,11 +1184,6 @@ export default function Devolucoes() {
                       ? "Atualizar"
                       : "Cadastrar Devolução"}
                   </Button>
-                  {vendaSelecionada && (!itensSelecionados['item-principal'] || itensSelecionados['item-principal'] <= 0) && (
-                    <p className="text-xs text-red-600 text-center w-full mt-2">
-                      ⚠️ Informe a quantidade a devolver (deve ser maior que 0)
-                    </p>
-                  )}
                 </div>
               </form>
             </DialogContent>
