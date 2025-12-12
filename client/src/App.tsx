@@ -21,7 +21,6 @@ import Inventory from "@/pages/Inventory";
 import Reports from "@/pages/Reports";
 import PDV from "@/pages/PDV";
 import Settings from "@/pages/Settings";
-import ConfigFiscal from "@/pages/ConfigFiscal";
 import Fornecedores from "@/pages/Fornecedores";
 import Clientes from "@/pages/Clientes";
 import ContasPagar from "@/pages/ContasPagar";
@@ -148,15 +147,6 @@ function Router() {
           <DashboardLayout>
             <ProtectedRoute requiredPermission="configuracoes">
               <Settings />
-            </ProtectedRoute>
-          </DashboardLayout>
-        )}
-      </Route>
-      <Route path="/config-fiscal">
-        {() => (
-          <DashboardLayout>
-            <ProtectedRoute requiredPermission="config_fiscal">
-              <ConfigFiscal />
             </ProtectedRoute>
           </DashboardLayout>
         )}

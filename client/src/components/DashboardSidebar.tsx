@@ -9,7 +9,7 @@ type MenuItem = {
   title: string;
   url: string;
   icon: any;
-  permission?: "dashboard" | "pdv" | "produtos" | "inventario" | "relatorios" | "clientes" | "fornecedores" | "financeiro" | "config_fiscal" | "configuracoes" | "caixa" | "devolucoes" | "contas_pagar" | "contas_receber" | "historico_caixas" | "orcamentos";
+  permission?: "dashboard" | "pdv" | "produtos" | "inventario" | "relatorios" | "clientes" | "fornecedores" | "financeiro" | "configuracoes" | "caixa" | "devolucoes" | "contas_pagar" | "contas_receber" | "historico_caixas" | "orcamentos";
   adminOnly?: boolean;
   badge?: string;
 };
@@ -37,10 +37,6 @@ const financeMenuItems: MenuItem[] = [
 
 const configMenuItems: MenuItem[] = [
   { title: "Planos", url: "/planos", icon: Crown, adminOnly: true },
-];
-
-const configMenuItemsAfterAdmin: MenuItem[] = [
-  { title: "Config. Fiscal", url: "/config-fiscal", icon: FileText, permission: "config_fiscal", adminOnly: true },
 ];
 
 const configMenuItemsEnd: MenuItem[] = [
@@ -184,10 +180,7 @@ export default function DashboardSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {/* 3. Config. Fiscal */}
-              {configMenuItemsAfterAdmin.map(renderMenuItem)}
-
-              {/* 4. Ajuda e Termos */}
+              {/* 3. Ajuda e Termos */}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
