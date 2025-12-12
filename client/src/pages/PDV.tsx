@@ -901,11 +901,66 @@ ${cupomPersonalizado.rodape}
                   </Button>
                   <Button
                     className="flex-1"
-                    onClick={() => {
+                    onClick={async () => {
+                      // Generate cupom text for saving
+                      const cupomTexto = `
+═══════════════════════════════════
+    ${cupomPersonalizado.cabecalho}
+${configFiscal?.razao_social || 'Estabelecimento'}
+${configFiscal?.cnpj ? `CNPJ: ${configFiscal.cnpj}` : ''}
+${new Date().toLocaleString('pt-BR')}
+═══════════════════════════════════
+
+ITENS:
+${lastSale.itens.map((item: any, index: number) => {
+  const preco_unit = Number(item.preco_unitario || item.preco || 0);
+  const qtd = Number(item.quantidade || 1);
+  const subtotal = Number(item.subtotal || (preco_unit * qtd) || 0);
+  const nome_produto = item.nome || item.produto || 'Produto';
+  return `${index + 1}. ${nome_produto}\n   ${qtd} x R$ ${preco_unit.toFixed(2)} = R$ ${subtotal.toFixed(2)}`;
+}).join('\n\n')}
+
+───────────────────────────────────
+TOTAL: R$ ${lastSale.valorTotal.toFixed(2)}
+═══════════════════════════════════
+
+${cupomPersonalizado.avisoFiscal}
+
+${cupomPersonalizado.rodape}
+═══════════════════════════════════
+                      `.trim();
+
+                      // Save cupom to database
+                      if (lastSale.vendaId) {
+                        try {
+                          const userStr = localStorage.getItem("user");
+                          if (userStr) {
+                            const user = JSON.parse(userStr);
+                            const headers: Record<string, string> = {
+                              "Content-Type": "application/json",
+                              "x-user-id": user.id,
+                              "x-user-type": user.tipo || "usuario",
+                            };
+
+                            if (user.tipo === "funcionario" && user.conta_id) {
+                              headers["x-conta-id"] = user.conta_id;
+                            }
+
+                            await fetch(`/api/vendas/${lastSale.vendaId}/cupom`, {
+                              method: "PATCH",
+                              headers,
+                              body: JSON.stringify({ cupomTexto }),
+                            });
+                          }
+                        } catch (error) {
+                          console.error("Erro ao salvar cupom:", error);
+                        }
+                      }
+
                       setShowCupomNaoFiscal(false);
                       toast({
                         title: "Cupom gerado!",
-                        description: "Cupom não-fiscal disponível",
+                        description: "Cupom não-fiscal salvo e disponível para download nos relatórios",
                       });
                     }}
                     data-testid="button-fechar-cupom"

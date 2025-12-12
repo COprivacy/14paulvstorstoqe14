@@ -160,7 +160,7 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
       playBeep(true);
 
       const existingItemIndex = cart.findIndex(item => item.codigo_barras === codigoProduto);
-      const quantidadeAdicionar = isBalancaCode ? (pesoGramas / 1000) : quantidadeMultiplicador;
+      const quantidadeAdicionar = isBalancaCode ? (pesoGramas / 1000) : Math.max(1, quantidadeMultiplicador);
 
       if (existingItemIndex > -1) {
         const updatedCart = [...cart];
@@ -361,8 +361,23 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
                 <Input
                   type="number"
                   min="1"
-                  value={quantidadeMultiplicador}
-                  onChange={(e) => setQuantidadeMultiplicador(Math.max(1, parseInt(e.target.value) || 1))}
+                  value={quantidadeMultiplicador === 0 ? "" : quantidadeMultiplicador}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || val === "0") {
+                      setQuantidadeMultiplicador(0);
+                    } else {
+                      const parsed = parseInt(val);
+                      if (!isNaN(parsed) && parsed > 0) {
+                        setQuantidadeMultiplicador(parsed);
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    if (quantidadeMultiplicador < 1) {
+                      setQuantidadeMultiplicador(1);
+                    }
+                  }}
                   className="h-8 w-16 text-center font-bold"
                   disabled={isProcessing}
                 />

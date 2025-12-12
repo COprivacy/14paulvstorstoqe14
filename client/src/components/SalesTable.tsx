@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingCart, Download } from "lucide-react";
 import { formatDateTime } from "@/lib/dateUtils";
 import { validateVenda, validateArray } from "@/lib/dataValidator";
 
@@ -18,7 +18,8 @@ interface Sale {
   itens?: string;
   cliente_id?: number;
   orcamento_numero?: string;
-  status?: string; // Adicionado para verificar status de arquivamento
+  status?: string;
+  cupom_texto?: string;
 }
 
 interface SalesTableProps {
@@ -85,6 +86,7 @@ export default function SalesTable({ sales }: SalesTableProps) {
                     <TableHead className="text-center">Vendedor</TableHead>
                     <TableHead className="text-center">Orçamento</TableHead>
                     <TableHead className="text-center">Devolução</TableHead>
+                    <TableHead className="text-center">Cupom</TableHead>
                     <TableHead className="text-right">Data</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -148,6 +150,31 @@ export default function SalesTable({ sales }: SalesTableProps) {
                                 DEV-{devolucaoRelacionada.id}
                               </Badge>
                             </div>
+                          ) : (
+                            '-'
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {sale.cupom_texto ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const blob = new Blob([sale.cupom_texto || ''], { type: 'text/plain' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `cupom-venda-${sale.id}.txt`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                              }}
+                              data-testid={`button-download-cupom-${sale.id}`}
+                              title="Baixar cupom"
+                            >
+                              <Download className="h-4 w-4 text-blue-600" />
+                            </Button>
                           ) : (
                             '-'
                           )}

@@ -4243,6 +4243,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Endpoint para salvar cupom não-fiscal de uma venda
+  app.patch("/api/vendas/:id/cupom", getUserId, async (req, res) => {
+    try {
+      const effectiveUserId = req.headers["effective-user-id"] as string;
+      const vendaId = parseInt(req.params.id);
+      const { cupomTexto } = req.body;
+
+      if (!effectiveUserId) {
+        return res.status(401).json({ error: "Usuário não autenticado" });
+      }
+
+      if (!cupomTexto || typeof cupomTexto !== 'string' || cupomTexto.length > 8000) {
+        return res.status(400).json({ error: "Cupom inválido" });
+      }
+
+      // Verificar se a venda pertence ao usuário
+      const venda = await storage.getVenda?.(vendaId);
+      if (!venda || venda.user_id !== effectiveUserId) {
+        return res.status(404).json({ error: "Venda não encontrada" });
+      }
+
+      // Atualizar cupom_texto
+      if (storage.updateVendaCupom) {
+        await storage.updateVendaCupom(vendaId, cupomTexto);
+      }
+
+      res.json({ success: true, message: "Cupom salvo com sucesso" });
+    } catch (error: any) {
+      console.error("Erro ao salvar cupom:", error);
+      res.status(500).json({ error: error.message || "Erro ao salvar cupom" });
+    }
+  });
+
   // Rotas de Fornecedores
   app.get("/api/fornecedores", getUserId, async (req, res) => {
     try {

@@ -614,6 +614,16 @@ export class PostgresStorage implements IStorage {
     await this.db.delete(vendas);
   }
 
+  async getVenda(id: number): Promise<Venda | undefined> {
+    const result = await this.db.select().from(vendas).where(eq(vendas.id, id)).limit(1);
+    return result[0];
+  }
+
+  async updateVendaCupom(id: number, cupomTexto: string): Promise<boolean> {
+    const result = await this.db.update(vendas).set({ cupom_texto: cupomTexto }).where(eq(vendas.id, id)).returning();
+    return result.length > 0;
+  }
+
   async getFornecedores(): Promise<Fornecedor[]> {
     return await this.db.select().from(fornecedores);
   }
