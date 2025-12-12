@@ -777,6 +777,36 @@ export type ContasReceber = typeof contasReceber.$inferSelect;
 export type InsertSystemConfig = z.infer<typeof insertSystemConfigSchema>;
 export type SystemConfig = typeof systemConfig.$inferSelect;
 
+// Tabela de Sessões Ativas (para controle de sessões simultâneas e fingerprinting)
+export const userSessions = pgTable("user_sessions", {
+  id: serial("id").primaryKey(),
+  user_id: text("user_id").notNull(),
+  user_type: text("user_type").notNull().default("usuario"), // usuario, funcionario
+  session_token: text("session_token").notNull().unique(),
+  device_fingerprint: text("device_fingerprint").notNull(),
+  device_info: jsonb("device_info"), // browser, os, screen, etc
+  ip_address: text("ip_address"),
+  user_agent: text("user_agent"),
+  is_active: text("is_active").notNull().default("true"),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  last_activity: timestamp("last_activity", { withTimezone: true }).notNull().defaultNow(),
+  expires_at: timestamp("expires_at", { withTimezone: true }).notNull(),
+}, (table) => ({
+  userIdIdx: index("user_sessions_user_id_idx").on(table.user_id),
+  sessionTokenIdx: index("user_sessions_session_token_idx").on(table.session_token),
+  fingerprintIdx: index("user_sessions_fingerprint_idx").on(table.device_fingerprint),
+  isActiveIdx: index("user_sessions_is_active_idx").on(table.is_active),
+}));
+
+export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
+  id: true,
+  created_at: true,
+  last_activity: true,
+});
+
+export type UserSession = typeof userSessions.$inferSelect;
+export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
+
 export function hasPermission(user: User, permission: string): boolean {
   // Admin sempre tem todas as permissões
   if (user.is_admin === 'true') return true; // Corrigido para comparar com string 'true'
