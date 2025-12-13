@@ -7,6 +7,14 @@ A web application for Brazilian small businesses, offering inventory management,
 Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
+**2025-12-13:** Fixed Mercado Pago Webhook Duplicate Payment Bug:
+- Identified bug where Mercado Pago webhook was processing same payment multiple times, creating duplicate employee packages
+- Added `getEmployeePackageByPaymentId` method to check for existing payments before processing
+- Added UNIQUE index on `employee_packages.payment_id` column for database-level protection
+- Updated `createEmployeePackage` to use `ON CONFLICT DO NOTHING` for atomic duplicate prevention
+- Added duplicate payment check for subscription webhooks (checks `mercadopago_payment_id`)
+- Fixed customer data: removed duplicate entry and corrected `max_funcionarios` count
+
 **2025-12-12:** Implemented Device Fingerprinting and Session Management:
 - Created `user_sessions` table to track active sessions with fingerprint, token, device info
 - Implemented client-side fingerprinting using Web Crypto API (browser, OS, screen, canvas hash)
