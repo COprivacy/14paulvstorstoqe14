@@ -1,25 +1,42 @@
 
 import { useState, useEffect } from "react";
-import { Check, Shield, Lock, CheckCircle, Mail, Package, CreditCard, ArrowLeft, Sparkles, Zap, TrendingUp, Users, BarChart3, FileText } from "lucide-react";
+import { Check, Shield, Lock, CheckCircle, Mail, Package, CreditCard, ArrowLeft, Sparkles, Zap, TrendingUp, Users, BarChart3, FileText, Crown, Star, UserPlus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { CheckoutForm } from "@/components/CheckoutForm";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { getPlanPrices, fetchPlanPricesFromServer, formatPrice, calculateAnnualSavings } from "@/lib/planPrices";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+interface EmployeePackagePrices {
+  pacote_5: number;
+  pacote_10: number;
+  pacote_20: number;
+  pacote_50: number;
+}
+
+const DEFAULT_EMPLOYEE_PRICES: EmployeePackagePrices = {
+  pacote_5: 39.90,
+  pacote_10: 69.90,
+  pacote_20: 119.90,
+  pacote_50: 249.90,
+};
 
 export default function Planos() {
   const { user } = useUser();
   const [, setLocation] = useLocation();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{
-    plano: "premium_mensal" | "premium_anual";
+    plano: "premium_mensal" | "premium_anual" | "pacote_5" | "pacote_10" | "pacote_20" | "pacote_50";
     planoNome: string;
     planoPreco: string;
   } | null>(null);
   const { toast } = useToast();
   const [precos, setPrecos] = useState(getPlanPrices());
+  const [employeePrices, setEmployeePrices] = useState<EmployeePackagePrices>(DEFAULT_EMPLOYEE_PRICES);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,8 +45,15 @@ export default function Planos() {
       try {
         const precosAtualizados = await fetchPlanPricesFromServer();
         setPrecos(precosAtualizados);
+        
+        // Carregar preços dos pacotes de funcionários
+        const empRes = await fetch('/api/employee-package-prices');
+        if (empRes.ok) {
+          const empData = await empRes.json();
+          setEmployeePrices(empData);
+        }
       } catch (error) {
-        console.error('❌ [PLANOS] Erro ao carregar preços:', error);
+        console.error('Erro ao carregar preços:', error);
         setPrecos(getPlanPrices());
       } finally {
         setLoading(false);
@@ -46,18 +70,18 @@ export default function Planos() {
     if (status) {
       if (status === 'success' || status === 'approved') {
         toast({
-          title: "🎉 Pagamento Confirmado!",
+          title: "Pagamento Confirmado!",
           description: "Sua assinatura será ativada em breve. Você receberá um e-mail de confirmação.",
         });
       } else if (status === 'failure') {
         toast({
-          title: "❌ Pagamento Recusado",
+          title: "Pagamento Recusado",
           description: "Não foi possível processar seu pagamento. Tente novamente.",
           variant: "destructive",
         });
       } else if (status === 'pending') {
         toast({
-          title: "⏳ Pagamento Pendente",
+          title: "Pagamento Pendente",
           description: "Seu pagamento está sendo processado. Aguarde a confirmação.",
         });
       }
@@ -88,279 +112,385 @@ export default function Planos() {
         planoNome: "Plano Mensal",
         planoPreco: formatPrice(precos.premium_mensal)
       });
-    } else {
+    } else if (tipo === "anual") {
       setSelectedPlan({
         plano: "premium_anual",
         planoNome: "Plano Anual",
         planoPreco: formatPrice(precos.premium_anual / 12)
       });
+    } else if (tipo.startsWith("pacote_")) {
+      const pacoteKey = tipo as keyof EmployeePackagePrices;
+      const quantidade = parseInt(tipo.split("_")[1]);
+      setSelectedPlan({
+        plano: tipo as any,
+        planoNome: `+${quantidade} Funcionários`,
+        planoPreco: formatPrice(employeePrices[pacoteKey])
+      });
     }
     setCheckoutOpen(true);
   };
 
-  const recursos = [
-    { icon: BarChart3, titulo: "PDV Completo", desc: "Sistema de ponto de venda moderno e intuitivo" },
-    { icon: Package, titulo: "Gestão de Estoque", desc: "Controle total de produtos e inventário" },
-    { icon: FileText, titulo: "NFC-e", desc: "Emissão de notas fiscais eletrônicas" },
-    { icon: TrendingUp, titulo: "Relatórios Avançados", desc: "Dashboards e análises em tempo real" },
-    { icon: Users, titulo: "Multi-usuário", desc: "Gerencie funcionários e permissões" },
-    { icon: Shield, titulo: "Backup Automático", desc: "Seus dados sempre seguros" },
+  const recursosPrincipais = [
+    "PDV Completo",
+    "Gestão de Estoque",
+    "Emissão NFC-e",
+    "Relatórios",
+    "1 Funcionário",
+    "Backup Automático"
+  ];
+
+  const employeePackages = [
+    { 
+      id: "pacote_5", 
+      quantidade: 5, 
+      preco: employeePrices.pacote_5,
+      precoUnitario: employeePrices.pacote_5 / 5,
+      popular: false
+    },
+    { 
+      id: "pacote_10", 
+      quantidade: 10, 
+      preco: employeePrices.pacote_10,
+      precoUnitario: employeePrices.pacote_10 / 10,
+      popular: true
+    },
+    { 
+      id: "pacote_20", 
+      quantidade: 20, 
+      preco: employeePrices.pacote_20,
+      precoUnitario: employeePrices.pacote_20 / 20,
+      popular: false
+    },
+    { 
+      id: "pacote_50", 
+      quantidade: 50, 
+      preco: employeePrices.pacote_50,
+      precoUnitario: employeePrices.pacote_50 / 50,
+      popular: false
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-purple-950" data-testid="page-planos">
-      {/* Header */}
+      {/* Header Compacto */}
       <nav className="bg-black/30 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link href="/">
-              <div className="flex items-center space-x-3 cursor-pointer group">
-                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl group-hover:scale-110 transition-transform">
-                  <Package className="h-6 w-6 text-white" />
+              <div className="flex items-center gap-2 cursor-pointer group">
+                <div className="p-1.5 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg group-hover:scale-110 transition-transform">
+                  <Package className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  Pavisoft Sistemas
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  Pavisoft
                 </span>
               </div>
             </Link>
             <Button
-              variant="outline"
-              className="gap-2 border-white/20 hover:bg-white/10 text-white"
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-white/80 hover:text-white hover:bg-white/10"
               onClick={handleBackToSystem}
+              data-testid="button-voltar"
             >
               <ArrowLeft className="h-4 w-4" />
-              Voltar ao Sistema
+              Voltar
             </Button>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-full mb-6">
-            <Sparkles className="h-4 w-4 text-purple-400" />
-            <span className="text-sm text-purple-300 font-medium">Transforme seu negócio hoje</span>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Hero Compacto */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-full mb-4">
+            <Sparkles className="h-3.5 w-3.5 text-purple-400" />
+            <span className="text-xs text-purple-300 font-medium">Planos Premium</span>
           </div>
           
-          <h1 className="text-5xl md:text-6xl font-bold mb-6" data-testid="text-title">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3" data-testid="text-title">
             <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Escolha o Plano Ideal
+              Escolha seu Plano
             </span>
           </h1>
           
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto" data-testid="text-subtitle">
-            Sistema completo de gestão para sua empresa crescer com segurança e eficiência
+          <p className="text-gray-400 max-w-xl mx-auto text-sm" data-testid="text-subtitle">
+            Sistema completo de gestão empresarial com tudo que você precisa
           </p>
         </div>
 
-        {/* Recursos em Destaque */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-16">
-          {recursos.map((recurso, index) => (
-            <Card key={index} className="bg-white/5 border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4 text-center">
-                <recurso.icon className="h-8 w-8 mx-auto mb-2 text-purple-400" />
-                <h3 className="text-sm font-semibold text-white mb-1">{recurso.titulo}</h3>
-                <p className="text-xs text-gray-400">{recurso.desc}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {/* Tabs para Planos */}
+        <Tabs defaultValue="sistema" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 bg-white/5 border border-white/10">
+            <TabsTrigger 
+              value="sistema" 
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
+              data-testid="tab-sistema"
+            >
+              <Crown className="h-4 w-4 mr-2" />
+              Planos do Sistema
+            </TabsTrigger>
+            <TabsTrigger 
+              value="funcionarios"
+              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-teal-600 data-[state=active]:text-white"
+              data-testid="tab-funcionarios"
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Funcionários Extra
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Planos */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
-          {/* Plano Mensal */}
-          <Card 
-            className="bg-white/5 border-white/10 backdrop-blur-xl hover:border-blue-500/50 transition-all group"
-            data-testid="card-plano-mensal"
-          >
-            <CardHeader className="text-center pb-8 pt-10">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-4 mx-auto group-hover:scale-110 transition-transform">
-                <Zap className="h-8 w-8 text-white" />
-              </div>
-              <CardTitle className="text-3xl font-bold text-white mb-2" data-testid="text-nome-mensal">
-                Plano Mensal
-              </CardTitle>
-              <CardDescription className="text-gray-400" data-testid="text-descricao-mensal">
-                Flexibilidade total
-              </CardDescription>
-              <div className="mt-6">
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent" data-testid="text-preco-mensal">
-                    {formatPrice(valorMensal)}
-                  </span>
-                  <span className="text-gray-400 text-xl" data-testid="text-periodo-mensal">/mês</span>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-6">
-              <ul className="space-y-3">
-                {[
-                  "Acesso completo ao sistema",
-                  "1 funcionário incluso",
-                  "PDV e controle de caixa",
-                  "Gestão de estoque ilimitada",
-                  "Emissão de NFC-e",
-                  "Relatórios em tempo real",
-                  "Gestão financeira completa",
-                  "Suporte por email",
-                  "Backup automático diário"
-                ].map((recurso, index) => (
-                  <li key={index} className="flex items-start gap-3" data-testid={`item-recurso-mensal-${index}`}>
-                    <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">{recurso}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Button 
-                className="w-full text-lg py-6 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-500/50"
-                onClick={() => handleSelectPlan('mensal')}
-                data-testid="button-contratar-mensal"
+          {/* Tab Planos do Sistema */}
+          <TabsContent value="sistema" className="mt-0">
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {/* Plano Mensal */}
+              <Card 
+                className="bg-white/5 border-white/10 backdrop-blur-xl hover:border-blue-500/50 transition-all"
+                data-testid="card-plano-mensal"
               >
-                Contratar Agora
-              </Button>
-            </CardContent>
-          </Card>
+                <CardHeader className="text-center pb-4 pt-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl mb-3 mx-auto">
+                    <Zap className="h-6 w-6 text-white" />
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-white" data-testid="text-nome-mensal">
+                    Mensal
+                  </CardTitle>
+                  <CardDescription className="text-gray-400 text-sm">
+                    Flexibilidade total
+                  </CardDescription>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent" data-testid="text-preco-mensal">
+                      {formatPrice(valorMensal)}
+                    </span>
+                    <span className="text-gray-400">/mês</span>
+                  </div>
+                </CardHeader>
 
-          {/* Plano Anual */}
-          <Card 
-            className="relative bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/50 backdrop-blur-xl shadow-2xl shadow-purple-500/20 group overflow-hidden"
-            data-testid="card-plano-anual"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-bl-full opacity-20"></div>
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-2 rounded-full shadow-lg" data-testid="badge-destaque">
-                <span className="font-bold">🔥 Mais Popular - Economize {formatPrice(economia)}</span>
-              </div>
-            </div>
+                <CardContent className="space-y-4 pb-6">
+                  <div className="grid grid-cols-2 gap-2">
+                    {recursosPrincipais.map((recurso, index) => (
+                      <div key={index} className="flex items-center gap-1.5 text-sm" data-testid={`item-recurso-mensal-${index}`}>
+                        <Check className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                        <span className="text-gray-300">{recurso}</span>
+                      </div>
+                    ))}
+                  </div>
 
-            <CardHeader className="text-center pb-8 pt-14 relative">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl mb-4 mx-auto group-hover:scale-110 transition-transform">
-                <Sparkles className="h-8 w-8 text-white" />
-              </div>
-              <CardTitle className="text-3xl font-bold text-white mb-2" data-testid="text-nome-anual">
-                Plano Anual
-              </CardTitle>
-              <CardDescription className="text-gray-300" data-testid="text-descricao-anual">
-                Melhor custo-benefício
-              </CardDescription>
-              <div className="mt-6">
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent" data-testid="text-preco-anual">
-                    {formatPrice(valorAnualMensal)}
-                  </span>
-                  <span className="text-gray-300 text-xl" data-testid="text-periodo-anual">/mês</span>
+                  <Button 
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+                    onClick={() => handleSelectPlan('mensal')}
+                    data-testid="button-contratar-mensal"
+                  >
+                    Contratar Mensal
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Plano Anual - Destaque */}
+              <Card 
+                className="relative bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/50 backdrop-blur-xl shadow-xl shadow-purple-500/20"
+                data-testid="card-plano-anual"
+              >
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                  <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 text-xs" data-testid="badge-destaque">
+                    <Star className="h-3 w-3 mr-1" />
+                    Economia de {formatPrice(economia)}
+                  </Badge>
                 </div>
-                <p className="text-sm text-purple-300 mt-2">
-                  {formatPrice(valorAnual)}/ano • 12x sem juros
+
+                <CardHeader className="text-center pb-4 pt-8">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl mb-3 mx-auto">
+                    <Crown className="h-6 w-6 text-white" />
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-white" data-testid="text-nome-anual">
+                    Anual
+                  </CardTitle>
+                  <CardDescription className="text-gray-300 text-sm">
+                    Melhor custo-benefício
+                  </CardDescription>
+                  <div className="mt-4">
+                    <span className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent" data-testid="text-preco-anual">
+                      {formatPrice(valorAnualMensal)}
+                    </span>
+                    <span className="text-gray-300">/mês</span>
+                  </div>
+                  <p className="text-xs text-purple-300 mt-1">
+                    {formatPrice(valorAnual)}/ano
+                  </p>
+                </CardHeader>
+
+                <CardContent className="space-y-4 pb-6">
+                  <div className="grid grid-cols-2 gap-2">
+                    {recursosPrincipais.map((recurso, index) => (
+                      <div key={index} className="flex items-center gap-1.5 text-sm" data-testid={`item-recurso-anual-${index}`}>
+                        <Check className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                        <span className="text-white font-medium">{recurso}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 text-xs">
+                      Suporte Prioritário
+                    </Badge>
+                    <Badge variant="secondary" className="bg-purple-500/20 text-purple-300 text-xs">
+                      Backup em Tempo Real
+                    </Badge>
+                  </div>
+
+                  <Button 
+                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    onClick={() => handleSelectPlan('anual')}
+                    data-testid="button-contratar-anual"
+                  >
+                    Contratar Anual
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Tab Funcionários Extra */}
+          <TabsContent value="funcionarios" className="mt-0">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-semibold text-white mb-2">
+                  Expanda sua Equipe
+                </h2>
+                <p className="text-gray-400 text-sm">
+                  Adicione mais funcionários ao seu plano Premium com pacotes especiais
                 </p>
               </div>
-            </CardHeader>
 
-            <CardContent className="space-y-6">
-              <ul className="space-y-3">
-                {[
-                  "Todos os recursos do plano mensal",
-                  "1 funcionário incluso",
-                  `Economize ${formatPrice(economia)} por ano`,
-                  "Suporte prioritário",
-                  "Backups em tempo real",
-                  "Atualizações antecipadas",
-                  "Acesso completo ao sistema",
-                  "PDV e controle de caixa",
-                  "Gestão financeira completa"
-                ].map((recurso, index) => (
-                  <li key={index} className="flex items-start gap-3" data-testid={`item-recurso-anual-${index}`}>
-                    <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-white font-medium">{recurso}</span>
-                  </li>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {employeePackages.map((pkg) => (
+                  <Card 
+                    key={pkg.id}
+                    className={`relative bg-white/5 border-white/10 backdrop-blur-xl hover:border-green-500/50 transition-all ${
+                      pkg.popular ? 'border-2 border-green-500/50 shadow-lg shadow-green-500/20' : ''
+                    }`}
+                    data-testid={`card-${pkg.id}`}
+                  >
+                    {pkg.popular && (
+                      <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10">
+                        <Badge className="bg-gradient-to-r from-green-600 to-teal-600 text-white text-xs px-2 py-0.5">
+                          Popular
+                        </Badge>
+                      </div>
+                    )}
+
+                    <CardContent className="p-4 text-center">
+                      <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-3 ${
+                        pkg.popular 
+                          ? 'bg-gradient-to-br from-green-500 to-teal-600' 
+                          : 'bg-gradient-to-br from-blue-500/50 to-purple-600/50'
+                      }`}>
+                        <UserPlus className="h-5 w-5 text-white" />
+                      </div>
+                      
+                      <h3 className="text-lg font-bold text-white mb-1">
+                        +{pkg.quantidade}
+                      </h3>
+                      <p className="text-xs text-gray-400 mb-3">Funcionários</p>
+                      
+                      <div className="mb-3">
+                        <span className={`text-2xl font-bold ${
+                          pkg.popular 
+                            ? 'bg-gradient-to-r from-green-400 to-teal-400 bg-clip-text text-transparent' 
+                            : 'text-white'
+                        }`}>
+                          {formatPrice(pkg.preco)}
+                        </span>
+                        <span className="text-gray-400 text-xs">/mês</span>
+                      </div>
+                      
+                      <p className="text-xs text-gray-500 mb-3">
+                        {formatPrice(pkg.precoUnitario)}/funcionário
+                      </p>
+
+                      <Button 
+                        size="sm"
+                        className={`w-full ${
+                          pkg.popular 
+                            ? 'bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700' 
+                            : 'bg-white/10 hover:bg-white/20 text-white'
+                        }`}
+                        onClick={() => handleSelectPlan(pkg.id)}
+                        data-testid={`button-contratar-${pkg.id}`}
+                      >
+                        Adicionar
+                      </Button>
+                    </CardContent>
+                  </Card>
                 ))}
-              </ul>
-
-              <Button 
-                className="w-full text-lg py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg shadow-purple-500/50"
-                onClick={() => handleSelectPlan('anual')}
-                data-testid="button-contratar-anual"
-              >
-                Contratar Agora
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Segurança */}
-        <Card className="bg-white/5 border-white/10 backdrop-blur-xl max-w-4xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl text-white text-center flex items-center justify-center gap-2">
-              <Shield className="h-6 w-6 text-green-400" />
-              Segurança no Pagamento
-            </CardTitle>
-            <p className="text-center text-gray-400 mt-2">
-              Sua compra é 100% segura e protegida
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
-                <Lock className="h-5 w-5 text-blue-400 mt-1" />
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Criptografia SSL/TLS</h3>
-                  <p className="text-gray-400 text-sm">Todos os dados do pagamento são criptografados</p>
-                </div>
               </div>
 
-              <div className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
-                <Shield className="h-5 w-5 text-green-400 mt-1" />
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Dados Protegidos</h3>
-                  <p className="text-gray-400 text-sm">Informações nunca armazenadas em nossos servidores</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
-                <CreditCard className="h-5 w-5 text-purple-400 mt-1" />
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Gateway Seguro Mercado Pago</h3>
-                  <p className="text-gray-400 text-sm">Certificado PCI-DSS Nível 1</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
-                <CheckCircle className="h-5 w-5 text-green-400 mt-1" />
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Conformidade LGPD</h3>
-                  <p className="text-gray-400 text-sm">Totalmente em conformidade com a LGPD</p>
-                </div>
-              </div>
+              <Card className="mt-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-500/20 rounded-lg">
+                        <Users className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <h4 className="text-white font-medium text-sm">Precisa de mais funcionários?</h4>
+                        <p className="text-gray-400 text-xs">Combine pacotes ou entre em contato para volumes maiores</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-white/20 text-white hover:bg-white/10"
+                      onClick={() => window.location.href = 'mailto:atendimento.pavisoft@gmail.com'}
+                      data-testid="button-contato-funcionarios"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Falar Conosco
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
+          </TabsContent>
+        </Tabs>
 
-            <div className="text-center p-4 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg border border-blue-500/20">
-              <p className="text-gray-300 mb-2">
-                Tem dúvidas sobre segurança ou pagamento?
-              </p>
-              <Button
-                variant="default"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600"
-                onClick={() => window.location.href = 'mailto:atendimento.pavisoft@gmail.com'}
-                data-testid="button-email-suporte"
-              >
-                <Mail className="h-4 w-4" />
-                Entre em Contato
-              </Button>
+        {/* Segurança - Compacto */}
+        <Card className="bg-white/5 border-white/10 backdrop-blur-xl max-w-4xl mx-auto mt-10">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Shield className="h-5 w-5 text-green-400" />
+              <h3 className="text-lg font-semibold text-white">Pagamento 100% Seguro</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-blue-400" />
+                <span className="text-gray-300 text-sm">SSL/TLS</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-green-400" />
+                <span className="text-gray-300 text-sm">Dados Protegidos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-purple-400" />
+                <span className="text-gray-300 text-sm">Mercado Pago</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-400" />
+                <span className="text-gray-300 text-sm">LGPD</span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Footer */}
-        <footer className="mt-16 pt-8 border-t border-white/10">
+        {/* Footer Compacto */}
+        <footer className="mt-10 pt-6 border-t border-white/10">
           <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <Package className="h-6 w-6 text-purple-400" />
-              <span className="text-white font-bold">Pavisoft Sistemas</span>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Package className="h-4 w-4 text-purple-400" />
+              <span className="text-white font-medium text-sm">Pavisoft Sistemas</span>
             </div>
-            <p className="text-sm text-gray-400">© 2025 Pavisoft Sistemas. Todos os direitos reservados.</p>
+            <p className="text-xs text-gray-500">2025 Pavisoft Sistemas. Todos os direitos reservados.</p>
           </div>
         </footer>
       </div>
@@ -369,7 +499,7 @@ export default function Planos() {
         <CheckoutForm
           open={checkoutOpen}
           onOpenChange={setCheckoutOpen}
-          plano={selectedPlan.plano}
+          plano={selectedPlan.plano as any}
           planoNome={selectedPlan.planoNome}
           planoPreco={selectedPlan.planoPreco}
         />
