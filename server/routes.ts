@@ -6339,6 +6339,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             paymentId,
           });
 
+          // 🔒 VERIFICAÇÃO DE DUPLICATAS: Checar se este pagamento já foi processado
+          if (storage.getEmployeePackageByPaymentId) {
+            const existingPackage = await storage.getEmployeePackageByPaymentId(paymentId.toString());
+            if (existingPackage) {
+              logger.warn("Pagamento já processado anteriormente - ignorando duplicata", "MERCADOPAGO_WEBHOOK", {
+                paymentId,
+                existingPackageId: existingPackage.id,
+                externalReference,
+              });
+              return res.status(200).json({ 
+                success: true, 
+                message: "Webhook recebido (pagamento já processado anteriormente)",
+                duplicate: true
+              });
+            }
+          }
+
           // Extrair informações do external_reference: pacote_5_userId_timestamp
           const parts = externalReference.split("_");
           const pacoteId = parts[0] + "_" + parts[1]; // pacote_5, pacote_10, etc
@@ -6501,6 +6518,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             externalReference,
           });
           return res.status(200).json({ success: true, message: "Webhook recebido (assinatura não encontrada)" });
+        }
+
+        // 🔒 VERIFICAÇÃO DE DUPLICATAS: Checar se este pagamento já foi processado para esta assinatura
+        if (subscription.mercadopago_payment_id === paymentId.toString() && subscription.status_pagamento === "approved") {
+          logger.warn("Pagamento de assinatura já processado anteriormente - ignorando duplicata", "MERCADOPAGO_WEBHOOK", {
+            paymentId,
+            subscriptionId: subscription.id,
+            externalReference,
+          });
+          return res.status(200).json({ 
+            success: true, 
+            message: "Webhook recebido (pagamento já processado anteriormente)",
+            duplicate: true
+          });
         }
 
         // Processar status do pagamento

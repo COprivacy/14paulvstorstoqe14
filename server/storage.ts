@@ -210,6 +210,7 @@ export interface IStorage {
   createEmployeePackage?(data: any): Promise<any>;
   getEmployeePackages?(userId: string): Promise<any[]>;
   getAllEmployeePackages?(): Promise<any[]>;
+  getEmployeePackageByPaymentId?(paymentId: string): Promise<any | undefined>;
   updateEmployeePackageStatus?(packageId: number, status: string, dataCancelamento?: string): Promise<any>;
   deleteEmployeePackage?(packageId: number): Promise<boolean>;
 

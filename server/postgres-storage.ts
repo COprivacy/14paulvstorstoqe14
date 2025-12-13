@@ -1780,8 +1780,17 @@ export class PostgresStorage implements IStorage {
           ${packageData.payment_id}, ${packageData.data_compra}, 
           ${packageData.data_vencimento}, ${packageData.data_cancelamento}
         )
+        ON CONFLICT (payment_id) WHERE payment_id IS NOT NULL DO NOTHING
         RETURNING *
       `);
+
+      if (result.rows.length === 0 && packageData.payment_id) {
+        logger.warn('[DB] Pacote de funcionários já existe para este payment_id - ignorando duplicata', { 
+          payment_id: packageData.payment_id 
+        });
+        const existing = await this.getEmployeePackageByPaymentId(packageData.payment_id);
+        return existing;
+      }
 
       return result.rows[0];
     } catch (error) {
@@ -1850,6 +1859,20 @@ export class PostgresStorage implements IStorage {
     } catch (error: any) {
       logger.error('[DB] Erro ao deletar pacote de funcionários:', { error: error.message, packageId });
       return false;
+    }
+  }
+
+  async getEmployeePackageByPaymentId(paymentId: string): Promise<any | undefined> {
+    try {
+      const result = await this.db.execute(sql`
+        SELECT * FROM employee_packages 
+        WHERE payment_id = ${paymentId}
+        LIMIT 1
+      `);
+      return result.rows[0] || undefined;
+    } catch (error) {
+      logger.error('[DB] Erro ao buscar pacote por payment_id:', { error, paymentId });
+      return undefined;
     }
   }
 
