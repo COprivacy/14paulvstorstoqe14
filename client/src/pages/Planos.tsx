@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckoutForm } from "@/components/CheckoutForm";
+import { EmployeeCheckoutForm } from "@/components/EmployeeCheckoutForm";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@/hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
@@ -29,10 +30,16 @@ export default function Planos() {
   const { user } = useUser();
   const [, setLocation] = useLocation();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [employeeCheckoutOpen, setEmployeeCheckoutOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<{
-    plano: "premium_mensal" | "premium_anual" | "pacote_5" | "pacote_10" | "pacote_20" | "pacote_50";
+    plano: "premium_mensal" | "premium_anual";
     planoNome: string;
     planoPreco: string;
+  } | null>(null);
+  const [selectedEmployeePlan, setSelectedEmployeePlan] = useState<{
+    pacoteId: string;
+    quantidade: number;
+    preco: number;
   } | null>(null);
   const { toast } = useToast();
   const [precos, setPrecos] = useState(getPlanPrices());
@@ -112,22 +119,24 @@ export default function Planos() {
         planoNome: "Plano Mensal",
         planoPreco: formatPrice(precos.premium_mensal)
       });
+      setCheckoutOpen(true);
     } else if (tipo === "anual") {
       setSelectedPlan({
         plano: "premium_anual",
         planoNome: "Plano Anual",
         planoPreco: formatPrice(precos.premium_anual / 12)
       });
+      setCheckoutOpen(true);
     } else if (tipo.startsWith("pacote_")) {
       const pacoteKey = tipo as keyof EmployeePackagePrices;
       const quantidade = parseInt(tipo.split("_")[1]);
-      setSelectedPlan({
-        plano: tipo as any,
-        planoNome: `+${quantidade} Funcionários`,
-        planoPreco: formatPrice(employeePrices[pacoteKey])
+      setSelectedEmployeePlan({
+        pacoteId: tipo,
+        quantidade,
+        preco: employeePrices[pacoteKey]
       });
+      setEmployeeCheckoutOpen(true);
     }
-    setCheckoutOpen(true);
   };
 
   const recursosPrincipais = [
@@ -499,9 +508,19 @@ export default function Planos() {
         <CheckoutForm
           open={checkoutOpen}
           onOpenChange={setCheckoutOpen}
-          plano={selectedPlan.plano as any}
+          plano={selectedPlan.plano}
           planoNome={selectedPlan.planoNome}
           planoPreco={selectedPlan.planoPreco}
+        />
+      )}
+
+      {selectedEmployeePlan && (
+        <EmployeeCheckoutForm
+          open={employeeCheckoutOpen}
+          onOpenChange={setEmployeeCheckoutOpen}
+          pacoteId={selectedEmployeePlan.pacoteId}
+          quantidade={selectedEmployeePlan.quantidade}
+          preco={selectedEmployeePlan.preco}
         />
       )}
     </div>
