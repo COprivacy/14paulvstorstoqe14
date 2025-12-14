@@ -2670,7 +2670,13 @@ export default function AdminPublico() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedClientFor360, setSelectedClientFor360] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'assinaturas_funcionarios' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes' | 'manutencao'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'clientes' | 'assinaturas' | 'assinaturas_funcionarios' | 'configuracoes' | 'sistema' | 'metricas' | 'logs' | 'promocoes' | 'manutencao' | 'comunicacao'>('dashboard');
+  const [comunicacaoTab, setComunicacaoTab] = useState<'email-massa' | 'templates' | 'historico' | 'automacao'>('email-massa');
+  const [emailMassaSegmento, setEmailMassaSegmento] = useState<string>('todos');
+  const [emailMassaAssunto, setEmailMassaAssunto] = useState<string>('');
+  const [emailMassaConteudo, setEmailMassaConteudo] = useState<string>('');
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('mercadopago');
   const [userEditDialogOpen, setUserEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -2867,6 +2873,129 @@ export default function AdminPublico() {
     queryKey: ["/api/admin/employee-packages"],
     retry: 1,
     staleTime: 30000,
+  });
+
+  // Queries para Sistema de Comunicação
+  const { data: emailTemplates = [], isLoading: loadingTemplates } = useQuery<any[]>({
+    queryKey: ["/api/admin/email-templates"],
+    retry: 1,
+    staleTime: 30000,
+  });
+
+  const { data: emailHistory = [], isLoading: loadingHistory } = useQuery<any[]>({
+    queryKey: ["/api/admin/email-history"],
+    retry: 1,
+    staleTime: 30000,
+  });
+
+  const { data: emailAutomation } = useQuery<any>({
+    queryKey: ["/api/admin/email-automation"],
+    retry: 1,
+    staleTime: 30000,
+  });
+
+  const { data: emailStats } = useQuery<any>({
+    queryKey: ["/api/admin/email-stats"],
+    retry: 1,
+    staleTime: 30000,
+  });
+
+  // Mutation para envio de email em massa
+  const enviarEmailMassaMutation = useMutation({
+    mutationFn: async (data: { segmento: string; assunto: string; conteudo: string }) => {
+      const response = await apiRequest("POST", "/api/admin/email-send-mass", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Emails enviados!",
+        description: `${data.enviados || 0} emails foram enviados com sucesso.`,
+      });
+      setEmailMassaAssunto('');
+      setEmailMassaConteudo('');
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-stats"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao enviar emails",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para criar/editar template
+  const salvarTemplateMutation = useMutation({
+    mutationFn: async (data: { id?: number; nome: string; assunto: string; conteudo: string; tipo: string }) => {
+      if (data.id) {
+        const response = await apiRequest("PUT", `/api/admin/email-templates/${data.id}`, data);
+        return response.json();
+      } else {
+        const response = await apiRequest("POST", "/api/admin/email-templates", data);
+        return response.json();
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: editingTemplate ? "Template atualizado!" : "Template criado!",
+        description: "O template foi salvo com sucesso.",
+      });
+      setTemplateDialogOpen(false);
+      setEditingTemplate(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao salvar template",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para deletar template
+  const deletarTemplateMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/admin/email-templates/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Template excluído!",
+        description: "O template foi removido com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-templates"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao excluir template",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para atualizar automação
+  const atualizarAutomacaoMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("PUT", "/api/admin/email-automation", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Automação atualizada!",
+        description: "As configurações de automação foram salvas.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-automation"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao atualizar automação",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteUserMutation = useMutation({
@@ -3199,6 +3328,18 @@ export default function AdminPublico() {
           >
             <Zap className="h-5 w-5 mr-3" />
             {sidebarOpen && "Manutenção"}
+          </Button>
+          <Button
+            variant="ghost"
+            className={`w-full justify-start hover:bg-slate-700 ${!selectedClientFor360 && activeTab === 'comunicacao' ? 'bg-slate-700' : ''}`}
+            onClick={() => {
+              setSelectedClientFor360(null);
+              setActiveTab('comunicacao');
+            }}
+            data-testid="button-nav-comunicacao"
+          >
+            <Mail className="h-5 w-5 mr-3" />
+            {sidebarOpen && "Comunicação"}
           </Button>
         </nav>
 
@@ -4568,6 +4709,449 @@ export default function AdminPublico() {
           ) : activeTab === 'manutencao' ? (
             // Aba de Manutenção do Sistema
             <MaintenanceTab users={users} subscriptions={subscriptions} employeePackages={employeePackages} />
+          ) : activeTab === 'comunicacao' ? (
+            // Aba de Comunicação com Clientes
+            <div className="space-y-6">
+              {/* Header com estatísticas */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Enviados</p>
+                        <p className="text-2xl font-bold">{emailStats?.total_enviados || 0}</p>
+                      </div>
+                      <Mail className="h-8 w-8 text-blue-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Enviados Hoje</p>
+                        <p className="text-2xl font-bold">{emailStats?.enviados_hoje || 0}</p>
+                      </div>
+                      <Calendar className="h-8 w-8 text-green-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Este Mês</p>
+                        <p className="text-2xl font-bold">{emailStats?.enviados_mes || 0}</p>
+                      </div>
+                      <BarChart3 className="h-8 w-8 text-purple-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Templates</p>
+                        <p className="text-2xl font-bold">{emailTemplates.length}</p>
+                      </div>
+                      <FileText className="h-8 w-8 text-orange-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Tabs internas */}
+              <Tabs value={comunicacaoTab} onValueChange={(v) => setComunicacaoTab(v as any)}>
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="email-massa" data-testid="tab-email-massa">Email em Massa</TabsTrigger>
+                  <TabsTrigger value="templates" data-testid="tab-templates">Templates</TabsTrigger>
+                  <TabsTrigger value="historico" data-testid="tab-historico">Histórico</TabsTrigger>
+                  <TabsTrigger value="automacao" data-testid="tab-automacao">Automação</TabsTrigger>
+                </TabsList>
+
+                {/* Tab Email em Massa */}
+                <TabsContent value="email-massa" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Mail className="h-5 w-5" />
+                        Enviar Email em Massa
+                      </CardTitle>
+                      <CardDescription>
+                        Envie comunicações para segmentos específicos de clientes
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Segmento de Destinatários</Label>
+                        <Select value={emailMassaSegmento} onValueChange={setEmailMassaSegmento}>
+                          <SelectTrigger data-testid="select-segmento">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="todos">Todos os Clientes</SelectItem>
+                            <SelectItem value="trial">Apenas Trial</SelectItem>
+                            <SelectItem value="premium">Apenas Premium</SelectItem>
+                            <SelectItem value="premium_mensal">Premium Mensal</SelectItem>
+                            <SelectItem value="premium_anual">Premium Anual</SelectItem>
+                            <SelectItem value="expirados">Planos Expirados</SelectItem>
+                            <SelectItem value="ativos">Clientes Ativos</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Assunto do Email</Label>
+                        <Input
+                          value={emailMassaAssunto}
+                          onChange={(e) => setEmailMassaAssunto(e.target.value)}
+                          placeholder="Digite o assunto do email"
+                          data-testid="input-assunto"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Conteúdo do Email</Label>
+                        <Textarea
+                          value={emailMassaConteudo}
+                          onChange={(e) => setEmailMassaConteudo(e.target.value)}
+                          placeholder="Digite o conteúdo do email. Use {{nome}}, {{email}}, {{plano}} para personalização."
+                          rows={8}
+                          data-testid="textarea-conteudo"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Variáveis disponíveis: {"{{nome}}"}, {"{{email}}"}, {"{{plano}}"}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => enviarEmailMassaMutation.mutate({
+                            segmento: emailMassaSegmento,
+                            assunto: emailMassaAssunto,
+                            conteudo: emailMassaConteudo
+                          })}
+                          disabled={enviarEmailMassaMutation.isPending || !emailMassaAssunto || !emailMassaConteudo}
+                          data-testid="button-enviar-massa"
+                        >
+                          {enviarEmailMassaMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                          Enviar Emails
+                        </Button>
+                        <Select onValueChange={(templateId) => {
+                          const template = emailTemplates.find((t: any) => t.id.toString() === templateId);
+                          if (template) {
+                            setEmailMassaAssunto(template.assunto);
+                            setEmailMassaConteudo(template.conteudo);
+                          }
+                        }}>
+                          <SelectTrigger className="w-[200px]" data-testid="select-template">
+                            <SelectValue placeholder="Usar Template" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {emailTemplates.map((template: any) => (
+                              <SelectItem key={template.id} value={template.id.toString()}>
+                                {template.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Tab Templates */}
+                <TabsContent value="templates" className="space-y-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <FileText className="h-5 w-5" />
+                          Templates de Email
+                        </CardTitle>
+                        <CardDescription>
+                          Gerencie templates pré-configurados para comunicações
+                        </CardDescription>
+                      </div>
+                      <Button onClick={() => {
+                        setEditingTemplate(null);
+                        setTemplateDialogOpen(true);
+                      }} data-testid="button-novo-template">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Novo Template
+                      </Button>
+                    </CardHeader>
+                    <CardContent>
+                      {loadingTemplates ? (
+                        <div className="flex justify-center py-8">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                      ) : emailTemplates.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          Nenhum template cadastrado
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Nome</TableHead>
+                              <TableHead>Tipo</TableHead>
+                              <TableHead>Assunto</TableHead>
+                              <TableHead>Ações</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {emailTemplates.map((template: any) => (
+                              <TableRow key={template.id} data-testid={`row-template-${template.id}`}>
+                                <TableCell className="font-medium">{template.nome}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">{template.tipo}</Badge>
+                                </TableCell>
+                                <TableCell className="max-w-[200px] truncate">{template.assunto}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        setEditingTemplate(template);
+                                        setTemplateDialogOpen(true);
+                                      }}
+                                      data-testid={`button-edit-template-${template.id}`}
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={() => {
+                                        if (confirm('Tem certeza que deseja excluir este template?')) {
+                                          deletarTemplateMutation.mutate(template.id);
+                                        }
+                                      }}
+                                      data-testid={`button-delete-template-${template.id}`}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Tab Histórico */}
+                <TabsContent value="historico" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="h-5 w-5" />
+                        Histórico de Comunicações
+                      </CardTitle>
+                      <CardDescription>
+                        Visualize todos os emails enviados
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {loadingHistory ? (
+                        <div className="flex justify-center py-8">
+                          <Loader2 className="h-8 w-8 animate-spin" />
+                        </div>
+                      ) : emailHistory.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          Nenhum email enviado ainda
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Data</TableHead>
+                              <TableHead>Destinatário</TableHead>
+                              <TableHead>Assunto</TableHead>
+                              <TableHead>Tipo</TableHead>
+                              <TableHead>Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {emailHistory.slice(0, 50).map((email: any) => (
+                              <TableRow key={email.id} data-testid={`row-history-${email.id}`}>
+                                <TableCell>
+                                  {email.enviado_em ? format(new Date(email.enviado_em), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
+                                </TableCell>
+                                <TableCell>{email.destinatario_email}</TableCell>
+                                <TableCell className="max-w-[200px] truncate">{email.assunto}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">{email.tipo}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={email.status === 'enviado' ? 'default' : 'destructive'}>
+                                    {email.status}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Tab Automação */}
+                <TabsContent value="automacao" className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="h-5 w-5" />
+                        Configurações de Automação
+                      </CardTitle>
+                      <CardDescription>
+                        Configure emails automáticos para diferentes eventos
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertTitle>Sobre Emails Automáticos</AlertTitle>
+                        <AlertDescription>
+                          Os emails automáticos são enviados com base em eventos do sistema, como boas-vindas, expiração de plano e renovação.
+                        </AlertDescription>
+                      </Alert>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <p className="font-medium">Email de Boas-vindas</p>
+                            <p className="text-sm text-muted-foreground">Enviado quando um novo usuário se cadastra</p>
+                          </div>
+                          <Badge variant={emailAutomation?.boas_vindas_ativo ? 'default' : 'secondary'}>
+                            {emailAutomation?.boas_vindas_ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <p className="font-medium">Aviso de Expiração</p>
+                            <p className="text-sm text-muted-foreground">Enviado 3 dias antes do plano expirar</p>
+                          </div>
+                          <Badge variant={emailAutomation?.expiracao_ativo ? 'default' : 'secondary'}>
+                            {emailAutomation?.expiracao_ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <p className="font-medium">Confirmação de Renovação</p>
+                            <p className="text-sm text-muted-foreground">Enviado quando o plano é renovado com sucesso</p>
+                          </div>
+                          <Badge variant={emailAutomation?.renovacao_ativo ? 'default' : 'secondary'}>
+                            {emailAutomation?.renovacao_ativo ? 'Ativo' : 'Inativo'}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 border-t">
+                        <p className="text-sm text-muted-foreground">
+                          Para configurar os templates de emails automáticos, edite os templates correspondentes na aba "Templates".
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+
+              {/* Dialog para Template */}
+              <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>{editingTemplate ? 'Editar Template' : 'Novo Template'}</DialogTitle>
+                    <DialogDescription>
+                      {editingTemplate ? 'Atualize as informações do template' : 'Crie um novo template de email'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    salvarTemplateMutation.mutate({
+                      id: editingTemplate?.id,
+                      nome: formData.get('nome') as string,
+                      assunto: formData.get('assunto') as string,
+                      conteudo: formData.get('conteudo') as string,
+                      tipo: formData.get('tipo') as string,
+                    });
+                  }}>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Nome do Template</Label>
+                          <Input
+                            name="nome"
+                            defaultValue={editingTemplate?.nome || ''}
+                            placeholder="Ex: Boas-vindas"
+                            required
+                            data-testid="input-template-nome"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Tipo</Label>
+                          <Select name="tipo" defaultValue={editingTemplate?.tipo || 'manual'}>
+                            <SelectTrigger data-testid="select-template-tipo">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="manual">Manual</SelectItem>
+                              <SelectItem value="boas_vindas">Boas-vindas</SelectItem>
+                              <SelectItem value="expiracao">Expiração</SelectItem>
+                              <SelectItem value="renovacao">Renovação</SelectItem>
+                              <SelectItem value="promocao">Promoção</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Assunto</Label>
+                        <Input
+                          name="assunto"
+                          defaultValue={editingTemplate?.assunto || ''}
+                          placeholder="Assunto do email"
+                          required
+                          data-testid="input-template-assunto"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Conteúdo</Label>
+                        <Textarea
+                          name="conteudo"
+                          defaultValue={editingTemplate?.conteudo || ''}
+                          placeholder="Conteúdo do email. Use {{nome}}, {{email}}, {{plano}} para personalização."
+                          rows={8}
+                          required
+                          data-testid="textarea-template-conteudo"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Variáveis disponíveis: {"{{nome}}"}, {"{{email}}"}, {"{{plano}}"}
+                        </p>
+                      </div>
+                    </div>
+                    <DialogFooter className="mt-4">
+                      <Button type="button" variant="outline" onClick={() => setTemplateDialogOpen(false)}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit" disabled={salvarTemplateMutation.isPending} data-testid="button-salvar-template">
+                        {salvarTemplateMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        Salvar Template
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           ) : (
             // Dashboard Principal
             <>
