@@ -8399,6 +8399,252 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+  // ========================================
+  // ROTAS DO SISTEMA DE COMUNICAÇÃO
+  // ========================================
+
+  // Listar todos os templates de email
+  app.get("/api/admin/email-templates", requireAdmin, async (req, res) => {
+    try {
+      const templates = await storage.getEmailTemplates();
+      res.json(templates);
+    } catch (error: any) {
+      logger.error('Erro ao buscar templates:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Criar novo template de email
+  app.post("/api/admin/email-templates", requireAdmin, async (req, res) => {
+    try {
+      const template = await storage.createEmailTemplate(req.body);
+      res.json(template);
+    } catch (error: any) {
+      logger.error('Erro ao criar template:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Atualizar template de email
+  app.put("/api/admin/email-templates/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const template = await storage.updateEmailTemplate(parseInt(id), req.body);
+      res.json(template);
+    } catch (error: any) {
+      logger.error('Erro ao atualizar template:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Deletar template de email
+  app.delete("/api/admin/email-templates/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteEmailTemplate(parseInt(id));
+      res.json({ success: true });
+    } catch (error: any) {
+      logger.error('Erro ao deletar template:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Buscar histórico de emails
+  app.get("/api/admin/email-history", requireAdmin, async (req, res) => {
+    try {
+      const { userId, limit = 100 } = req.query;
+      const history = await storage.getEmailHistory(userId as string, parseInt(limit as string));
+      res.json(history);
+    } catch (error: any) {
+      logger.error('Erro ao buscar histórico:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Buscar histórico de emails de um cliente específico
+  app.get("/api/admin/email-history/:userId", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const history = await storage.getEmailHistoryByUser(userId);
+      res.json(history);
+    } catch (error: any) {
+      logger.error('Erro ao buscar histórico do cliente:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Enviar email em massa para segmento
+  app.post("/api/admin/email-send-mass", requireAdmin, async (req, res) => {
+    try {
+      const { segmento, templateId, assunto, conteudo } = req.body;
+      
+      // Buscar usuários do segmento
+      let users = await storage.getUsers();
+      
+      switch (segmento) {
+        case 'trial':
+          users = users.filter(u => u.plano === 'trial');
+          break;
+        case 'premium':
+          users = users.filter(u => u.plano === 'premium' || u.plano === 'premium_mensal' || u.plano === 'premium_anual');
+          break;
+        case 'expirados':
+          users = users.filter(u => u.status === 'bloqueado' || u.status === 'expirado');
+          break;
+        case 'ativos':
+          users = users.filter(u => u.status === 'ativo');
+          break;
+        // 'todos' mantém todos os usuários
+      }
+
+      // Importar EmailService
+      const { EmailService } = await import('./email-service');
+      const emailService = new EmailService();
+
+      let enviados = 0;
+      let falhas = 0;
+      const resultados: any[] = [];
+
+      for (const user of users) {
+        if (!user.email) continue;
+        
+        // Substituir variáveis no conteúdo
+        let conteudoPersonalizado = conteudo
+          .replace(/\{\{nome\}\}/g, user.nome || 'Cliente')
+          .replace(/\{\{email\}\}/g, user.email)
+          .replace(/\{\{plano\}\}/g, user.plano || 'trial');
+
+        let assuntoPersonalizado = assunto
+          .replace(/\{\{nome\}\}/g, user.nome || 'Cliente');
+
+        try {
+          await emailService.sendGenericEmail({
+            to: user.email,
+            subject: assuntoPersonalizado,
+            html: conteudoPersonalizado
+          });
+
+          // Registrar no histórico
+          await storage.createEmailHistory({
+            user_id: user.id,
+            template_id: templateId || null,
+            email_destino: user.email,
+            assunto: assuntoPersonalizado,
+            conteudo: conteudoPersonalizado,
+            tipo: 'massa',
+            segmento,
+            status: 'enviado'
+          });
+
+          enviados++;
+          resultados.push({ email: user.email, status: 'enviado' });
+        } catch (error: any) {
+          falhas++;
+          resultados.push({ email: user.email, status: 'falha', erro: error.message });
+          
+          // Registrar falha no histórico
+          await storage.createEmailHistory({
+            user_id: user.id,
+            template_id: templateId || null,
+            email_destino: user.email,
+            assunto: assuntoPersonalizado,
+            conteudo: conteudoPersonalizado,
+            tipo: 'massa',
+            segmento,
+            status: 'falha',
+            erro: error.message
+          });
+        }
+      }
+
+      res.json({ success: true, enviados, falhas, total: users.length, resultados });
+    } catch (error: any) {
+      logger.error('Erro ao enviar emails em massa:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Enviar email individual
+  app.post("/api/admin/email-send", requireAdmin, async (req, res) => {
+    try {
+      const { userId, email, assunto, conteudo, templateId } = req.body;
+      
+      const { EmailService } = await import('./email-service');
+      const emailService = new EmailService();
+
+      // Buscar dados do usuário se userId fornecido
+      let user = null;
+      if (userId) {
+        user = await storage.getUserById(userId);
+      }
+
+      // Substituir variáveis
+      let conteudoPersonalizado = conteudo
+        .replace(/\{\{nome\}\}/g, user?.nome || 'Cliente')
+        .replace(/\{\{email\}\}/g, user?.email || email)
+        .replace(/\{\{plano\}\}/g, user?.plano || 'trial');
+
+      let assuntoPersonalizado = assunto
+        .replace(/\{\{nome\}\}/g, user?.nome || 'Cliente');
+
+      await emailService.sendGenericEmail({
+        to: email || user?.email,
+        subject: assuntoPersonalizado,
+        html: conteudoPersonalizado
+      });
+
+      // Registrar no histórico
+      await storage.createEmailHistory({
+        user_id: userId || null,
+        template_id: templateId || null,
+        email_destino: email || user?.email,
+        assunto: assuntoPersonalizado,
+        conteudo: conteudoPersonalizado,
+        tipo: 'manual',
+        status: 'enviado'
+      });
+
+      res.json({ success: true, message: 'Email enviado com sucesso' });
+    } catch (error: any) {
+      logger.error('Erro ao enviar email:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Listar configurações de automação
+  app.get("/api/admin/email-automation", requireAdmin, async (req, res) => {
+    try {
+      const automation = await storage.getEmailAutomation();
+      res.json(automation);
+    } catch (error: any) {
+      logger.error('Erro ao buscar automação:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Atualizar configuração de automação
+  app.put("/api/admin/email-automation/:tipo", requireAdmin, async (req, res) => {
+    try {
+      const { tipo } = req.params;
+      const automation = await storage.upsertEmailAutomation(tipo, req.body);
+      res.json(automation);
+    } catch (error: any) {
+      logger.error('Erro ao atualizar automação:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Estatísticas de emails
+  app.get("/api/admin/email-stats", requireAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getEmailStats();
+      res.json(stats);
+    } catch (error: any) {
+      logger.error('Erro ao buscar estatísticas:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

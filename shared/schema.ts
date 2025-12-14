@@ -808,6 +808,76 @@ export const insertUserSessionSchema = createInsertSchema(userSessions).omit({
 export type UserSession = typeof userSessions.$inferSelect;
 export type InsertUserSession = z.infer<typeof insertUserSessionSchema>;
 
+// Tabela de Templates de Email
+export const emailTemplates = pgTable("email_templates", {
+  id: serial("id").primaryKey(),
+  nome: text("nome").notNull(),
+  assunto: text("assunto").notNull(),
+  conteudo: text("conteudo").notNull(),
+  tipo: text("tipo").notNull().default("manual"), // manual, boas_vindas, expiracao, renovacao, promocao
+  variaveis: text("variaveis"), // JSON com variáveis disponíveis
+  ativo: text("ativo").notNull().default("true"),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+
+// Tabela de Histórico de Emails Enviados
+export const emailHistory = pgTable("email_history", {
+  id: serial("id").primaryKey(),
+  user_id: text("user_id").references(() => users.id, { onDelete: 'set null' }),
+  template_id: integer("template_id").references(() => emailTemplates.id, { onDelete: 'set null' }),
+  email_destino: text("email_destino").notNull(),
+  assunto: text("assunto").notNull(),
+  conteudo: text("conteudo").notNull(),
+  tipo: text("tipo").notNull().default("manual"), // manual, automatico, massa
+  segmento: text("segmento"), // trial, premium, todos, etc
+  status: text("status").notNull().default("enviado"), // enviado, falha, pendente
+  erro: text("erro"),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => ({
+  userIdIdx: index("email_history_user_id_idx").on(table.user_id),
+  tipoIdx: index("email_history_tipo_idx").on(table.tipo),
+  statusIdx: index("email_history_status_idx").on(table.status),
+}));
+
+export const insertEmailHistorySchema = createInsertSchema(emailHistory).omit({
+  id: true,
+  created_at: true,
+});
+
+export type EmailHistory = typeof emailHistory.$inferSelect;
+export type InsertEmailHistory = z.infer<typeof insertEmailHistorySchema>;
+
+// Tabela de Configurações de Automação de Email
+export const emailAutomation = pgTable("email_automation", {
+  id: serial("id").primaryKey(),
+  tipo: text("tipo").notNull().unique(), // boas_vindas, expiracao_3_dias, expiracao_1_dia, renovacao, etc
+  template_id: integer("template_id").references(() => emailTemplates.id, { onDelete: 'set null' }),
+  ativo: text("ativo").notNull().default("true"),
+  dias_antes: integer("dias_antes"), // Para lembretes de expiração
+  descricao: text("descricao"),
+  created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const insertEmailAutomationSchema = createInsertSchema(emailAutomation).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
+
+export type EmailAutomation = typeof emailAutomation.$inferSelect;
+export type InsertEmailAutomation = z.infer<typeof insertEmailAutomationSchema>;
+
 export function hasPermission(user: User, permission: string): boolean {
   // Admin sempre tem todas as permissões
   if (user.is_admin === 'true') return true; // Corrigido para comparar com string 'true'

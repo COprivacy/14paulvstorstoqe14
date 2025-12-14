@@ -2271,4 +2271,121 @@ export class PostgresStorage implements IStorage {
       return 0;
     }
   }
+
+  // ========================================
+  // MÉTODOS DO SISTEMA DE COMUNICAÇÃO
+  // ========================================
+
+  async getEmailTemplates(): Promise<any[]> {
+    const result = await this.db.execute(sql`
+      SELECT * FROM email_templates ORDER BY created_at DESC
+    `);
+    return result.rows;
+  }
+
+  async createEmailTemplate(data: any): Promise<any> {
+    const result = await this.db.execute(sql`
+      INSERT INTO email_templates (nome, assunto, conteudo, tipo, variaveis, ativo)
+      VALUES (${data.nome}, ${data.assunto}, ${data.conteudo}, ${data.tipo || 'manual'}, ${data.variaveis || null}, ${data.ativo || 'true'})
+      RETURNING *
+    `);
+    return result.rows[0];
+  }
+
+  async updateEmailTemplate(id: number, data: any): Promise<any> {
+    const result = await this.db.execute(sql`
+      UPDATE email_templates 
+      SET nome = ${data.nome}, assunto = ${data.assunto}, conteudo = ${data.conteudo}, 
+          tipo = ${data.tipo}, variaveis = ${data.variaveis}, ativo = ${data.ativo},
+          updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `);
+    return result.rows[0];
+  }
+
+  async deleteEmailTemplate(id: number): Promise<void> {
+    await this.db.execute(sql`DELETE FROM email_templates WHERE id = ${id}`);
+  }
+
+  async getEmailHistory(userId?: string, limit: number = 100): Promise<any[]> {
+    if (userId) {
+      const result = await this.db.execute(sql`
+        SELECT eh.*, u.nome as user_nome, u.email as user_email
+        FROM email_history eh
+        LEFT JOIN users u ON eh.user_id = u.id
+        WHERE eh.user_id = ${userId}
+        ORDER BY eh.created_at DESC
+        LIMIT ${limit}
+      `);
+      return result.rows;
+    }
+    const result = await this.db.execute(sql`
+      SELECT eh.*, u.nome as user_nome, u.email as user_email
+      FROM email_history eh
+      LEFT JOIN users u ON eh.user_id = u.id
+      ORDER BY eh.created_at DESC
+      LIMIT ${limit}
+    `);
+    return result.rows;
+  }
+
+  async getEmailHistoryByUser(userId: string): Promise<any[]> {
+    const result = await this.db.execute(sql`
+      SELECT * FROM email_history 
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `);
+    return result.rows;
+  }
+
+  async createEmailHistory(data: any): Promise<any> {
+    const result = await this.db.execute(sql`
+      INSERT INTO email_history (user_id, template_id, email_destino, assunto, conteudo, tipo, segmento, status, erro)
+      VALUES (${data.user_id || null}, ${data.template_id || null}, ${data.email_destino}, ${data.assunto}, ${data.conteudo}, ${data.tipo || 'manual'}, ${data.segmento || null}, ${data.status || 'enviado'}, ${data.erro || null})
+      RETURNING *
+    `);
+    return result.rows[0];
+  }
+
+  async getEmailAutomation(): Promise<any[]> {
+    const result = await this.db.execute(sql`
+      SELECT ea.*, et.nome as template_nome
+      FROM email_automation ea
+      LEFT JOIN email_templates et ON ea.template_id = et.id
+      ORDER BY ea.tipo
+    `);
+    return result.rows;
+  }
+
+  async upsertEmailAutomation(tipo: string, data: any): Promise<any> {
+    const result = await this.db.execute(sql`
+      INSERT INTO email_automation (tipo, template_id, ativo, dias_antes, descricao)
+      VALUES (${tipo}, ${data.template_id || null}, ${data.ativo || 'true'}, ${data.dias_antes || null}, ${data.descricao || null})
+      ON CONFLICT (tipo) DO UPDATE SET
+        template_id = ${data.template_id || null},
+        ativo = ${data.ativo || 'true'},
+        dias_antes = ${data.dias_antes || null},
+        descricao = ${data.descricao || null},
+        updated_at = NOW()
+      RETURNING *
+    `);
+    return result.rows[0];
+  }
+
+  async getEmailStats(): Promise<any> {
+    const result = await this.db.execute(sql`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN status = 'enviado' THEN 1 END) as enviados,
+        COUNT(CASE WHEN status = 'falha' THEN 1 END) as falhas,
+        COUNT(CASE WHEN tipo = 'massa' THEN 1 END) as massa,
+        COUNT(CASE WHEN tipo = 'manual' THEN 1 END) as manual,
+        COUNT(CASE WHEN tipo = 'automatico' THEN 1 END) as automatico,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '24 hours' THEN 1 END) as ultimas_24h,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as ultimos_7dias
+      FROM email_history
+    `);
+    return result.rows[0];
+  }
 }

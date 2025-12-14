@@ -1192,4 +1192,30 @@ export class EmailService {
       html,
     });
   }
+
+  // Método genérico para enviar emails personalizados
+  async sendGenericEmail(config: {
+    to: string;
+    subject: string;
+    html: string;
+  }): Promise<void> {
+    const content = `
+<tr>
+  <td style="padding: 48px 40px;">
+    <div style="color: #1e293b; font-size: 15px; line-height: 1.7;">
+      ${config.html}
+    </div>
+  </td>
+</tr>
+    `;
+
+    const fullHtml = this.getBaseTemplate(content);
+
+    await this.sendMailSafely({
+      from: process.env.SMTP_FROM || 'Pavisoft Sistemas <noreply@pavisoft.com>',
+      to: config.to,
+      subject: config.subject,
+      html: fullHtml,
+    });
+  }
 }
