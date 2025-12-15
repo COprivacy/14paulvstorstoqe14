@@ -395,6 +395,7 @@ export const devolucoes = pgTable("devolucoes", {
   produto_id: integer("produto_id").notNull(),
   produto_nome: text("produto_nome").notNull(),
   quantidade: integer("quantidade").notNull(),
+  quantidade_original: integer("quantidade_original"),
   valor_total: real("valor_total").notNull(),
   motivo: text("motivo").notNull(),
   status: text("status").notNull().default("pendente"),
@@ -403,6 +404,7 @@ export const devolucoes = pgTable("devolucoes", {
   cliente_nome: text("cliente_nome"),
   operador_nome: text("operador_nome"),
   operador_id: text("operador_id"),
+  devolucao_parcial: text("devolucao_parcial").default("false"),
 });
 
 export const insertCaixaSchema = createInsertSchema(caixas).omit({
@@ -429,8 +431,10 @@ export const insertDevolucaoSchema = createInsertSchema(devolucoes).omit({
   id: true,
 }).extend({
   quantidade: z.coerce.number().int().positive(),
+  quantidade_original: z.coerce.number().int().positive().optional(),
   valor_total: z.coerce.number().positive(),
   status: z.enum(["pendente", "aprovada", "rejeitada", "arquivada"]).default("pendente"),
+  devolucao_parcial: z.enum(["true", "false"]).default("false").optional(),
 });
 
 export type InsertDevolucao = typeof devolucoes.$inferInsert;

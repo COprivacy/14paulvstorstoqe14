@@ -156,8 +156,10 @@ export default function Devolucoes() {
         produto_nome: string;
         produto_id?: number;
         quantidade: number;
+        quantidade_original: number;
         valor_unitario: number;
         valor_total: number;
+        devolucao_parcial: "true" | "false";
       }> = [];
 
       const errosValidacao: string[] = [];
@@ -175,12 +177,17 @@ export default function Devolucoes() {
           // Resolve product ID from catalog
           const produtoId = resolveProdutoId(item);
 
+          // Determine if this is a partial return (returning less than original quantity)
+          const isParcial = qtdDevolver < item.quantidade;
+
           itensParaDevolver.push({
             produto_nome: item.nome || 'Produto',
             produto_id: produtoId,
             quantidade: qtdDevolver,
+            quantidade_original: item.quantidade,
             valor_unitario: item.preco || 0,
-            valor_total: (item.preco || 0) * qtdDevolver
+            valor_total: (item.preco || 0) * qtdDevolver,
+            devolucao_parcial: isParcial ? "true" : "false"
           });
         }
       });
@@ -211,6 +218,7 @@ export default function Devolucoes() {
         const data: any = {
           produto_nome: item.produto_nome,
           quantidade: item.quantidade,
+          quantidade_original: item.quantidade_original,
           valor_total: item.valor_total,
           motivo,
           status,
@@ -219,6 +227,7 @@ export default function Devolucoes() {
           operador_nome: operadorNome,
           operador_id: operadorId,
           venda_id: vendaSelecionada.id,
+          devolucao_parcial: item.devolucao_parcial,
         };
 
         if (item.produto_id) {
@@ -436,11 +445,21 @@ export default function Devolucoes() {
     
     // If itens is a valid array, return with stable keys
     if (Array.isArray(itens) && itens.length > 0) {
-      return itens.map((item, idx) => ({
-        ...item,
-        // Use codigo_barras or produto_id or nome as stable key, fallback to index
-        uniqueKey: item.codigo_barras || `pid-${item.produto_id}` || `name-${item.nome}-${idx}`
-      }));
+      return itens.map((item, idx) => {
+        // Build a truly unique key by always including the index
+        // This ensures each item has its own independent key
+        const baseKey = item.codigo_barras && item.codigo_barras.trim() 
+          ? item.codigo_barras 
+          : item.produto_id 
+            ? `pid-${item.produto_id}` 
+            : `name-${(item.nome || 'item').replace(/\s+/g, '-')}`;
+        
+        return {
+          ...item,
+          // Always include index to guarantee uniqueness
+          uniqueKey: `${baseKey}-idx-${idx}`
+        };
+      });
     }
     
     // Fallback to single product format from venda fields
@@ -451,7 +470,7 @@ export default function Devolucoes() {
         quantidade: venda.quantidade_vendida,
         preco: valorUnitario,
         subtotal: venda.valor_total,
-        uniqueKey: `single-${venda.id}`
+        uniqueKey: `single-${venda.id}-0`
       }];
     }
     
@@ -1585,7 +1604,19 @@ export default function Devolucoes() {
                         {devolucao.operador_nome || "Sistema"}
                       </TableCell>
                       <TableCell data-testid={`text-quantidade-${devolucao.id}`}>
-                        {devolucao.quantidade}
+                        <div className="flex flex-col gap-1">
+                          <span>{devolucao.quantidade}</span>
+                          {devolucao.devolucao_parcial === "true" && (
+                            <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700">
+                              Parcial
+                            </Badge>
+                          )}
+                          {devolucao.quantidade_original && devolucao.devolucao_parcial === "true" && (
+                            <span className="text-xs text-muted-foreground">
+                              de {devolucao.quantidade_original}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell data-testid={`text-valor-${devolucao.id}`}>
                         R$ {devolucao.valor_total.toFixed(2)}
@@ -1669,7 +1700,19 @@ export default function Devolucoes() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">Quantidade</Label>
-                  <p className="font-medium">{selectedDevolucao.quantidade} unidades</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{selectedDevolucao.quantidade} unidades</p>
+                    {selectedDevolucao.devolucao_parcial === "true" && (
+                      <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700">
+                        Devolução Parcial
+                      </Badge>
+                    )}
+                  </div>
+                  {selectedDevolucao.quantidade_original && selectedDevolucao.devolucao_parcial === "true" && (
+                    <p className="text-xs text-muted-foreground">
+                      Quantidade original da venda: {selectedDevolucao.quantidade_original} unidades
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">Valor Total</Label>
