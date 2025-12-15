@@ -974,241 +974,287 @@ export default function Devolucoes() {
                 Nova Devolução
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingDevolucao ? "Editar Devolução" : vendaSelecionada ? "Devolver Venda" : "Nova Devolução"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingDevolucao
-                    ? "Atualize as informações da devolução"
-                    : vendaSelecionada
-                    ? "Preencha os dados para devolver esta venda"
-                    : "Preencha os dados para registrar uma nova devolução"}
-                </DialogDescription>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+              <DialogHeader className="pb-4 border-b">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600">
+                    <Undo2 className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <DialogTitle className="text-xl">
+                      {editingDevolucao ? "Editar Devolução" : vendaSelecionada ? "Devolver Venda" : "Nova Devolução"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingDevolucao
+                        ? "Atualize as informações da devolução"
+                        : vendaSelecionada
+                        ? "Selecione os itens e preencha os dados"
+                        : "Preencha os dados para registrar uma devolução"}
+                    </DialogDescription>
+                  </div>
+                </div>
               </DialogHeader>
 
-              {vendaSelecionada && (
-                <div className="bg-blue-50 dark:bg-blue-950 p-4 rounded-lg border border-blue-200 dark:border-blue-800 space-y-3">
-                  <div>
-                    <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                      Devolução de Venda #{vendaSelecionada.id}
-                    </p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      Data: {formatDate(vendaSelecionada.data)}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Selecione os itens para devolver:
-                    </Label>
-                    <div className="bg-white dark:bg-blue-900 rounded-md border border-blue-200 dark:border-blue-700 p-3 space-y-3 max-h-[250px] overflow-y-auto">
-                      {parseItensVenda(vendaSelecionada).map((item, index) => {
-                        const qtdSelecionada = itensSelecionados[item.uniqueKey] || 0;
-                        const valorItem = (item.preco || 0) * qtdSelecionada;
-                        
-                        return (
-                          <div key={item.uniqueKey} className="pb-2 border-b last:border-b-0 last:pb-0">
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm font-medium text-blue-900 dark:text-blue-100 block truncate">
-                                  {item.nome || 'Produto'}
-                                </span>
-                                <span className="text-xs text-blue-600 dark:text-blue-400">
-                                  R$ {(item.preco || 0).toFixed(2)} / un
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  id={`qtd-${item.uniqueKey}`}
-                                  type="number"
-                                  min="0"
-                                  max={item.quantidade}
-                                  value={qtdSelecionada}
-                                  onChange={(e) => {
-                                    const valor = parseInt(e.target.value) || 0;
-                                    const qtdMaxima = item.quantidade;
-                                    setItensSelecionados(prev => ({
-                                      ...prev,
-                                      [item.uniqueKey]: Math.min(Math.max(0, valor), qtdMaxima)
-                                    }));
-                                  }}
-                                  className="w-16 h-8 text-center"
-                                  placeholder="0"
-                                  data-testid={`input-qtd-${index}`}
-                                />
-                                <span className="text-xs text-blue-700 dark:text-blue-300 whitespace-nowrap">
-                                  de {item.quantidade}
-                                </span>
-                              </div>
-                            </div>
-                            {qtdSelecionada > 0 && (
-                              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                Subtotal: R$ {valorItem.toFixed(2)}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    
-                    {/* Total summary */}
-                    <div className="bg-white dark:bg-blue-900 rounded-md border border-blue-200 dark:border-blue-700 p-3">
-                      {hasItensSelecionados() ? (
-                        <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 flex items-center justify-between">
-                          <span>Total a devolver:</span>
-                          <span className="text-green-600 dark:text-green-400">
-                            R$ {calcularValorDevolucao().toFixed(2)}
-                          </span>
-                        </p>
-                      ) : (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                          <AlertTriangle className="h-3 w-3" />
-                          Informe a quantidade de pelo menos um item para devolver
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {!vendaSelecionada && (
-                  <div className="space-y-2">
-                    <Label htmlFor="produto_id">Produto *</Label>
-                    <Select
-                      name="produto_id"
-                      defaultValue={editingDevolucao?.produto_id?.toString()}
-                      required
-                    >
-                      <SelectTrigger data-testid="select-produto">
-                        <SelectValue placeholder="Selecione o produto" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {produtos.map((produto) => (
-                          <SelectItem key={produto.id} value={produto.id.toString()}>
-                            {produto.nome} - R$ {produto.preco.toFixed(2)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
+              <div className="flex-1 overflow-y-auto py-4 space-y-4">
                 {vendaSelecionada && (
-                  <input type="hidden" name="venda_id" value={vendaSelecionada.id} />
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/50 dark:to-indigo-950/50 p-4 rounded-xl border border-blue-200/50 dark:border-blue-800/50 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ShoppingCart className="h-4 w-4 text-blue-600" />
+                        <span className="font-semibold text-blue-900 dark:text-blue-100">
+                          Venda #{vendaSelecionada.id}
+                        </span>
+                      </div>
+                      <Badge variant="outline" className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700">
+                        {formatDate(vendaSelecionada.data)}
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Itens para devolver:
+                      </Label>
+                      <div className="bg-white dark:bg-gray-900 rounded-lg border border-blue-100 dark:border-blue-900 divide-y divide-blue-100 dark:divide-blue-900 max-h-[200px] overflow-y-auto">
+                        {parseItensVenda(vendaSelecionada).map((item, index) => {
+                          const qtdSelecionada = itensSelecionados[item.uniqueKey] || 0;
+                          const valorItem = (item.preco || 0) * qtdSelecionada;
+                          
+                          return (
+                            <div key={item.uniqueKey} className="p-3 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-colors">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">
+                                    {item.nome || 'Produto'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    R$ {(item.preco || 0).toFixed(2)} / un
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7"
+                                      onClick={() => {
+                                        const novoValor = Math.max(0, qtdSelecionada - 1);
+                                        setItensSelecionados(prev => ({
+                                          ...prev,
+                                          [item.uniqueKey]: novoValor
+                                        }));
+                                      }}
+                                      data-testid={`button-minus-${index}`}
+                                    >
+                                      <span className="text-lg font-bold">-</span>
+                                    </Button>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      max={item.quantidade}
+                                      value={qtdSelecionada}
+                                      onChange={(e) => {
+                                        const valor = parseInt(e.target.value) || 0;
+                                        setItensSelecionados(prev => ({
+                                          ...prev,
+                                          [item.uniqueKey]: Math.min(Math.max(0, valor), item.quantidade)
+                                        }));
+                                      }}
+                                      className="w-12 h-7 text-center border-0 bg-transparent p-0"
+                                      data-testid={`input-qtd-${index}`}
+                                    />
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-7 w-7"
+                                      onClick={() => {
+                                        const novoValor = Math.min(item.quantidade, qtdSelecionada + 1);
+                                        setItensSelecionados(prev => ({
+                                          ...prev,
+                                          [item.uniqueKey]: novoValor
+                                        }));
+                                      }}
+                                      data-testid={`button-plus-${index}`}
+                                    >
+                                      <span className="text-lg font-bold">+</span>
+                                    </Button>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground w-12 text-right">
+                                    de {item.quantidade}
+                                  </span>
+                                </div>
+                              </div>
+                              {qtdSelecionada > 0 && (
+                                <div className="mt-2 flex justify-end">
+                                  <Badge className="bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+                                    Subtotal: R$ {valorItem.toFixed(2)}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 rounded-lg p-3 border border-green-200/50 dark:border-green-800/50">
+                        {hasItensSelecionados() ? (
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-green-800 dark:text-green-200">Total a devolver:</span>
+                            <span className="text-xl font-bold text-green-600 dark:text-green-400">
+                              R$ {calcularValorDevolucao().toFixed(2)}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            Informe a quantidade de pelo menos um item
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 )}
 
-                {!vendaSelecionada && (
+                <form onSubmit={handleSubmit} className="space-y-4" id="devolucao-form">
+                  {!vendaSelecionada && (
+                    <div className="space-y-2">
+                      <Label htmlFor="produto_id">Produto *</Label>
+                      <Select
+                        name="produto_id"
+                        defaultValue={editingDevolucao?.produto_id?.toString()}
+                        required
+                      >
+                        <SelectTrigger data-testid="select-produto">
+                          <SelectValue placeholder="Selecione o produto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {produtos.map((produto) => (
+                            <SelectItem key={produto.id} value={produto.id.toString()}>
+                              {produto.nome} - R$ {produto.preco.toFixed(2)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {vendaSelecionada && (
+                    <input type="hidden" name="venda_id" value={vendaSelecionada.id} />
+                  )}
+
+                  {!vendaSelecionada && (
+                    <div className="space-y-2">
+                      <Label htmlFor="quantidade">Quantidade *</Label>
+                      <Input
+                        id="quantidade"
+                        name="quantidade"
+                        type="number"
+                        min="1"
+                        defaultValue={editingDevolucao?.quantidade || 1}
+                        required
+                        data-testid="input-quantidade"
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <Label htmlFor="quantidade">Quantidade *</Label>
+                    <Label htmlFor="cliente_nome">Nome do Cliente</Label>
                     <Input
-                      id="quantidade"
-                      name="quantidade"
-                      type="number"
-                      min="1"
-                      defaultValue={editingDevolucao?.quantidade || 1}
-                      required
-                      data-testid="input-quantidade"
+                      id="cliente_nome"
+                      name="cliente_nome"
+                      defaultValue={editingDevolucao?.cliente_nome || ""}
+                      data-testid="input-cliente-nome"
                     />
                   </div>
-                )}
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="motivo">Motivo *</Label>
+                      <Select
+                        name="motivo"
+                        defaultValue={editingDevolucao?.motivo || "defeito"}
+                        required
+                      >
+                        <SelectTrigger data-testid="select-motivo">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="defeito">Produto com defeito</SelectItem>
+                          <SelectItem value="insatisfacao">Insatisfação com o produto</SelectItem>
+                          <SelectItem value="vencido">Produto vencido</SelectItem>
+                          <SelectItem value="errado">Produto errado</SelectItem>
+                          <SelectItem value="danificado">Produto danificado</SelectItem>
+                          <SelectItem value="outro">Outro motivo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="cliente_nome">Nome do Cliente</Label>
-                  <Input
-                    id="cliente_nome"
-                    name="cliente_nome"
-                    defaultValue={editingDevolucao?.cliente_nome || ""}
-                    data-testid="input-cliente-nome"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status *</Label>
+                      <Select
+                        name="status"
+                        defaultValue={editingDevolucao?.status || "pendente"}
+                        required
+                      >
+                        <SelectTrigger data-testid="select-status">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pendente">Pendente</SelectItem>
+                          <SelectItem value="aprovada">Aprovada</SelectItem>
+                          <SelectItem value="rejeitada">Rejeitada</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="motivo">Motivo *</Label>
-                  <Select
-                    name="motivo"
-                    defaultValue={editingDevolucao?.motivo || "defeito"}
-                    required
-                  >
-                    <SelectTrigger data-testid="select-motivo">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="defeito">Produto com defeito</SelectItem>
-                      <SelectItem value="insatisfacao">Insatisfação com o produto</SelectItem>
-                      <SelectItem value="vencido">Produto vencido</SelectItem>
-                      <SelectItem value="errado">Produto errado</SelectItem>
-                      <SelectItem value="danificado">Produto danificado</SelectItem>
-                      <SelectItem value="outro">Outro motivo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="observacoes">Observações</Label>
+                    <Textarea
+                      id="observacoes"
+                      name="observacoes"
+                      rows={2}
+                      defaultValue={editingDevolucao?.observacoes || ""}
+                      placeholder="Adicione observações adicionais..."
+                      data-testid="textarea-observacoes"
+                    />
+                  </div>
+                </form>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status *</Label>
-                  <Select
-                    name="status"
-                    defaultValue={editingDevolucao?.status || "pendente"}
-                    required
-                  >
-                    <SelectTrigger data-testid="select-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pendente">Pendente</SelectItem>
-                      <SelectItem value="aprovada">Aprovada</SelectItem>
-                      <SelectItem value="rejeitada">Rejeitada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Textarea
-                    id="observacoes"
-                    name="observacoes"
-                    rows={3}
-                    defaultValue={editingDevolucao?.observacoes || ""}
-                    placeholder="Adicione observações adicionais..."
-                    data-testid="textarea-observacoes"
-                  />
-                </div>
-
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setDialogOpen(false);
-                      setEditingDevolucao(null);
-                      setVendaSelecionada(null);
-                      setItensSelecionados({});
-                    }}
-                    data-testid="button-cancel"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={
-                      createMutation.isPending || 
-                      updateMutation.isPending ||
-                      (vendaSelecionada && !hasItensSelecionados())
-                    }
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                    data-testid="button-save"
-                  >
-                    {createMutation.isPending || updateMutation.isPending
-                      ? "Salvando..."
-                      : editingDevolucao
-                      ? "Atualizar"
-                      : "Cadastrar Devolução"}
-                  </Button>
-                </div>
-              </form>
+              <div className="flex gap-3 justify-end pt-4 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setDialogOpen(false);
+                    setEditingDevolucao(null);
+                    setVendaSelecionada(null);
+                    setItensSelecionados({});
+                  }}
+                  data-testid="button-cancel"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  form="devolucao-form"
+                  disabled={
+                    createMutation.isPending || 
+                    updateMutation.isPending ||
+                    (vendaSelecionada && !hasItensSelecionados())
+                  }
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 min-w-[140px]"
+                  data-testid="button-save"
+                >
+                  {createMutation.isPending || updateMutation.isPending
+                    ? "Salvando..."
+                    : editingDevolucao
+                    ? "Atualizar"
+                    : "Confirmar Devolução"}
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
