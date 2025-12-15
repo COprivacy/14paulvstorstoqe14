@@ -454,8 +454,12 @@ export default function Devolucoes() {
             ? `pid-${item.produto_id}` 
             : `name-${(item.nome || 'item').replace(/\s+/g, '-')}`;
         
+        // Handle different price field names: preco, preco_unitario, valor_unitario
+        const preco = item.preco ?? item.preco_unitario ?? item.valor_unitario ?? 0;
+        
         return {
           ...item,
+          preco, // Normalize the price field name
           // Always include index to guarantee uniqueness
           uniqueKey: `${baseKey}-idx-${idx}`
         };
