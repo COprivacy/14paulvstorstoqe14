@@ -5218,22 +5218,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const assinaturaMesmoPlano = assinaturasPendentes.find((s) => s.plano === plano);
 
         if (assinaturaMesmoPlano) {
-          // Reutilizar a assinatura existente - apenas atualizar dados
+          // Reutilizar a assinatura existente MAS atualizar com nova preferência de pagamento
           const prazoLimite = assinaturaMesmoPlano.prazo_limite_pagamento 
             ? new Date(assinaturaMesmoPlano.prazo_limite_pagamento)
             : new Date(new Date(assinaturaMesmoPlano.data_criacao).getTime() + 7 * 24 * 60 * 60 * 1000);
 
           // Verificar se o prazo ainda não expirou
           if (prazoLimite > new Date()) {
-            reutilizandoAssinatura = true;
-            subscription = assinaturaMesmoPlano;
-
-            console.log(`🔄 [CHECKOUT] Reutilizando assinatura pendente existente - ID: ${subscription.id}, Plano: ${plano}`);
+            // CORREÇÃO: Sempre atualizar com nova preferência de pagamento para evitar init_point expirado
+            const subscriptionAtualizada = await storage.updateSubscription(assinaturaMesmoPlano.id, {
+              mercadopago_payment_id: preference.id,
+              init_point: preference.init_point,
+              external_reference: externalReference,
+              valor: valorFinal,
+              data_atualizacao: new Date().toISOString(),
+            });
             
-            logger.info('Reutilizando assinatura pendente existente', 'CHECKOUT', {
+            // Verificar se a atualização foi bem-sucedida
+            if (!subscriptionAtualizada) {
+              logger.error('Falha ao atualizar assinatura pendente', 'CHECKOUT', {
+                subscriptionId: assinaturaMesmoPlano.id,
+                userId: user!.id,
+              });
+              return res.status(500).json({
+                error: "Erro ao atualizar assinatura. Tente novamente.",
+              });
+            }
+            
+            reutilizandoAssinatura = true;
+            subscription = subscriptionAtualizada;
+
+            console.log(`🔄 [CHECKOUT] Atualizando assinatura pendente com nova preferência - ID: ${subscription.id}, Plano: ${plano}`);
+            
+            logger.info('Assinatura pendente atualizada com nova preferência', 'CHECKOUT', {
               subscriptionId: subscription.id,
               userId: user!.id,
               plano,
+              novoInitPoint: preference.init_point,
               prazoLimite: prazoLimite.toISOString()
             });
           }
@@ -5340,8 +5361,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         subscription,
         preference: {
-          id: reutilizandoAssinatura ? subscription.mercadopago_payment_id : preference.id,
-          init_point: reutilizandoAssinatura ? subscription.init_point : preference.init_point,
+          id: preference.id,
+          init_point: preference.init_point,
         },
         cupomAplicado: cupomAplicado ? {
           codigo: cupomAplicado.codigo,
