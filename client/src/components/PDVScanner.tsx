@@ -66,6 +66,102 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
     inputRef.current?.focus();
   }, []);
 
+  // Atalhos de teclado para facilitar o uso do operador
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignora se estiver digitando em um input
+      const target = e.target as HTMLElement;
+      const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
+
+      // F1 - Dinheiro
+      if (e.key === 'F1') {
+        e.preventDefault();
+        setFormaPagamento('dinheiro');
+        toast({ title: "Dinheiro selecionado", description: "Atalho F1" });
+      }
+      // F2 - Cartão Débito
+      if (e.key === 'F2') {
+        e.preventDefault();
+        setFormaPagamento('cartao_debito');
+        toast({ title: "Cartao Debito selecionado", description: "Atalho F2" });
+      }
+      // F3 - Cartão Crédito
+      if (e.key === 'F3') {
+        e.preventDefault();
+        setFormaPagamento('cartao_credito');
+        toast({ title: "Cartao Credito selecionado", description: "Atalho F3" });
+      }
+      // F4 - PIX
+      if (e.key === 'F4') {
+        e.preventDefault();
+        setFormaPagamento('pix');
+        toast({ title: "PIX selecionado", description: "Atalho F4" });
+      }
+      // F5 - Limpar carrinho
+      if (e.key === 'F5') {
+        e.preventDefault();
+        if (cart.length > 0) {
+          clearCart();
+          toast({ title: "Carrinho limpo", description: "Atalho F5" });
+        }
+      }
+      // F6 - Focar no campo de código de barras
+      if (e.key === 'F6') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        toast({ title: "Scanner ativado", description: "Atalho F6" });
+      }
+      // F7 - Balança
+      if (e.key === 'F7') {
+        e.preventDefault();
+        setShowBalancaDialog(true);
+        toast({ title: "Balanca aberta", description: "Atalho F7" });
+      }
+      // F8 - Selecionar cliente
+      if (e.key === 'F8') {
+        e.preventDefault();
+        setOpenCombobox(true);
+        toast({ title: "Selecionar cliente", description: "Atalho F8" });
+      }
+      // F9 - Remover último item
+      if (e.key === 'F9') {
+        e.preventDefault();
+        if (cart.length > 0) {
+          removeItem(cart.length - 1);
+          toast({ title: "Ultimo item removido", description: "Atalho F9" });
+        }
+      }
+      // F10 - Aumentar quantidade multiplicador
+      if (e.key === 'F10') {
+        e.preventDefault();
+        setQuantidadeMultiplicador(prev => prev + 1);
+        toast({ title: `Quantidade: ${quantidadeMultiplicador + 1}`, description: "Atalho F10" });
+      }
+      // F11 - Diminuir quantidade multiplicador
+      if (e.key === 'F11') {
+        e.preventDefault();
+        setQuantidadeMultiplicador(prev => Math.max(1, prev - 1));
+        toast({ title: `Quantidade: ${Math.max(1, quantidadeMultiplicador - 1)}`, description: "Atalho F11" });
+      }
+      // F12 - Finalizar venda
+      if (e.key === 'F12') {
+        e.preventDefault();
+        if (cart.length > 0 && !isProcessing) {
+          handleCompleteSale();
+        }
+      }
+      // ESC - Limpar campo de busca / Fechar dialogs
+      if (e.key === 'Escape' && !isTyping) {
+        e.preventDefault();
+        setBarcode("");
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [cart, isProcessing, quantidadeMultiplicador, formaPagamento]);
+
   useEffect(() => {
     if (barcode.length >= 8) {
       handleScan(barcode);
@@ -414,9 +510,16 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
                 <Scale className="h-5 w-5" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              💡 Use um leitor de código de barras USB ou digite manualmente. Ajuste a quantidade antes de escanear!
-            </p>
+            <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+              <p>Use um leitor de codigo de barras USB ou digite manualmente</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="bg-muted px-2 py-1 rounded font-mono">F1</span><span>Dinheiro</span>
+                <span className="bg-muted px-2 py-1 rounded font-mono">F2</span><span>Debito</span>
+                <span className="bg-muted px-2 py-1 rounded font-mono">F3</span><span>Credito</span>
+                <span className="bg-muted px-2 py-1 rounded font-mono">F4</span><span>PIX</span>
+                <span className="bg-muted px-2 py-1 rounded font-mono">F12</span><span>Finalizar</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -500,11 +603,11 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
             <div className="h-full overflow-y-auto">
               <Table>
                 <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
-                  <TableRow>
-                    <TableHead className="w-[45%]">Produto</TableHead>
-                    <TableHead className="text-center w-[20%]">Qtd</TableHead>
-                    <TableHead className="text-right w-[17%]">Preço</TableHead>
-                    <TableHead className="text-right w-[18%]">Total</TableHead>
+                  <TableRow className="text-lg">
+                    <TableHead className="w-[45%] text-lg font-bold py-4">PRODUTO</TableHead>
+                    <TableHead className="text-center w-[20%] text-lg font-bold py-4">QTD</TableHead>
+                    <TableHead className="text-right w-[17%] text-lg font-bold py-4">PRECO</TableHead>
+                    <TableHead className="text-right w-[18%] text-lg font-bold py-4">TOTAL</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -512,63 +615,66 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
                     <TableRow>
                       <TableCell colSpan={4} className="h-64 text-center">
                         <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                          <ShoppingCart className="h-16 w-16 opacity-20" />
+                          <ShoppingCart className="h-20 w-20 opacity-20" />
                           <div>
-                            <p className="font-medium">Carrinho vazio</p>
-                            <p className="text-sm">Escaneie produtos para começar</p>
+                            <p className="font-bold text-2xl">CARRINHO VAZIO</p>
+                            <p className="text-lg mt-2">Escaneie produtos para comecar</p>
                           </div>
                         </div>
                       </TableCell>
                     </TableRow>
                   ) : (
                     cart.map((item, index) => (
-                      <TableRow key={index} className="group">
-                        <TableCell className="font-medium">
+                      <TableRow key={index} className="group border-b-2" data-testid={`cart-item-${index}`}>
+                        <TableCell className="font-bold py-4">
                           <div>
-                            <p className="line-clamp-1">{item.nome}</p>
+                            <p className="text-xl uppercase line-clamp-1 tracking-wide">{item.nome}</p>
                             {item.peso && (
-                              <p className="text-xs text-muted-foreground">⚖️ {item.peso.toFixed(3)} kg</p>
+                              <p className="text-base text-muted-foreground font-normal mt-1">Peso: {item.peso.toFixed(3)} kg</p>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-1">
+                        <TableCell className="py-4">
+                          <div className="flex items-center justify-center gap-2">
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-10 w-10"
                               onClick={() => updateQuantity(index, item.quantidade - (item.peso ? 0.1 : 1))}
                               disabled={isProcessing}
+                              data-testid={`btn-decrease-${index}`}
                             >
-                              <Minus className="h-3 w-3" />
+                              <Minus className="h-5 w-5" />
                             </Button>
-                            <span className="w-12 text-center font-semibold">
+                            <span className="w-16 text-center font-black text-2xl">
                               {item.peso ? item.quantidade.toFixed(3) : item.quantidade}
                             </span>
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-7 w-7"
+                              className="h-10 w-10"
                               onClick={() => updateQuantity(index, item.quantidade + (item.peso ? 0.1 : 1))}
                               disabled={(!item.peso && item.quantidade >= item.estoque_disponivel) || isProcessing}
+                              data-testid={`btn-increase-${index}`}
                             >
-                              <Plus className="h-3 w-3" />
+                              <Plus className="h-5 w-5" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-10 w-10 text-red-600 hover:text-red-700 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => removeItem(index)}
                               disabled={isProcessing}
+                              data-testid={`btn-remove-${index}`}
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-5 w-5" />
                             </Button>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right text-xl font-semibold py-4">
                           R$ {item.preco.toFixed(2)}
                         </TableCell>
-                        <TableCell className="text-right font-bold text-primary">
+                        <TableCell className="text-right font-black text-2xl text-primary py-4">
                           R$ {item.subtotal.toFixed(2)}
                         </TableCell>
                       </TableRow>
