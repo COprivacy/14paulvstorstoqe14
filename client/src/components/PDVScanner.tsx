@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Trash2, ShoppingCart, Plus, Minus, DollarSign, User, Check, ChevronsUpDown, CreditCard, Banknote, Percent, Scale, X } from "lucide-react";
+import { Trash2, ShoppingCart, Plus, Minus, DollarSign, User, Check, ChevronsUpDown, CreditCard, Banknote, Percent, Scale, X, HelpCircle, Keyboard } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import type { Cliente } from "@shared/schema";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -56,7 +56,25 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
   const [showBalancaDialog, setShowBalancaDialog] = useState(false);
   const [pesoBalanca, setPesoBalanca] = useState("");
   const [quantidadeMultiplicador, setQuantidadeMultiplicador] = useState(1);
+  const [showHelpDialog, setShowHelpDialog] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Lista de atalhos para exibir no popup de ajuda
+  const shortcuts = [
+    { key: "F1", action: "Ajuda", description: "Mostra este popup de atalhos", icon: HelpCircle },
+    { key: "F2", action: "Dinheiro", description: "Seleciona pagamento em dinheiro", icon: Banknote },
+    { key: "F3", action: "Debito", description: "Seleciona cartao de debito", icon: CreditCard },
+    { key: "F4", action: "Credito", description: "Seleciona cartao de credito", icon: CreditCard },
+    { key: "F5", action: "PIX", description: "Seleciona pagamento via PIX", icon: DollarSign },
+    { key: "F6", action: "Limpar Carrinho", description: "Remove todos os itens do carrinho", icon: Trash2 },
+    { key: "F7", action: "Focar Scanner", description: "Foca no campo de codigo de barras", icon: ShoppingCart },
+    { key: "F8", action: "Balanca", description: "Abre dialog para informar peso", icon: Scale },
+    { key: "F9", action: "Remover Ultimo", description: "Remove o ultimo item do carrinho", icon: X },
+    { key: "F10", action: "Multiplicar +1", description: "Aumenta multiplicador de quantidade", icon: Plus },
+    { key: "F11", action: "Multiplicar -1", description: "Diminui multiplicador de quantidade", icon: Minus },
+    { key: "F12", action: "Finalizar Venda", description: "Abre tela de finalizacao da venda", icon: Check },
+    { key: "ESC", action: "Limpar Campo", description: "Limpa o campo de busca", icon: X },
+  ];
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
     queryKey: ["/api/clientes"],
@@ -69,59 +87,58 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
   // Atalhos de teclado para facilitar o uso do operador
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignora se estiver digitando em um input
+      // Ignora se estiver digitando em um input (exceto para F1 que sempre abre ajuda)
       const target = e.target as HTMLElement;
       const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA';
 
-      // F1 - Dinheiro
+      // F1 - Ajuda (sempre funciona)
       if (e.key === 'F1') {
         e.preventDefault();
-        setFormaPagamento('dinheiro');
-        toast({ title: "Dinheiro selecionado", description: "Atalho F1" });
+        setShowHelpDialog(true);
       }
-      // F2 - Cartão Débito
+      // F2 - Dinheiro
       if (e.key === 'F2') {
         e.preventDefault();
-        setFormaPagamento('cartao_debito');
-        toast({ title: "Cartao Debito selecionado", description: "Atalho F2" });
+        setFormaPagamento('dinheiro');
+        toast({ title: "Dinheiro selecionado", description: "Atalho F2" });
       }
-      // F3 - Cartão Crédito
+      // F3 - Cartão Débito
       if (e.key === 'F3') {
         e.preventDefault();
-        setFormaPagamento('cartao_credito');
-        toast({ title: "Cartao Credito selecionado", description: "Atalho F3" });
+        setFormaPagamento('cartao_debito');
+        toast({ title: "Cartao Debito selecionado", description: "Atalho F3" });
       }
-      // F4 - PIX
+      // F4 - Cartão Crédito
       if (e.key === 'F4') {
         e.preventDefault();
-        setFormaPagamento('pix');
-        toast({ title: "PIX selecionado", description: "Atalho F4" });
+        setFormaPagamento('cartao_credito');
+        toast({ title: "Cartao Credito selecionado", description: "Atalho F4" });
       }
-      // F5 - Limpar carrinho
+      // F5 - PIX
       if (e.key === 'F5') {
+        e.preventDefault();
+        setFormaPagamento('pix');
+        toast({ title: "PIX selecionado", description: "Atalho F5" });
+      }
+      // F6 - Limpar carrinho
+      if (e.key === 'F6') {
         e.preventDefault();
         if (cart.length > 0) {
           clearCart();
-          toast({ title: "Carrinho limpo", description: "Atalho F5" });
+          toast({ title: "Carrinho limpo", description: "Atalho F6" });
         }
       }
-      // F6 - Focar no campo de código de barras
-      if (e.key === 'F6') {
-        e.preventDefault();
-        inputRef.current?.focus();
-        toast({ title: "Scanner ativado", description: "Atalho F6" });
-      }
-      // F7 - Balança
+      // F7 - Focar no campo de código de barras
       if (e.key === 'F7') {
         e.preventDefault();
-        setShowBalancaDialog(true);
-        toast({ title: "Balanca aberta", description: "Atalho F7" });
+        inputRef.current?.focus();
+        toast({ title: "Scanner ativado", description: "Atalho F7" });
       }
-      // F8 - Selecionar cliente
+      // F8 - Balança
       if (e.key === 'F8') {
         e.preventDefault();
-        setOpenCombobox(true);
-        toast({ title: "Selecionar cliente", description: "Atalho F8" });
+        setShowBalancaDialog(true);
+        toast({ title: "Balanca aberta", description: "Atalho F8" });
       }
       // F9 - Remover último item
       if (e.key === 'F9') {
@@ -513,10 +530,20 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
             <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
               <p>Use um leitor de codigo de barras USB ou digite manualmente</p>
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="bg-muted px-2 py-1 rounded font-mono">F1</span><span>Dinheiro</span>
-                <span className="bg-muted px-2 py-1 rounded font-mono">F2</span><span>Debito</span>
-                <span className="bg-muted px-2 py-1 rounded font-mono">F3</span><span>Credito</span>
-                <span className="bg-muted px-2 py-1 rounded font-mono">F4</span><span>PIX</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowHelpDialog(true)}
+                  className="gap-2"
+                  data-testid="btn-show-help"
+                >
+                  <Keyboard className="h-4 w-4" />
+                  <span className="font-mono">F1</span> Ajuda
+                </Button>
+                <span className="bg-muted px-2 py-1 rounded font-mono">F2</span><span>Dinheiro</span>
+                <span className="bg-muted px-2 py-1 rounded font-mono">F3</span><span>Debito</span>
+                <span className="bg-muted px-2 py-1 rounded font-mono">F4</span><span>Credito</span>
+                <span className="bg-muted px-2 py-1 rounded font-mono">F5</span><span>PIX</span>
                 <span className="bg-muted px-2 py-1 rounded font-mono">F12</span><span>Finalizar</span>
               </div>
             </div>
@@ -873,6 +900,44 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog de Ajuda - Atalhos de Teclado */}
+      <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-2xl">
+              <Keyboard className="h-7 w-7" />
+              ATALHOS DE TECLADO
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              Use as teclas de funcao para agilizar o atendimento
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 mt-4">
+            {shortcuts.map((shortcut) => (
+              <div
+                key={shortcut.key}
+                className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                data-testid={`shortcut-${shortcut.key}`}
+              >
+                <div className="flex items-center gap-3 min-w-[140px]">
+                  <span className="bg-primary text-primary-foreground px-3 py-2 rounded font-mono font-bold text-lg min-w-[60px] text-center">
+                    {shortcut.key}
+                  </span>
+                  <shortcut.icon className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-lg">{shortcut.action}</p>
+                  <p className="text-sm text-muted-foreground">{shortcut.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 bg-primary/10 rounded-lg text-center">
+            <p className="text-sm font-medium">Pressione <span className="font-mono bg-primary text-primary-foreground px-2 py-1 rounded">F1</span> a qualquer momento para ver esta ajuda</p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
