@@ -201,22 +201,42 @@ export default function DashboardSidebar() {
 
               {/* Admin Master (em qualquer lugar no final) */}
               {user?.email === "pavisoft.suporte@gmail.com" && user?.is_admin === "true" && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    asChild
-                    className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
-                  >
-                    <Link href="/admin-publico" onClick={(e) => {
-                      e.preventDefault();
-                      handleNavigation("/admin-publico");
-                    }}>
-                      <Crown className="h-4 w-4 text-amber-500 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
-                      <span className="flex-1 font-medium bg-gradient-to-r from-amber-500 to-yellow-500 bg-clip-text text-transparent">
-                        Admin Master
-                      </span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/admin-publico"}
+                      className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
+                    >
+                      <Link href="/admin-publico" onClick={(e) => {
+                        e.preventDefault();
+                        handleNavigation("/admin-publico");
+                      }}>
+                        <Crown className="h-4 w-4 text-amber-500 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                        <span className="flex-1 font-medium bg-gradient-to-r from-amber-500 to-yellow-500 bg-clip-text text-transparent">
+                          Admin Master
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === "/cliente360"}
+                      className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
+                    >
+                      <Link href="/cliente360" onClick={(e) => {
+                        e.preventDefault();
+                        handleNavigation("/cliente360");
+                      }}>
+                        <Users className="h-4 w-4 text-purple-500 transition-transform duration-300 group-hover:scale-110" />
+                        <span className="flex-1 font-medium bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                          Clientes 360
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>

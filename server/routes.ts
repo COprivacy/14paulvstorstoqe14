@@ -8314,6 +8314,366 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============================================
+  // CLIENTE 360 - ENDPOINTS AVANÇADOS
+  // ============================================
+
+  // Histórico completo de pagamentos do cliente
+  app.get("/api/admin/clients/:userId/payment-history", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Buscar todas as assinaturas/pagamentos do usuário
+      const subscriptions = await storage.getSubscriptionsByUser?.(userId) || [];
+      
+      // Calcular total pago
+      const totalPaid = subscriptions
+        .filter((s: any) => s.status === 'ativo' || s.status_pagamento === 'approved')
+        .reduce((sum: number, s: any) => sum + (s.valor || 0), 0);
+      
+      // Mapear para formato de histórico
+      const paymentHistory = subscriptions.map((s: any) => ({
+        id: s.id,
+        plano: s.plano,
+        valor: s.valor,
+        valor_desconto: s.valor_desconto_cupom || 0,
+        cupom: s.cupom_codigo,
+        status: s.status,
+        status_pagamento: s.status_pagamento,
+        forma_pagamento: s.forma_pagamento,
+        data_inicio: s.data_inicio,
+        data_vencimento: s.data_vencimento,
+        data_criacao: s.data_criacao,
+        mercadopago_payment_id: s.mercadopago_payment_id,
+      }));
+      
+      res.json({
+        payments: paymentHistory,
+        total_paid: totalPaid,
+        total_subscriptions: subscriptions.length,
+        active_subscriptions: subscriptions.filter((s: any) => s.status === 'ativo').length,
+      });
+    } catch (error) {
+      console.error("Erro ao buscar histórico de pagamentos:", error);
+      res.status(500).json({ error: "Erro ao buscar histórico de pagamentos" });
+    }
+  });
+
+  // Score de saúde do cliente
+  app.get("/api/admin/clients/:userId/health-score", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Buscar dados do usuário
+      const user = await storage.getUserById?.(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+      
+      // Buscar assinaturas
+      const subscriptions = await storage.getSubscriptionsByUser?.(userId) || [];
+      
+      // Calcular métricas para o score
+      let score = 100;
+      const factors: { name: string; impact: number; description: string }[] = [];
+      
+      // Fator 1: Status da conta
+      if (user.status !== 'ativo') {
+        score -= 30;
+        factors.push({ name: 'status_conta', impact: -30, description: 'Conta não está ativa' });
+      }
+      
+      // Fator 2: Plano
+      if (user.plano === 'trial') {
+        score -= 10;
+        factors.push({ name: 'plano_trial', impact: -10, description: 'Ainda está no período de trial' });
+      } else if (user.plano?.includes('anual')) {
+        score += 10;
+        factors.push({ name: 'plano_anual', impact: 10, description: 'Cliente com plano anual (mais engajado)' });
+      }
+      
+      // Fator 3: Pagamentos em dia
+      const pendingPayments = subscriptions.filter((s: any) => s.status_pagamento === 'pending').length;
+      const latePayments = subscriptions.filter((s: any) => {
+        if (!s.data_vencimento) return false;
+        return new Date(s.data_vencimento) < new Date() && s.status_pagamento !== 'approved';
+      }).length;
+      
+      if (latePayments > 0) {
+        score -= 25;
+        factors.push({ name: 'pagamentos_atrasados', impact: -25, description: `${latePayments} pagamento(s) atrasado(s)` });
+      } else if (pendingPayments > 0) {
+        score -= 10;
+        factors.push({ name: 'pagamentos_pendentes', impact: -10, description: `${pendingPayments} pagamento(s) pendente(s)` });
+      }
+      
+      // Fator 4: Tempo como cliente
+      const daysSinceCreation = user.data_criacao 
+        ? Math.floor((Date.now() - new Date(user.data_criacao).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      
+      if (daysSinceCreation > 365) {
+        score += 15;
+        factors.push({ name: 'cliente_antigo', impact: 15, description: `Cliente há mais de 1 ano (${daysSinceCreation} dias)` });
+      } else if (daysSinceCreation > 180) {
+        score += 10;
+        factors.push({ name: 'cliente_medio', impact: 10, description: `Cliente há mais de 6 meses (${daysSinceCreation} dias)` });
+      }
+      
+      // Fator 5: Expiração próxima
+      const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
+      if (expirationDate) {
+        const daysUntilExpiration = Math.floor((new Date(expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        if (daysUntilExpiration < 0) {
+          score -= 20;
+          factors.push({ name: 'plano_expirado', impact: -20, description: 'Plano expirado' });
+        } else if (daysUntilExpiration < 7) {
+          score -= 10;
+          factors.push({ name: 'expiracao_proxima', impact: -10, description: `Plano expira em ${daysUntilExpiration} dias` });
+        }
+      }
+      
+      // Normalizar score entre 0 e 100
+      score = Math.max(0, Math.min(100, score));
+      
+      // Determinar nível de risco
+      let riskLevel: 'low' | 'medium' | 'high' | 'critical';
+      if (score >= 80) riskLevel = 'low';
+      else if (score >= 60) riskLevel = 'medium';
+      else if (score >= 40) riskLevel = 'high';
+      else riskLevel = 'critical';
+      
+      res.json({
+        score,
+        risk_level: riskLevel,
+        factors,
+        metrics: {
+          days_as_customer: daysSinceCreation,
+          total_subscriptions: subscriptions.length,
+          pending_payments: pendingPayments,
+          late_payments: latePayments,
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao calcular health score:", error);
+      res.status(500).json({ error: "Erro ao calcular score de saúde" });
+    }
+  });
+
+  // Alertas de risco de cancelamento
+  app.get("/api/admin/clients/churn-alerts", requireAdmin, async (req, res) => {
+    try {
+      // Buscar todos os usuários
+      const users = await storage.getUsers?.() || [];
+      
+      const alerts: any[] = [];
+      
+      for (const user of users) {
+        const riskFactors: string[] = [];
+        let riskScore = 0;
+        
+        // Verificar status
+        if (user.status !== 'ativo') {
+          riskFactors.push('Conta inativa');
+          riskScore += 30;
+        }
+        
+        // Verificar expiração
+        const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
+        if (expirationDate) {
+          const daysUntilExpiration = Math.floor((new Date(expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+          if (daysUntilExpiration < 0) {
+            riskFactors.push(`Plano expirado há ${Math.abs(daysUntilExpiration)} dias`);
+            riskScore += 40;
+          } else if (daysUntilExpiration <= 7) {
+            riskFactors.push(`Plano expira em ${daysUntilExpiration} dias`);
+            riskScore += 20;
+          }
+        }
+        
+        // Verificar se está no trial
+        if (user.plano === 'trial') {
+          const trialExpDate = user.data_expiracao_trial;
+          if (trialExpDate) {
+            const daysLeft = Math.floor((new Date(trialExpDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+            if (daysLeft <= 3 && daysLeft >= 0) {
+              riskFactors.push(`Trial expira em ${daysLeft} dias`);
+              riskScore += 25;
+            }
+          }
+        }
+        
+        // Só adicionar aos alertas se tiver risco
+        if (riskScore > 0) {
+          alerts.push({
+            user_id: user.id,
+            user_name: user.nome,
+            user_email: user.email,
+            plano: user.plano,
+            status: user.status,
+            risk_score: Math.min(100, riskScore),
+            risk_factors: riskFactors,
+            expiration_date: expirationDate,
+          });
+        }
+      }
+      
+      // Ordenar por risco (maior primeiro)
+      alerts.sort((a, b) => b.risk_score - a.risk_score);
+      
+      res.json({
+        alerts: alerts.slice(0, 50), // Top 50 em risco
+        total_at_risk: alerts.length,
+        critical_count: alerts.filter(a => a.risk_score >= 50).length,
+        warning_count: alerts.filter(a => a.risk_score >= 20 && a.risk_score < 50).length,
+      });
+    } catch (error) {
+      console.error("Erro ao buscar alertas de churn:", error);
+      res.status(500).json({ error: "Erro ao buscar alertas de cancelamento" });
+    }
+  });
+
+  // Estatísticas de uso do cliente (produtos mais usados, vendas, etc.)
+  app.get("/api/admin/clients/:userId/usage-stats", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Buscar vendas do usuário
+      const vendas = await storage.getVendasByUser?.(userId) || [];
+      
+      // Calcular produtos mais vendidos
+      const productStats: Record<string, { name: string; quantity: number; revenue: number }> = {};
+      
+      for (const venda of vendas) {
+        // Tentar parsear itens se existir
+        let itens: any[] = [];
+        if (venda.itens) {
+          try {
+            itens = JSON.parse(venda.itens);
+          } catch {
+            // Se falhar parse, usar o campo produto
+            itens = [{ nome: venda.produto, quantidade: venda.quantidade_vendida, subtotal: venda.valor_total }];
+          }
+        } else {
+          itens = [{ nome: venda.produto, quantidade: venda.quantidade_vendida, subtotal: venda.valor_total }];
+        }
+        
+        for (const item of itens) {
+          const key = item.nome || item.produto || 'Desconhecido';
+          if (!productStats[key]) {
+            productStats[key] = { name: key, quantity: 0, revenue: 0 };
+          }
+          productStats[key].quantity += item.quantidade || 1;
+          productStats[key].revenue += item.subtotal || item.preco || 0;
+        }
+      }
+      
+      // Converter para array e ordenar
+      const topProducts = Object.values(productStats)
+        .sort((a, b) => b.revenue - a.revenue)
+        .slice(0, 10);
+      
+      // Calcular estatísticas gerais
+      const totalSales = vendas.length;
+      const totalRevenue = vendas.reduce((sum, v) => sum + (v.valor_total || 0), 0);
+      const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+      
+      // Vendas por mês (últimos 6 meses)
+      const monthlyStats: Record<string, { month: string; sales: number; revenue: number }> = {};
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      
+      for (const venda of vendas) {
+        const vendaDate = new Date(venda.data);
+        if (vendaDate >= sixMonthsAgo) {
+          const monthKey = `${vendaDate.getFullYear()}-${String(vendaDate.getMonth() + 1).padStart(2, '0')}`;
+          if (!monthlyStats[monthKey]) {
+            monthlyStats[monthKey] = { month: monthKey, sales: 0, revenue: 0 };
+          }
+          monthlyStats[monthKey].sales += 1;
+          monthlyStats[monthKey].revenue += venda.valor_total || 0;
+        }
+      }
+      
+      res.json({
+        top_products: topProducts,
+        total_sales: totalSales,
+        total_revenue: totalRevenue,
+        average_ticket: avgTicket,
+        monthly_stats: Object.values(monthlyStats).sort((a, b) => a.month.localeCompare(b.month)),
+      });
+    } catch (error) {
+      console.error("Erro ao buscar estatísticas de uso:", error);
+      res.status(500).json({ error: "Erro ao buscar estatísticas de uso" });
+    }
+  });
+
+  // Dashboard Cliente 360 - Resumo completo
+  app.get("/api/admin/clients/:userId/360-summary", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Buscar usuário
+      const user = await storage.getUserById?.(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usuário não encontrado" });
+      }
+      
+      // Buscar assinaturas
+      const subscriptions = await storage.getSubscriptionsByUser?.(userId) || [];
+      
+      // Calcular total pago
+      const totalPaid = subscriptions
+        .filter((s: any) => s.status === 'ativo' || s.status_pagamento === 'approved')
+        .reduce((sum: number, s: any) => sum + (s.valor || 0), 0);
+      
+      // Buscar vendas
+      const vendas = await storage.getVendasByUser?.(userId) || [];
+      const totalRevenue = vendas.reduce((sum: number, v: any) => sum + (v.valor_total || 0), 0);
+      
+      // Buscar funcionários
+      const funcionarios = await storage.getFuncionariosByContaId?.(userId) || [];
+      
+      // Calcular dias como cliente
+      const daysSinceCreation = user.data_criacao 
+        ? Math.floor((Date.now() - new Date(user.data_criacao).getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      
+      // Dias até expiração
+      const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
+      const daysUntilExpiration = expirationDate 
+        ? Math.floor((new Date(expirationDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        : null;
+      
+      res.json({
+        user: {
+          id: user.id,
+          nome: user.nome,
+          email: user.email,
+          telefone: user.telefone,
+          cpf_cnpj: user.cpf_cnpj,
+          plano: user.plano,
+          status: user.status,
+          data_criacao: user.data_criacao,
+          data_expiracao: expirationDate,
+        },
+        metrics: {
+          days_as_customer: daysSinceCreation,
+          days_until_expiration: daysUntilExpiration,
+          total_paid_subscriptions: totalPaid,
+          total_sales_revenue: totalRevenue,
+          total_sales_count: vendas.length,
+          active_employees: funcionarios.filter((f: any) => f.status === 'ativo').length,
+          total_employees: funcionarios.length,
+          total_subscriptions: subscriptions.length,
+        },
+      });
+    } catch (error) {
+      console.error("Erro ao buscar resumo 360:", error);
+      res.status(500).json({ error: "Erro ao buscar resumo do cliente" });
+    }
+  });
+
   app.get("/api/system-config/:key", async (req, res) => {
     try {
       const { key } = req.params;

@@ -35,6 +35,7 @@ import Orcamentos from "@/pages/Orcamentos";
 import TestSuite from "./pages/TestSuite";
 import Ajuda from "./pages/Ajuda";
 import Privacy from "@/pages/Privacy";
+import Cliente360 from "@/pages/Cliente360";
 
 function Router() {
   return (
@@ -217,6 +218,11 @@ function Router() {
       <Route path="/admin-publico" component={() => (
             <AdminMasterRoute>
               <AdminPublico />
+            </AdminMasterRoute>
+          )} />
+      <Route path="/cliente360" component={() => (
+            <AdminMasterRoute>
+              <Cliente360 />
             </AdminMasterRoute>
           )} />
       <Route path="/test-suite">

@@ -66,6 +66,7 @@ export interface IStorage {
   updateProduto(id: number, updates: Partial<Produto>): Promise<Produto | undefined>;
   deleteProduto(id: number): Promise<boolean>;
   getVendas(startDate?: string, endDate?: string): Promise<Venda[]>;
+  getVendasByUser?(userId: string): Promise<Venda[]>;
   getVenda?(id: number): Promise<Venda | undefined>;
   createVenda(insertVenda: InsertVenda): Promise<Venda>;
   deleteVenda?(id: number): Promise<boolean>;
