@@ -491,7 +491,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         } catch (sessionError) {
           logger.error('[SESSION] Erro ao criar sessão (continuando login)', 'AUTH', { error: sessionError });
-          // Não bloquear login se falhar criação de sessão
+          // IMPORTANTE: Limpar o token se a criação da sessão falhou
+          // Isso evita que o cliente receba um token inválido
+          sessionToken = null;
         }
       }
 
@@ -627,6 +629,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         } catch (sessionError) {
           logger.error('[SESSION] Erro ao criar sessão funcionário (continuando login)', 'AUTH', { error: sessionError });
+          // IMPORTANTE: Limpar o token se a criação da sessão falhou
+          // Isso evita que o cliente receba um token inválido
+          sessionToken = null;
         }
       }
 
