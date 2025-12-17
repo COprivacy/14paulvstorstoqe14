@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PlayCircle, CheckCircle, XCircle, AlertTriangle, Loader2, Shield } from "lucide-react";
+import { PlayCircle, CheckCircle, XCircle, AlertTriangle, Loader2, Shield, Wrench } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -24,6 +24,7 @@ interface TestSummary {
 
 export default function TestSuite() {
   const [isRunning, setIsRunning] = useState(false);
+  const [isFixing, setIsFixing] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
   const [summary, setSummary] = useState<TestSummary | null>(null);
   const { toast } = useToast();
@@ -69,6 +70,32 @@ export default function TestSuite() {
       });
     } finally {
       setIsRunning(false);
+    }
+  };
+
+  const fixDataIntegrity = async () => {
+    setIsFixing(true);
+    try {
+      const response = await apiRequest("POST", "/api/fix-data-integrity", {});
+      const data = await response.json();
+
+      toast({
+        title: data.success ? "Correções Aplicadas" : "Erro na Correção",
+        description: data.message,
+        variant: data.success ? "default" : "destructive"
+      });
+
+      if (data.success && data.fixes?.length > 0) {
+        runTests();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao corrigir dados",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsFixing(false);
     }
   };
 
@@ -129,32 +156,23 @@ export default function TestSuite() {
           </Button>
 
           <Button
-            onClick={async () => {
-              try {
-                const res = await fetch('/api/admin/force-block-employees/929cc121-fa29-4a09-b996-2e28a4ec84f7', {
-                  method: 'POST',
-                  headers: {
-                    'x-user-id': user?.id || '',
-                    'x-is-admin': 'true',
-                  },
-                });
-                const data = await res.json();
-                if (data.success) {
-                  alert(`✅ ${data.funcionariosBloqueados} funcionário(s) bloqueado(s) com sucesso!`);
-                  runTests(); // Re-executar testes para verificar
-                } else {
-                  alert(`❌ Erro: ${data.error || data.message}`);
-                }
-              } catch (error) {
-                alert(`❌ Erro ao bloquear funcionários: ${error}`);
-              }
-            }}
-            variant="destructive"
+            onClick={fixDataIntegrity}
+            disabled={isFixing}
             size="lg"
-            className="w-full sm:w-auto"
+            variant="secondary"
+            data-testid="button-fix-data"
           >
-            <Shield className="h-5 w-5 mr-2" />
-            Bloquear Funcionários (claudete@gmail.com)
+            {isFixing ? (
+              <>
+                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                Corrigindo...
+              </>
+            ) : (
+              <>
+                <Wrench className="h-5 w-5 mr-2" />
+                Corrigir Dados
+              </>
+            )}
           </Button>
         </div>
       </div>

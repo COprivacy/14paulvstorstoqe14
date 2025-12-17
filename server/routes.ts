@@ -5833,6 +5833,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Corrigir problemas de integridade de dados
+  app.post("/api/fix-data-integrity", requireAdmin, async (req, res) => {
+    try {
+      const fixes: any[] = [];
+      const users = await storage.getUsers();
+      const userIds = new Set(users.map(u => u.id));
+
+      // 1. Corrigir produtos órfãos (sem user_id válido)
+      const produtos = await storage.getProdutos();
+      const produtosOrfaos = produtos.filter(p => !userIds.has(p.user_id));
+      
+      if (produtosOrfaos.length > 0) {
+        for (const produto of produtosOrfaos) {
+          await storage.db.execute(sql`DELETE FROM produtos WHERE id = ${produto.id}`);
+        }
+        fixes.push({
+          tipo: "Produtos órfãos",
+          quantidade: produtosOrfaos.length,
+          acao: "Removidos"
+        });
+      }
+
+      // 2. Corrigir vendas órfãs (sem user_id válido)
+      const vendas = await storage.getVendas();
+      const vendasOrfas = vendas.filter(v => !userIds.has(v.user_id));
+      
+      if (vendasOrfas.length > 0) {
+        for (const venda of vendasOrfas) {
+          await storage.db.execute(sql`DELETE FROM vendas WHERE id = ${venda.id}`);
+        }
+        fixes.push({
+          tipo: "Vendas órfãs",
+          quantidade: vendasOrfas.length,
+          acao: "Removidas"
+        });
+      }
+
+      // 3. Recriar bloqueios para orçamentos aprovados
+      if (storage.getOrcamentos) {
+        const orcamentos = await storage.getOrcamentos();
+        const orcamentosAprovados = orcamentos.filter((o: any) => o.status === 'aprovado');
+        
+        let bloqueiosCriados = 0;
+        for (const orcamento of orcamentosAprovados) {
+          // Verificar se já existem bloqueios para este orçamento
+          const bloqueiosExistentes = await storage.db.execute(
+            sql`SELECT COUNT(*) as count FROM bloqueios_estoque WHERE orcamento_id = ${orcamento.id}`
+          );
+          
+          const count = Number(bloqueiosExistentes.rows?.[0]?.count || 0);
+          
+          if (count === 0 && orcamento.itens && Array.isArray(orcamento.itens)) {
+            // Criar bloqueios para cada item do orçamento
+            const dataBloqueio = new Date().toISOString();
+            for (const item of orcamento.itens) {
+              if (item.produto_id && item.quantidade) {
+                await storage.db.execute(sql`
+                  INSERT INTO bloqueios_estoque (produto_id, orcamento_id, user_id, quantidade_bloqueada, data_bloqueio)
+                  VALUES (${item.produto_id}, ${orcamento.id}, ${orcamento.user_id}, ${item.quantidade}, ${dataBloqueio})
+                `);
+                bloqueiosCriados++;
+              }
+            }
+          }
+        }
+        
+        if (bloqueiosCriados > 0) {
+          fixes.push({
+            tipo: "Bloqueios de estoque",
+            quantidade: bloqueiosCriados,
+            acao: "Criados para orçamentos aprovados"
+          });
+        }
+      }
+
+      logger.info("Correção de integridade executada", "DATA_FIX", { fixes });
+      
+      res.json({
+        success: true,
+        message: fixes.length > 0 
+          ? `${fixes.length} tipos de correções aplicadas` 
+          : "Nenhuma correção necessária",
+        fixes
+      });
+    } catch (error: any) {
+      logger.error("Erro ao corrigir integridade de dados", "DATA_FIX", { error });
+      res.status(500).json({ error: "Erro ao corrigir integridade de dados: " + error.message });
+    }
+  });
+
   // Obter todos os pacotes de funcionários do sistema (Admin Master)
   app.get("/api/admin/employee-packages", requireAdmin, async (req, res) => {
     try {

@@ -241,7 +241,7 @@ export class TestSuite {
       const metrics = logger.getLockingMetrics();
 
       const detalhes = {
-        orcamentos_aprovados: orcamentos.length,
+        orcamentos_aprovados: orcamentosAprovados.length,
         bloqueios_ativos: bloqueiosAtivos.length,
         produtos_bloqueados: metrics.produtos_com_bloqueios,
         aprovacoes_total: metrics.aprovacoes_total,
@@ -249,11 +249,11 @@ export class TestSuite {
         tempo_medio_ms: metrics.tempo_medio_aprovacao_ms,
       };
 
-      if (bloqueiosAtivos.length === 0 && orcamentos.length > 0) {
+      if (bloqueiosAtivos.length === 0 && orcamentosAprovados.length > 0) {
         this.addResult(
           "Sistema de Bloqueios",
           "warning",
-          `${orcamentos.length} orçamento(s) aprovado(s) mas nenhum bloqueio ativo encontrado`,
+          `${orcamentosAprovados.length} orçamento(s) aprovado(s) mas nenhum bloqueio ativo encontrado`,
           detalhes
         );
       } else if (bloqueiosAtivos.length > 0) {
