@@ -4002,6 +4002,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const funcionarioId = req.headers["funcionario-id"] as string;
       const { itens, cliente_id, forma_pagamento } = req.body;
 
+      // Buscar nome do usuário para registrar como vendedor
+      const user = await storage.getUserById(userId);
+      const nomeVendedor = user?.nome || user?.email || "Venda direta";
+
       const caixaAberto = await storage.getCaixaAberto?.(userId, funcionarioId || undefined);
       if (!caixaAberto) {
         return res
@@ -4086,6 +4090,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         itens: JSON.stringify(produtosVendidos),
         cliente_id: cliente_id || undefined,
         forma_pagamento: forma_pagamento || "dinheiro",
+        vendedor: nomeVendedor,
       });
 
       await storage.atualizarTotaisCaixa?.(
