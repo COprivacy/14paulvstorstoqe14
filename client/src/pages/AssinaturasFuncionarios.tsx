@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Users, Package, CheckCircle, Clock, XCircle, TrendingUp, RefreshCw, PlayCircle, Search, AlertCircle, Info, ShieldAlert, Lock } from "lucide-react";
+import { Users, Package, CheckCircle, Clock, XCircle, TrendingUp, RefreshCw, PlayCircle, Search, AlertCircle, Info, ShieldAlert, Lock, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +26,7 @@ function PasswordProtectionDialog({
   onDenied: () => void;
 }) {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -103,15 +104,30 @@ function PasswordProtectionDialog({
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="access-password">Senha de Acesso</Label>
-              <Input
-                id="access-password"
-                type="password"
-                placeholder="Digite a senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoFocus
-              />
+              <div className="relative">
+                <Input
+                  id="access-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Digite a senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoFocus
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                  data-testid="button-toggle-packages-password"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Verificando..." : "Acessar"}
