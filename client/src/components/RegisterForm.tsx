@@ -92,7 +92,7 @@ export default function RegisterForm({ onRegister, onLoginClick, isLoading }: Re
           <p className="text-xl font-semibold text-white/90 tracking-wide" data-testid="text-brand-subtitle">SISTEMAS</p>
         </div>
 
-        <Card className="w-full bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-white/20 dark:border-gray-800/50 shadow-2xl">
+        <Card className="w-full bg-white/98 dark:bg-gray-950/95 backdrop-blur-md border-gray-200/60 dark:border-gray-800/50 shadow-2xl">
           <CardHeader className="space-y-3 pb-6">
             <CardTitle className="text-2xl font-bold text-center">
               Criar sua conta

@@ -212,7 +212,7 @@ export default function LoginForm({
           <p className="text-sm text-white/70" data-testid="text-brand-slogan">Gestão Empresarial Inteligente</p>
         </div>
 
-        <Card className="bg-white/95 dark:bg-gray-950/95 backdrop-blur-md border-white/20 dark:border-gray-800/50 shadow-2xl">
+        <Card className="bg-white/98 dark:bg-gray-950/95 backdrop-blur-md border-gray-200/60 dark:border-gray-800/50 shadow-2xl">
           <CardHeader className="space-y-3 pb-6">
             <CardTitle className="text-2xl font-bold text-center">
               Bem-vindo de volta
