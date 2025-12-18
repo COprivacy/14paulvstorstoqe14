@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, ShoppingCart, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingCart, Download, FileText } from "lucide-react";
 import { formatDateTime } from "@/lib/dateUtils";
 import { validateVenda, validateArray } from "@/lib/dataValidator";
+import jsPDF from "jspdf";
 
 interface Sale {
   id: number;
@@ -25,6 +26,57 @@ interface Sale {
 interface SalesTableProps {
   sales: Sale[];
 }
+
+const downloadCupomPDF = (cupomTexto: string, vendaId: number) => {
+  try {
+    const doc = new jsPDF({
+      format: 'a4',
+      orientation: 'portrait',
+    });
+
+    // Configurações do documento
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+
+    // Processar o texto do cupom linha por linha
+    const linhas = cupomTexto.split('\n');
+    let yPosition = 20;
+    const maxWidth = 180;
+    const lineHeight = 5;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 15;
+
+    // Centralizar cada linha
+    linhas.forEach((linha) => {
+      if (yPosition + lineHeight > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+      }
+
+      // Se a linha for longa, quebrar em múltiplas linhas
+      const splitText = doc.splitTextToSize(linha, maxWidth);
+      splitText.forEach((texto: string) => {
+        doc.text(texto, doc.internal.pageSize.getWidth() / 2, yPosition, { align: 'center' });
+        yPosition += lineHeight;
+      });
+    });
+
+    // Salvar PDF
+    doc.save(`cupom-venda-${vendaId}.pdf`);
+  } catch (error) {
+    console.error('Erro ao gerar PDF do cupom:', error);
+    // Fallback para download de texto se houver erro
+    const blob = new Blob([cupomTexto], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cupom-venda-${vendaId}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+};
 
 export default function SalesTable({ sales }: SalesTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -159,21 +211,11 @@ export default function SalesTable({ sales }: SalesTableProps) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => {
-                                const blob = new Blob([sale.cupom_texto || ''], { type: 'text/plain' });
-                                const url = URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = `cupom-venda-${sale.id}.txt`;
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                URL.revokeObjectURL(url);
-                              }}
+                              onClick={() => downloadCupomPDF(sale.cupom_texto || '', sale.id)}
                               data-testid={`button-download-cupom-${sale.id}`}
-                              title="Baixar cupom"
+                              title="Baixar cupom em PDF"
                             >
-                              <Download className="h-4 w-4 text-blue-600" />
+                              <FileText className="h-4 w-4 text-blue-600" />
                             </Button>
                           ) : (
                             '-'
