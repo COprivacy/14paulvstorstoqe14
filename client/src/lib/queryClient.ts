@@ -67,8 +67,14 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  skipSessionToken: boolean = false,
 ): Promise<Response> {
   const authHeaders = getAuthHeaders();
+  
+  // Se for requisição de autenticação, remover token de sessão para evitar conflitos
+  if (skipSessionToken && authHeaders["x-session-token"]) {
+    delete authHeaders["x-session-token"];
+  }
   
   const res = await fetch(url, {
     method,

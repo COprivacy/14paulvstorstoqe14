@@ -32,7 +32,7 @@ export default function Login() {
         senha: password,
         device_fingerprint: deviceFingerprint,
         device_info: deviceInfo
-      });
+      }, true);
 
       if (!response.ok) {
         throw new Error("Email ou senha inválidos");
