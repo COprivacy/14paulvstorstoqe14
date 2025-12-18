@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Users, Package, CheckCircle, Clock, XCircle, TrendingUp, RefreshCw, PlayCircle, Search, AlertCircle, Info, ShieldAlert } from "lucide-react";
+import { Users, Package, CheckCircle, Clock, XCircle, TrendingUp, RefreshCw, PlayCircle, Search, AlertCircle, Info, ShieldAlert, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -18,10 +18,116 @@ import { useUser } from "@/hooks/use-user";
 import { useLocation } from "wouter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+function PasswordProtectionDialog({ 
+  onAuthenticated, 
+  onDenied 
+}: { 
+  onAuthenticated: () => void; 
+  onDenied: () => void;
+}) {
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const response = await fetch("/api/auth/verify-master-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": user.id || "",
+          "x-user-email": user.email || "",
+          "x-is-admin": user.is_admin || "false",
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (response.status === 429) {
+        const result = await response.json();
+        toast({
+          title: "Bloqueado temporariamente",
+          description: result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const result = await response.json();
+
+      if (result.valid) {
+        toast({
+          title: "Acesso autorizado",
+          description: "Bem-vindo ao Gerenciamento de Pacotes",
+        });
+        sessionStorage.setItem("employee_packages_auth", "true");
+        onAuthenticated();
+      } else {
+        toast({
+          title: "Senha incorreta",
+          description: "A senha de acesso está incorreta",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao verificar senha:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível verificar a senha. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+      setPassword("");
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen p-4 bg-gray-50 dark:bg-gray-900">
+      <Card className="max-w-md w-full">
+        <CardHeader className="space-y-2">
+          <div className="flex justify-center mb-4">
+            <div className="rounded-full bg-blue-100 dark:bg-blue-900/30 p-4">
+              <Lock className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl text-center">Acesso Protegido</CardTitle>
+          <CardDescription className="text-center">
+            Digite a senha de acesso para continuar
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="access-password">Senha de Acesso</Label>
+              <Input
+                id="access-password"
+                type="password"
+                placeholder="Digite a senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Verificando..." : "Acessar"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function AssinaturasFuncionarios() {
   const { toast } = useToast();
   const { user } = useUser();
   const [, setLocation] = useLocation();
+  const [isPasswordProtected, setIsPasswordProtected] = useState(true);
   
   // Verificação de acesso - apenas Admin Master
   useEffect(() => {
@@ -34,6 +140,13 @@ export default function AssinaturasFuncionarios() {
       setLocation("/dashboard");
     }
   }, [user, setLocation, toast]);
+
+  // Limpar proteção por senha ao desmontar o componente
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem("employee_packages_auth");
+    };
+  }, []);
 
   // Se não é o usuário master, mostrar mensagem de acesso negado
   if (!user || user.email !== "pavisoft.suporte@gmail.com" || user.is_admin !== "true") {
@@ -68,6 +181,16 @@ export default function AssinaturasFuncionarios() {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  // Verificar se a proteção por senha já foi validada
+  if (isPasswordProtected && !sessionStorage.getItem("employee_packages_auth")) {
+    return (
+      <PasswordProtectionDialog 
+        onAuthenticated={() => setIsPasswordProtected(false)}
+        onDenied={() => setLocation("/dashboard")}
+      />
     );
   }
   
