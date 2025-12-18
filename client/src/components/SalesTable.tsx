@@ -34,32 +34,152 @@ const downloadCupomPDF = (cupomTexto: string, vendaId: number) => {
       orientation: 'portrait',
     });
 
-    // Configurações do documento
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-
-    // Processar o texto do cupom linha por linha
-    const linhas = cupomTexto.split('\n');
-    let yPosition = 20;
-    const maxWidth = 180;
-    const lineHeight = 5;
+    const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 15;
+    const margin = 12;
+    const centerX = pageWidth / 2;
+    let yPosition = 15;
 
-    // Centralizar cada linha
+    // Buscar customização da loja
+    const customization = localStorage.getItem("customization");
+    let storeName = "PAVISOFT SISTEMAS";
+    let storePhone = "";
+    let storeEmail = "";
+
+    if (customization) {
+      try {
+        const config = JSON.parse(customization);
+        storeName = config.storeName || storeName;
+        storePhone = config.phone || "";
+        storeEmail = config.email || "";
+      } catch (e) {
+        console.error("Erro ao carregar configurações:", e);
+      }
+    }
+
+    // ==================== HEADER ====================
+    // Linha superior decorativa
+    doc.setDrawColor(41, 128, 185);
+    doc.setLineWidth(0.5);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 4;
+
+    // Logo/Nome da Loja
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(41, 128, 185);
+    doc.text(storeName, centerX, yPosition, { align: 'center' });
+    yPosition += 7;
+
+    // Informações da loja
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    if (storePhone) doc.text(storePhone, centerX, yPosition, { align: 'center' });
+    yPosition += 3;
+    if (storeEmail) doc.text(storeEmail, centerX, yPosition, { align: 'center' });
+    yPosition += 4;
+
+    // Linha decorativa
+    doc.setDrawColor(41, 128, 185);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 5;
+
+    // ==================== TÍTULO E DATA ====================
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text('CUPOM FISCAL', centerX, yPosition, { align: 'center' });
+    yPosition += 6;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    const now = new Date();
+    const dataHora = `${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}`;
+    doc.text(dataHora, centerX, yPosition, { align: 'center' });
+    yPosition += 5;
+
+    // ID da venda
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(41, 128, 185);
+    doc.text(`Nº: ${vendaId.toString().padStart(6, '0')}`, centerX, yPosition, { align: 'center' });
+    yPosition += 6;
+
+    // ==================== CONTEÚDO DO CUPOM ====================
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 4;
+
+    // Processar e formatar o conteúdo
+    const linhas = cupomTexto.split('\n').filter(l => l.trim());
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+
+    let isHeader = true;
+    let isTotal = false;
+
     linhas.forEach((linha) => {
-      if (yPosition + lineHeight > pageHeight - margin) {
+      if (yPosition + 4 > pageHeight - 20) {
         doc.addPage();
         yPosition = margin;
       }
 
-      // Se a linha for longa, quebrar em múltiplas linhas
-      const splitText = doc.splitTextToSize(linha, maxWidth);
+      const linhaLimpa = linha.trim();
+
+      // Detectar seções especiais
+      if (linhaLimpa.toUpperCase().includes('TOTAL') || linhaLimpa.toUpperCase().includes('R$')) {
+        isTotal = true;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(41, 128, 185);
+      } else if (linhaLimpa.includes('===') || linhaLimpa.includes('%%%')) {
+        yPosition += 1;
+        return;
+      } else {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(50, 50, 50);
+      }
+
+      const splitText = doc.splitTextToSize(linhaLimpa, pageWidth - margin * 2);
       splitText.forEach((texto: string) => {
-        doc.text(texto, doc.internal.pageSize.getWidth() / 2, yPosition, { align: 'center' });
-        yPosition += lineHeight;
+        doc.text(texto, centerX, yPosition, { align: 'center' });
+        yPosition += 4;
       });
+
+      isHeader = false;
     });
+
+    // ==================== RODAPÉ ====================
+    yPosition += 3;
+    doc.setDrawColor(200, 200, 200);
+    doc.line(margin, yPosition, pageWidth - margin, yPosition);
+    yPosition += 4;
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Obrigado pela preferência!', centerX, yPosition, { align: 'center' });
+    yPosition += 3;
+    doc.text('Sistema PAVISOFT', centerX, yPosition, { align: 'center' });
+
+    // Número de páginas
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(180, 180, 180);
+      doc.text(
+        `${i} de ${pageCount}`,
+        pageWidth / 2,
+        pageHeight - 5,
+        { align: 'center' }
+      );
+    }
 
     // Salvar PDF
     doc.save(`cupom-venda-${vendaId}.pdf`);
