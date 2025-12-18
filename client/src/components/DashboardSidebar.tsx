@@ -250,6 +250,21 @@ export default function DashboardSidebar() {
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
+                        <SidebarMenuItem>
+                          <SidebarMenuButton
+                            asChild
+                            isActive={location === "/assinaturasfuncionarios"}
+                            className="group relative overflow-hidden transition-all duration-300 hover:scale-[1.02] data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/10 data-[active=true]:to-primary/5"
+                          >
+                            <Link href="/assinaturasfuncionarios" onClick={(e) => {
+                              e.preventDefault();
+                              handleNavigation("/assinaturasfuncionarios");
+                            }}>
+                              <FileText className="h-4 w-4 text-blue-500 transition-transform duration-300 group-hover:scale-110" />
+                              <span className="flex-1 font-medium">Assinaturas Funcionários</span>
+                            </Link>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
                       </SidebarMenu>
                     </CollapsibleContent>
                   </SidebarMenuItem>
