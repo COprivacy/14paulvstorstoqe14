@@ -9,7 +9,22 @@ async function throwIfResNotOk(res: Response) {
 }
 
 function getAuthHeaders(): Record<string, string> {
-  const userStr = localStorage.getItem("user");
+  // Tentar localStorage primeiro, depois sessionStorage
+  let userStr = null;
+  try {
+    userStr = localStorage.getItem("user");
+  } catch (e) {
+    // localStorage pode falhar em private mode
+  }
+  
+  if (!userStr) {
+    try {
+      userStr = sessionStorage.getItem("user");
+    } catch (e) {
+      // sessionStorage também pode falhar
+    }
+  }
+  
   if (!userStr) return {};
   
   try {
@@ -19,7 +34,7 @@ function getAuthHeaders(): Record<string, string> {
       "x-user-type": user.tipo || "usuario",
     };
     
-    // Verificação robusta para is_admin (pode ser boolean, string ou number)
+    // Verificação robusta para is_admin (pode ser boolean, string ou número)
     const isAdmin = user.is_admin === true || 
                     user.is_admin === "true" || 
                     user.is_admin === 1 || 
@@ -33,7 +48,7 @@ function getAuthHeaders(): Record<string, string> {
       headers["x-conta-id"] = user.conta_id;
     }
     
-    // Adicionar token de sessão se disponível
+    // Adicionar token de sessão se disponível (compatível com localStorage e sessionStorage)
     const sessionToken = getStoredSessionToken();
     if (sessionToken) {
       headers["x-session-token"] = sessionToken;

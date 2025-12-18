@@ -108,13 +108,50 @@ export async function generateFingerprint(): Promise<string> {
 }
 
 export function getStoredSessionToken(): string | null {
-  return localStorage.getItem('session_token');
+  try {
+    // Tentar localStorage primeiro (mais persistente)
+    const localToken = localStorage.getItem('session_token');
+    if (localToken) return localToken;
+    
+    // Fallback para sessionStorage (melhor para mobile)
+    const sessionToken = sessionStorage.getItem('session_token');
+    return sessionToken;
+  } catch (e) {
+    // Se localStorage falhar (private mode), usar sessionStorage
+    try {
+      return sessionStorage.getItem('session_token');
+    } catch {
+      return null;
+    }
+  }
 }
 
 export function setStoredSessionToken(token: string): void {
-  localStorage.setItem('session_token', token);
+  try {
+    // Tentar armazenar em ambos os locais para máxima compatibilidade
+    try {
+      localStorage.setItem('session_token', token);
+    } catch (e) {
+      console.warn('[TOKEN] localStorage indisponível, usando sessionStorage');
+    }
+    
+    // Sempre armazenar em sessionStorage como fallback
+    sessionStorage.setItem('session_token', token);
+  } catch (e) {
+    console.error('[TOKEN] Erro ao armazenar token:', e);
+  }
 }
 
 export function clearStoredSessionToken(): void {
-  localStorage.removeItem('session_token');
+  try {
+    localStorage.removeItem('session_token');
+  } catch (e) {
+    // Ignorar erros
+  }
+  
+  try {
+    sessionStorage.removeItem('session_token');
+  } catch (e) {
+    // Ignorar erros
+  }
 }

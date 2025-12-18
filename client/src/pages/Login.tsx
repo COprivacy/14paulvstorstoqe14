@@ -40,13 +40,25 @@ export default function Login() {
 
       const userData = await response.json();
       
-      // Armazenar token de sessão se recebido
+      // Armazenar token de sessão se recebido (com fallback para mobile)
       if (userData.session_token) {
         setStoredSessionToken(userData.session_token);
       }
       
-      localStorage.setItem("user", JSON.stringify(userData));
-      console.log("🔄 Atualizando localStorage do usuário logado:", userData);
+      // Armazenar user em localStorage e sessionStorage para máxima compatibilidade
+      try {
+        localStorage.setItem("user", JSON.stringify(userData));
+      } catch (e) {
+        console.warn('localStorage indisponível, usando sessionStorage');
+      }
+      
+      try {
+        sessionStorage.setItem("user", JSON.stringify(userData));
+      } catch (e) {
+        // Ignorar erro
+      }
+      
+      console.log("🔄 Atualizando dados do usuário logado:", userData);
 
       toast({
         title: "Login realizado com sucesso!",
