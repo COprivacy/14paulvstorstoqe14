@@ -1,10 +1,32 @@
 # Controle de Estoque Simples
 
 ## Overview
-A web application for Brazilian small businesses, offering inventory management, point-of-sale (PDV) with barcode scanning, sales tracking, and reporting. It includes integration with the Focus NFe API for Brazilian invoice (NF-e/NFC-e) emission. The system emphasizes simplicity, mobile-first design, comprehensive financial management, and employee permission controls. Users are responsible for their Focus NFe account credentials.
+**PAVISOFT SISTEMAS** - Complete business management system for Brazilian small businesses (SMEs).
+
+**Status:** 🟢 **PRODUCTION READY - READY FOR LAUNCH**
+
+A web application offering inventory management, point-of-sale (PDV) with barcode scanning, sales tracking, comprehensive financial module, NF-e/NFC-e invoice emission, employee control with audit logs, and multi-tenant architecture. System emphasizes simplicity, security, Brazilian compliance, and competitive pricing (R$ 89-299/month).
+
+**Key Differentiators:**
+- ✅ NF-e integrada (sem custo extra, vs Omni que cobra R$ 50+)
+- ✅ Módulo financeiro completo (A/P, A/R, Cash Flow)
+- ✅ Devoluções/Trocas gerenciadas
+- ✅ Controle de funcionários com auditoria
+- ✅ 30% mais barato que Omni/Tiny
+- ✅ Multi-tenant com isolamento de dados
+- ✅ Session management com fingerprint
+- ✅ Progressive Web App (PWA) - mobile ready
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
+
+## Business Strategy
+- **Target Market:** Small retailers (1-50 employees), coffee shops, small restaurants, boutiques
+- **Pricing:** R$ 89 (Básico), R$ 179 (Profissional), R$ 299 (Empresarial)
+- **GTM:** Direct sales to owner/managers, startup pitch
+- **Competitive Advantage:** Integrated NF-e + Financial Management + Lower Price
+- **Revenue Model:** SaaS subscription (monthly/annual)
+- **Next Phase:** App Mobile (Q2 2025), Marketplace Integration (Q2 2025), Payment Gateway (Q3 2025)
 
 ## Recent Changes
 **2025-12-13:** Fixed Mercado Pago Webhook Duplicate Payment Bug:
