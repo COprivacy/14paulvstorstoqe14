@@ -30,9 +30,11 @@ import {
   UserCheck,
   UserX,
   Package,
-  BarChart3
+  BarChart3,
+  Clock,
+  AlertCircle
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface User {
@@ -155,6 +157,26 @@ function formatDate(date: string | undefined) {
     return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
   } catch {
     return date;
+  }
+}
+
+function getExpirationStatus(daysUntilExpiration: number | null | undefined) {
+  if (daysUntilExpiration === null || daysUntilExpiration === undefined) {
+    return { text: 'Sem data de vencimento', color: 'text-gray-500', bgColor: 'bg-gray-500/10', icon: 'clock' };
+  }
+  
+  const GRACE_PERIOD = 4; // 4 dias de carência após vencimento
+  
+  if (daysUntilExpiration > 0) {
+    if (daysUntilExpiration <= 7) {
+      return { text: `Vence em ${daysUntilExpiration} dia(s)`, color: 'text-orange-600', bgColor: 'bg-orange-500/10', icon: 'alert' };
+    }
+    return { text: `Ativo - Vence em ${daysUntilExpiration} dias`, color: 'text-green-600', bgColor: 'bg-green-500/10', icon: 'clock' };
+  } else if (daysUntilExpiration <= 0 && daysUntilExpiration > -GRACE_PERIOD) {
+    const daysRemaining = GRACE_PERIOD + daysUntilExpiration;
+    return { text: `Vencido - ${daysRemaining} dia(s) para cancelar`, color: 'text-red-600', bgColor: 'bg-red-500/10', icon: 'alert' };
+  } else {
+    return { text: 'Conta cancelada', color: 'text-red-700', bgColor: 'bg-red-500/10', icon: 'alert' };
   }
 }
 
@@ -391,7 +413,7 @@ export default function Cliente360() {
               </CardHeader>
               
               <CardContent className="flex-1 flex flex-col min-h-0 pt-0">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
                   <div className="bg-muted/50 rounded-lg p-3">
                     <div className="flex items-center gap-2 text-muted-foreground mb-1">
                       <DollarSign className="h-4 w-4" />
@@ -426,6 +448,19 @@ export default function Cliente360() {
                     </div>
                     <p className="text-lg font-bold">
                       {clientSummary ? clientSummary.metrics.active_employees : '-'}
+                    </p>
+                  </div>
+                  <div className={`rounded-lg p-3 ${clientSummary ? getExpirationStatus(clientSummary.metrics.days_until_expiration).bgColor : 'bg-muted/50'}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      {clientSummary && getExpirationStatus(clientSummary.metrics.days_until_expiration).icon === 'alert' ? (
+                        <AlertCircle className={`h-4 w-4 ${getExpirationStatus(clientSummary.metrics.days_until_expiration).color}`} />
+                      ) : (
+                        <Clock className={`h-4 w-4 ${clientSummary ? getExpirationStatus(clientSummary.metrics.days_until_expiration).color : 'text-muted-foreground'}`} />
+                      )}
+                      <span className={`text-xs ${clientSummary ? getExpirationStatus(clientSummary.metrics.days_until_expiration).color : 'text-muted-foreground'}`}>Plano</span>
+                    </div>
+                    <p className={`text-sm font-bold ${clientSummary ? getExpirationStatus(clientSummary.metrics.days_until_expiration).color : 'text-muted-foreground'}`}>
+                      {clientSummary ? getExpirationStatus(clientSummary.metrics.days_until_expiration).text : '-'}
                     </p>
                   </div>
                 </div>
