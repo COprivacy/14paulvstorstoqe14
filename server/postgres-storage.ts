@@ -914,15 +914,16 @@ export class PostgresStorage implements IStorage {
     try {
       return await this.db.select().from(subscriptions).orderBy(desc(subscriptions.id));
     } catch (error: any) {
-      // Se der erro de coluna não existente (cupom_codigo), fazer SELECT manual sem essas colunas
+      // Se der erro de coluna não existente (valor_original, cupom_codigo, etc), fazer SELECT manual sem essas colunas
       if (error.code === '42703') {
-        logger.warn('[DB] Executando SELECT básico de subscriptions (campos de cupom não disponíveis)', { error: error.message });
+        logger.warn('[DB] Executando SELECT básico de subscriptions (campos novos não disponíveis)', { error: error.message });
         const result = await this.db.execute(sql`
           SELECT 
             id, user_id, plano, valor, status, status_pagamento, 
-            payment_id, preference_id, data_criacao, data_vencimento, 
-            data_atualizacao, data_cancelamento, motivo_cancelamento, 
-            auto_renovacao, tentativas_cobranca, prazo_limite_pagamento
+            mercadopago_payment_id, mercadopago_preference_id, data_criacao, data_vencimento, 
+            data_atualizacao, motivo_cancelamento, 
+            tentativas_cobranca, prazo_limite_pagamento, forma_pagamento,
+            init_point, external_reference
           FROM subscriptions 
           ORDER BY id DESC
         `);
