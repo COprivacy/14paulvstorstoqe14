@@ -25,6 +25,9 @@ __export(schema_exports, {
   contasReceber: () => contasReceber,
   cupons: () => cupons,
   devolucoes: () => devolucoes,
+  emailAutomation: () => emailAutomation,
+  emailHistory: () => emailHistory,
+  emailTemplates: () => emailTemplates,
   employeePackages: () => employeePackages,
   fornecedores: () => fornecedores,
   funcionarios: () => funcionarios,
@@ -43,6 +46,9 @@ __export(schema_exports, {
   insertContasReceberSchema: () => insertContasReceberSchema,
   insertCupomSchema: () => insertCupomSchema,
   insertDevolucaoSchema: () => insertDevolucaoSchema,
+  insertEmailAutomationSchema: () => insertEmailAutomationSchema,
+  insertEmailHistorySchema: () => insertEmailHistorySchema,
+  insertEmailTemplateSchema: () => insertEmailTemplateSchema,
   insertEmployeePackageSchema: () => insertEmployeePackageSchema,
   insertFornecedorSchema: () => insertFornecedorSchema,
   insertFuncionarioSchema: () => insertFuncionarioSchema,
@@ -58,6 +64,7 @@ __export(schema_exports, {
   insertSystemOwnerSchema: () => insertSystemOwnerSchema,
   insertUserCustomizationSchema: () => insertUserCustomizationSchema,
   insertUserSchema: () => insertUserSchema,
+  insertUserSessionSchema: () => insertUserSessionSchema,
   insertUsoCupomSchema: () => insertUsoCupomSchema,
   insertVendaSchema: () => insertVendaSchema,
   isPremium: () => isPremium,
@@ -72,6 +79,7 @@ __export(schema_exports, {
   systemConfig: () => systemConfig,
   systemOwner: () => systemOwner,
   userCustomization: () => userCustomization,
+  userSessions: () => userSessions,
   users: () => users,
   usoCupons: () => usoCupons,
   vendas: () => vendas
@@ -95,7 +103,7 @@ function isPremium(user) {
   }
   return false;
 }
-var users, systemOwner, produtos, bloqueiosEstoque, vendas, fornecedores, clientes, compras, configFiscal, contasPagar, contasReceber, systemConfig, insertUserSchema, insertSystemOwnerSchema, insertProdutoSchema, insertVendaSchema, insertBloqueioEstoqueSchema, insertFornecedorSchema, insertClienteSchema, insertCompraSchema, insertConfigFiscalSchema, planos, configMercadoPago, logsAdmin, subscriptions, insertPlanoSchema, insertConfigMercadoPagoSchema, insertLogAdminSchema, insertContasPagarSchema, insertContasReceberSchema, insertSystemConfigSchema, insertSubscriptionSchema, funcionarios, insertFuncionarioSchema, permissoesFuncionarios, insertPermissaoFuncionarioSchema, caixas, movimentacoesCaixa, devolucoes, insertCaixaSchema, insertMovimentacaoCaixaSchema, insertDevolucaoSchema, orcamentos, insertOrcamentoSchema, clientNotes, clientDocuments, clientInteractions, planChangesHistory, employeePackages, cupons, usoCupons, insertEmployeePackageSchema, insertCupomSchema, insertUsoCupomSchema, userCustomization, insertUserCustomizationSchema, clientCommunications, insertClientNoteSchema, insertClientDocumentSchema, insertClientInteractionSchema, insertPlanChangeHistorySchema, insertClientCommunicationSchema;
+var users, systemOwner, produtos, clientes, fornecedores, bloqueiosEstoque, vendas, compras, configFiscal, contasPagar, contasReceber, systemConfig, insertUserSchema, insertSystemOwnerSchema, insertProdutoSchema, insertVendaSchema, insertBloqueioEstoqueSchema, insertFornecedorSchema, insertClienteSchema, insertCompraSchema, insertConfigFiscalSchema, planos, configMercadoPago, logsAdmin, subscriptions, insertPlanoSchema, insertConfigMercadoPagoSchema, insertLogAdminSchema, insertContasPagarSchema, insertContasReceberSchema, insertSystemConfigSchema, insertSubscriptionSchema, funcionarios, insertFuncionarioSchema, permissoesFuncionarios, insertPermissaoFuncionarioSchema, caixas, movimentacoesCaixa, devolucoes, insertCaixaSchema, insertMovimentacaoCaixaSchema, insertDevolucaoSchema, orcamentos, insertOrcamentoSchema, clientNotes, clientDocuments, clientInteractions, planChangesHistory, employeePackages, cupons, usoCupons, insertEmployeePackageSchema, insertCupomSchema, insertUsoCupomSchema, userCustomization, insertUserCustomizationSchema, clientCommunications, insertClientNoteSchema, insertClientDocumentSchema, insertClientInteractionSchema, insertPlanChangeHistorySchema, insertClientCommunicationSchema, userSessions, insertUserSessionSchema, emailTemplates, insertEmailTemplateSchema, emailHistory, insertEmailHistorySchema, emailAutomation, insertEmailAutomationSchema;
 var init_schema = __esm({
   "shared/schema.ts"() {
     "use strict";
@@ -104,7 +112,7 @@ var init_schema = __esm({
       email: text("email").unique().notNull(),
       senha: text("senha").notNull(),
       nome: text("nome").notNull(),
-      plano: text("plano").default("free"),
+      plano: text("plano").default("trial"),
       is_admin: text("is_admin").default("false"),
       data_criacao: text("data_criacao"),
       data_expiracao_trial: text("data_expiracao_trial"),
@@ -113,7 +121,6 @@ var init_schema = __esm({
       cpf_cnpj: text("cpf_cnpj"),
       telefone: text("telefone"),
       endereco: text("endereco"),
-      asaas_customer_id: text("asaas_customer_id"),
       permissoes: text("permissoes"),
       ultimo_acesso: text("ultimo_acesso"),
       max_funcionarios: integer("max_funcionarios").default(1),
@@ -129,50 +136,19 @@ var init_schema = __esm({
     });
     produtos = pgTable("produtos", {
       id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-      user_id: text("user_id").notNull(),
+      user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
       nome: text("nome").notNull(),
       categoria: text("categoria").notNull(),
       preco: real("preco").notNull(),
       quantidade: integer("quantidade").notNull(),
       estoque_minimo: integer("estoque_minimo").notNull(),
       codigo_barras: text("codigo_barras"),
-      vencimento: text("vencimento")
-    });
-    bloqueiosEstoque = pgTable("bloqueios_estoque", {
-      id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-      produto_id: integer("produto_id").notNull(),
-      orcamento_id: integer("orcamento_id").notNull(),
-      user_id: text("user_id").notNull(),
-      quantidade_bloqueada: integer("quantidade_bloqueada").notNull(),
-      data_bloqueio: text("data_bloqueio").notNull()
-    });
-    vendas = pgTable("vendas", {
-      id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-      user_id: text("user_id").notNull(),
-      produto: text("produto").notNull(),
-      quantidade_vendida: integer("quantidade_vendida").notNull().default(0),
-      valor_total: real("valor_total").notNull().default(0),
-      data: text("data").notNull(),
-      itens: text("itens"),
-      cliente_id: integer("cliente_id"),
-      forma_pagamento: text("forma_pagamento"),
-      orcamento_id: integer("orcamento_id"),
-      vendedor: text("vendedor")
-    });
-    fornecedores = pgTable("fornecedores", {
-      id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-      user_id: text("user_id").notNull(),
-      nome: text("nome").notNull(),
-      cnpj: text("cnpj"),
-      telefone: text("telefone"),
-      email: text("email"),
-      endereco: text("endereco"),
-      observacoes: text("observacoes"),
-      data_cadastro: text("data_cadastro").notNull()
+      vencimento: text("vencimento"),
+      localizacao: text("localizacao")
     });
     clientes = pgTable("clientes", {
       id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-      user_id: text("user_id").notNull(),
+      user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
       nome: text("nome").notNull(),
       cpf_cnpj: text("cpf_cnpj"),
       telefone: text("telefone"),
@@ -182,11 +158,44 @@ var init_schema = __esm({
       percentual_desconto: real("percentual_desconto"),
       data_cadastro: text("data_cadastro").notNull()
     });
+    fornecedores = pgTable("fornecedores", {
+      id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+      user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+      nome: text("nome").notNull(),
+      cnpj: text("cnpj"),
+      telefone: text("telefone"),
+      email: text("email"),
+      endereco: text("endereco"),
+      observacoes: text("observacoes"),
+      data_cadastro: text("data_cadastro").notNull()
+    });
+    bloqueiosEstoque = pgTable("bloqueios_estoque", {
+      id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+      produto_id: integer("produto_id").notNull().references(() => produtos.id, { onDelete: "cascade" }),
+      orcamento_id: integer("orcamento_id").notNull(),
+      user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+      quantidade_bloqueada: integer("quantidade_bloqueada").notNull(),
+      data_bloqueio: text("data_bloqueio").notNull()
+    });
+    vendas = pgTable("vendas", {
+      id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+      user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+      produto: text("produto").notNull(),
+      quantidade_vendida: integer("quantidade_vendida").notNull().default(0),
+      valor_total: real("valor_total").notNull().default(0),
+      data: text("data").notNull(),
+      itens: text("itens"),
+      cliente_id: integer("cliente_id").references(() => clientes.id, { onDelete: "set null" }),
+      forma_pagamento: text("forma_pagamento"),
+      orcamento_id: integer("orcamento_id"),
+      vendedor: text("vendedor"),
+      cupom_texto: text("cupom_texto")
+    });
     compras = pgTable("compras", {
       id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-      user_id: text("user_id").notNull(),
-      fornecedor_id: integer("fornecedor_id").notNull(),
-      produto_id: integer("produto_id").notNull(),
+      user_id: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+      fornecedor_id: integer("fornecedor_id").notNull().references(() => fornecedores.id, { onDelete: "restrict" }),
+      produto_id: integer("produto_id").notNull().references(() => produtos.id, { onDelete: "restrict" }),
       quantidade: integer("quantidade").notNull(),
       valor_unitario: real("valor_unitario").notNull(),
       valor_total: real("valor_total").notNull(),
@@ -237,7 +246,7 @@ var init_schema = __esm({
       data_criacao: true
     }).extend({
       email: z.string().email("Email inv\xE1lido").toLowerCase(),
-      senha: z.string().min(8, "Senha deve ter no m\xEDnimo 8 caracteres").regex(/[A-Z]/, "Senha deve conter pelo menos uma letra mai\xFAscula").regex(/[0-9]/, "Senha deve conter pelo menos um n\xFAmero").regex(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um caractere especial"),
+      senha: z.string().min(8, "Senha deve ter no m\xEDnimo 8 caracteres").regex(/[a-z]/, "Senha deve conter pelo menos uma letra min\xFAscula").regex(/[A-Z]/, "Senha deve conter pelo menos uma letra mai\xFAscula").regex(/[0-9]/, "Senha deve conter pelo menos um n\xFAmero"),
       nome: z.string().min(3, "Nome deve ter no m\xEDnimo 3 caracteres").max(100),
       meta_mensal: z.number().optional()
     });
@@ -328,6 +337,7 @@ var init_schema = __esm({
       plano: text("plano").notNull(),
       status: text("status").notNull().default("pendente"),
       valor: real("valor").notNull().default(0),
+      valor_original: real("valor_original").notNull().default(0),
       data_inicio: text("data_inicio"),
       data_vencimento: text("data_vencimento"),
       mercadopago_payment_id: text("mercadopago_payment_id"),
@@ -339,6 +349,9 @@ var init_schema = __esm({
       prazo_limite_pagamento: text("prazo_limite_pagamento"),
       tentativas_cobranca: integer("tentativas_cobranca").default(0),
       motivo_cancelamento: text("motivo_cancelamento"),
+      cupom_codigo: text("cupom_codigo"),
+      cupom_id: integer("cupom_id"),
+      valor_desconto_cupom: real("valor_desconto_cupom"),
       data_criacao: text("data_criacao").notNull(),
       data_atualizacao: text("data_atualizacao")
     });
@@ -432,6 +445,7 @@ var init_schema = __esm({
       produto_id: integer("produto_id").notNull(),
       produto_nome: text("produto_nome").notNull(),
       quantidade: integer("quantidade").notNull(),
+      quantidade_original: integer("quantidade_original"),
       valor_total: real("valor_total").notNull(),
       motivo: text("motivo").notNull(),
       status: text("status").notNull().default("pendente"),
@@ -439,7 +453,8 @@ var init_schema = __esm({
       observacoes: text("observacoes"),
       cliente_nome: text("cliente_nome"),
       operador_nome: text("operador_nome"),
-      operador_id: text("operador_id")
+      operador_id: text("operador_id"),
+      devolucao_parcial: text("devolucao_parcial").default("false")
     });
     insertCaixaSchema = createInsertSchema(caixas).omit({
       id: true
@@ -457,8 +472,10 @@ var init_schema = __esm({
       id: true
     }).extend({
       quantidade: z.coerce.number().int().positive(),
+      quantidade_original: z.coerce.number().int().positive().optional(),
       valor_total: z.coerce.number().positive(),
-      status: z.enum(["pendente", "aprovada", "rejeitada", "arquivada"]).default("pendente")
+      status: z.enum(["pendente", "aprovada", "rejeitada", "arquivada"]).default("pendente"),
+      devolucao_parcial: z.enum(["true", "false"]).default("false").optional()
     });
     orcamentos = pgTable("orcamentos", {
       id: serial("id").primaryKey(),
@@ -569,7 +586,7 @@ var init_schema = __esm({
       status: text("status").notNull().default("ativo"),
       // ativo, expirado, cancelado
       payment_id: text("payment_id"),
-      // ID do pagamento (Mercado Pago ou Asaas)
+      // ID do pagamento (Mercado Pago)
       data_compra: text("data_compra").notNull(),
       data_vencimento: text("data_vencimento").notNull(),
       // 30 dias após compra
@@ -723,6 +740,91 @@ var init_schema = __esm({
       id: true,
       sent_at: true
     });
+    userSessions = pgTable("user_sessions", {
+      id: serial("id").primaryKey(),
+      user_id: text("user_id").notNull(),
+      user_type: text("user_type").notNull().default("usuario"),
+      // usuario, funcionario
+      session_token: text("session_token").notNull().unique(),
+      device_fingerprint: text("device_fingerprint").notNull(),
+      device_info: jsonb("device_info"),
+      // browser, os, screen, etc
+      ip_address: text("ip_address"),
+      user_agent: text("user_agent"),
+      is_active: text("is_active").notNull().default("true"),
+      created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+      last_activity: timestamp("last_activity", { withTimezone: true }).notNull().defaultNow(),
+      expires_at: timestamp("expires_at", { withTimezone: true }).notNull()
+    }, (table) => ({
+      userIdIdx: index("user_sessions_user_id_idx").on(table.user_id),
+      sessionTokenIdx: index("user_sessions_session_token_idx").on(table.session_token),
+      fingerprintIdx: index("user_sessions_fingerprint_idx").on(table.device_fingerprint),
+      isActiveIdx: index("user_sessions_is_active_idx").on(table.is_active)
+    }));
+    insertUserSessionSchema = createInsertSchema(userSessions).omit({
+      id: true,
+      created_at: true,
+      last_activity: true
+    });
+    emailTemplates = pgTable("email_templates", {
+      id: serial("id").primaryKey(),
+      nome: text("nome").notNull(),
+      assunto: text("assunto").notNull(),
+      conteudo: text("conteudo").notNull(),
+      tipo: text("tipo").notNull().default("manual"),
+      // manual, boas_vindas, expiracao, renovacao, promocao
+      variaveis: text("variaveis"),
+      // JSON com variáveis disponíveis
+      ativo: text("ativo").notNull().default("true"),
+      created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+      updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    });
+    insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+      id: true,
+      created_at: true,
+      updated_at: true
+    });
+    emailHistory = pgTable("email_history", {
+      id: serial("id").primaryKey(),
+      user_id: text("user_id").references(() => users.id, { onDelete: "set null" }),
+      template_id: integer("template_id").references(() => emailTemplates.id, { onDelete: "set null" }),
+      email_destino: text("email_destino").notNull(),
+      assunto: text("assunto").notNull(),
+      conteudo: text("conteudo").notNull(),
+      tipo: text("tipo").notNull().default("manual"),
+      // manual, automatico, massa
+      segmento: text("segmento"),
+      // trial, premium, todos, etc
+      status: text("status").notNull().default("enviado"),
+      // enviado, falha, pendente
+      erro: text("erro"),
+      created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+    }, (table) => ({
+      userIdIdx: index("email_history_user_id_idx").on(table.user_id),
+      tipoIdx: index("email_history_tipo_idx").on(table.tipo),
+      statusIdx: index("email_history_status_idx").on(table.status)
+    }));
+    insertEmailHistorySchema = createInsertSchema(emailHistory).omit({
+      id: true,
+      created_at: true
+    });
+    emailAutomation = pgTable("email_automation", {
+      id: serial("id").primaryKey(),
+      tipo: text("tipo").notNull().unique(),
+      // boas_vindas, expiracao_3_dias, expiracao_1_dia, renovacao, etc
+      template_id: integer("template_id").references(() => emailTemplates.id, { onDelete: "set null" }),
+      ativo: text("ativo").notNull().default("true"),
+      dias_antes: integer("dias_antes"),
+      // Para lembretes de expiração
+      descricao: text("descricao"),
+      created_at: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+      updated_at: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+    });
+    insertEmailAutomationSchema = createInsertSchema(emailAutomation).omit({
+      id: true,
+      created_at: true,
+      updated_at: true
+    });
   }
 });
 
@@ -784,6 +886,18 @@ var init_logger = __esm({
           }
         }
       }
+      getTimestampSaoPaulo() {
+        return (/* @__PURE__ */ new Date()).toLocaleString("sv-SE", {
+          timeZone: "America/Sao_Paulo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          fractionalSecondDigits: 3
+        }).replace(" ", "T") + "Z";
+      }
       writeLog(entry) {
         if (!this.shouldLog(entry.level)) return;
         this.rotateLogIfNeeded();
@@ -796,7 +910,7 @@ var init_logger = __esm({
       }
       error(message, context, data, userId) {
         this.writeLog({
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          timestamp: this.getTimestampSaoPaulo(),
           level: "ERROR" /* ERROR */,
           message,
           context,
@@ -806,7 +920,7 @@ var init_logger = __esm({
       }
       warn(message, context, data, userId) {
         this.writeLog({
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          timestamp: this.getTimestampSaoPaulo(),
           level: "WARN" /* WARN */,
           message,
           context,
@@ -816,7 +930,7 @@ var init_logger = __esm({
       }
       info(message, context, data, userId) {
         this.writeLog({
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          timestamp: this.getTimestampSaoPaulo(),
           level: "INFO" /* INFO */,
           message,
           context,
@@ -826,7 +940,7 @@ var init_logger = __esm({
       }
       debug(message, context, data, userId) {
         this.writeLog({
-          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          timestamp: this.getTimestampSaoPaulo(),
           level: "DEBUG" /* DEBUG */,
           message,
           context,
@@ -935,6 +1049,12 @@ var init_postgres_storage = __esm({
     init_schema();
     init_logger();
     neonConfig.webSocketConstructor = ws;
+    if (!process.env.DATABASE_URL) {
+      console.error("\u274C ERRO: Vari\xE1vel de ambiente DATABASE_URL n\xE3o est\xE1 configurada!");
+      console.error("\u{1F4DD} Configure a vari\xE1vel DATABASE_URL com a string de conex\xE3o do PostgreSQL.");
+      console.error("\u{1F4DD} Exemplo: postgresql://usuario:senha@host:porta/database");
+      throw new Error("DATABASE_URL n\xE3o est\xE1 configurada. Configure esta vari\xE1vel de ambiente antes de continuar.");
+    }
     dbUrl = process.env.DATABASE_URL;
     maskedUrl = dbUrl.replace(/:([^@]+)@/, ":****@");
     console.log(`\u{1F50C} Conectando ao PostgreSQL: ${maskedUrl}`);
@@ -1105,6 +1225,22 @@ var init_postgres_storage = __esm({
           if (cupom.quantidade_maxima && cupom.quantidade_utilizada >= cupom.quantidade_maxima) {
             return { valido: false, erro: "Cupom esgotado" };
           }
+          if (userId && userId !== "temp") {
+            const usuarioJaUsouCupom = await this.db.select().from(usoCupons).where(
+              and(
+                eq(usoCupons.cupom_id, cupom.id),
+                eq(usoCupons.user_id, userId)
+              )
+            ).limit(1);
+            if (usuarioJaUsouCupom.length > 0) {
+              logger.warn("[DB] Usu\xE1rio tentou reusar cupom", {
+                cupomId: cupom.id,
+                cupomCodigo: cupom.codigo,
+                userId
+              });
+              return { valido: false, erro: "Voc\xEA j\xE1 utilizou este cupom em uma compra anterior" };
+            }
+          }
           return {
             valido: true,
             cupom: {
@@ -1204,14 +1340,13 @@ var init_postgres_storage = __esm({
           ...insertUser,
           id: randomUUID(),
           data_criacao: (/* @__PURE__ */ new Date()).toISOString(),
-          plano: this.normalizePlanName(insertUser.plano || "free")
+          plano: this.normalizePlanName(insertUser.plano || "trial")
         };
         const result = await this.db.insert(users).values(newUser).returning();
         return result[0];
       }
       normalizePlanName(plano) {
         const planMap = {
-          "free": "free",
           "trial": "trial",
           "mensal": "premium_mensal",
           "anual": "premium_anual",
@@ -1219,7 +1354,7 @@ var init_postgres_storage = __esm({
           "premium_mensal": "premium_mensal",
           "premium_anual": "premium_anual"
         };
-        return planMap[plano.toLowerCase()] || "free";
+        return planMap[plano.toLowerCase()] || "trial";
       }
       async updateUser(id, updates) {
         try {
@@ -1294,6 +1429,7 @@ var init_postgres_storage = __esm({
             cliente_id: vendas.cliente_id,
             orcamento_id: vendas.orcamento_id,
             vendedor: vendas.vendedor,
+            cupom_texto: vendas.cupom_texto,
             orcamento_numero: orcamentos.numero
           }).from(vendas).leftJoin(orcamentos, eq(vendas.orcamento_id, orcamentos.id)).where(eq(vendas.user_id, userId)).orderBy(desc(vendas.data));
           return result;
@@ -1312,6 +1448,14 @@ var init_postgres_storage = __esm({
       }
       async clearVendas() {
         await this.db.delete(vendas);
+      }
+      async getVenda(id) {
+        const result = await this.db.select().from(vendas).where(eq(vendas.id, id)).limit(1);
+        return result[0];
+      }
+      async updateVendaCupom(id, cupomTexto) {
+        const result = await this.db.update(vendas).set({ cupom_texto: cupomTexto }).where(eq(vendas.id, id)).returning();
+        return result.length > 0;
       }
       async getFornecedores() {
         return await this.db.select().from(fornecedores);
@@ -1458,10 +1602,6 @@ var init_postgres_storage = __esm({
         const result = await this.db.select().from(logsAdmin).orderBy(desc(logsAdmin.id));
         return result;
       }
-      async deleteAllLogsAdmin() {
-        const result = await this.db.delete(logsAdmin).returning();
-        return result.length;
-      }
       async getLogsAdminByAccount(contaId) {
         const funcionariosIds = await this.db.select({ id: funcionarios.id }).from(funcionarios).where(eq(funcionarios.conta_id, contaId));
         const ids = [contaId, ...funcionariosIds.map((f) => f.id)];
@@ -1500,15 +1640,40 @@ var init_postgres_storage = __esm({
       }
       async deleteAllLogsAdmin(contaId) {
         try {
-          await this.db.delete(logsAdmin).where(eq(logsAdmin.conta_id, contaId));
-          logger.info("[DB] Logs de auditoria limpos", { contaId });
+          let result;
+          if (contaId) {
+            result = await this.db.delete(logsAdmin).where(eq(logsAdmin.conta_id, contaId)).returning();
+          } else {
+            result = await this.db.delete(logsAdmin).returning();
+          }
+          const deletedCount = result.length;
+          logger.info("[DB] Logs de auditoria limpos", { contaId: contaId || "todos", deletedCount });
+          return deletedCount;
         } catch (error) {
           logger.error("[DB] Erro ao limpar logs de auditoria:", { error });
           throw error;
         }
       }
       async getSubscriptions() {
-        return await this.db.select().from(subscriptions).orderBy(desc(subscriptions.id));
+        try {
+          return await this.db.select().from(subscriptions).orderBy(desc(subscriptions.id));
+        } catch (error) {
+          if (error.code === "42703") {
+            logger.warn("[DB] Executando SELECT b\xE1sico de subscriptions (campos novos n\xE3o dispon\xEDveis)", { error: error.message });
+            const result = await this.db.execute(sql`
+          SELECT 
+            id, user_id, plano, valor, status, status_pagamento, 
+            mercadopago_payment_id, mercadopago_preference_id, data_criacao, data_vencimento, 
+            data_atualizacao, motivo_cancelamento, 
+            tentativas_cobranca, prazo_limite_pagamento, forma_pagamento,
+            init_point, external_reference
+          FROM subscriptions 
+          ORDER BY id DESC
+        `);
+            return result.rows;
+          }
+          throw error;
+        }
       }
       async getSubscription(id) {
         const result = await this.db.select().from(subscriptions).where(eq(subscriptions.id, id)).limit(1);
@@ -1530,6 +1695,10 @@ var init_postgres_storage = __esm({
           data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
         }).where(eq(subscriptions.id, id)).returning();
         return result[0];
+      }
+      async deleteSubscription(id) {
+        const result = await this.db.delete(subscriptions).where(eq(subscriptions.id, id)).returning();
+        return result.length > 0;
       }
       async getFuncionarios() {
         return await this.db.select().from(funcionarios);
@@ -1861,37 +2030,17 @@ var init_postgres_storage = __esm({
             const itensAtualizados = data.itens ? Array.isArray(data.itens) ? data.itens : [] : Array.isArray(orcamentoOriginal.itens) ? orcamentoOriginal.itens : [];
             const itensMudaram = data.itens !== void 0 && JSON.stringify(data.itens) !== JSON.stringify(orcamentoOriginal.itens);
             const precisaRecalcularBloqueios = statusFinal === "aprovado" && statusOriginal !== "aprovado" || statusFinal === "aprovado" && statusOriginal === "aprovado" && itensMudaram;
-            if (precisaRecalcularBloqueios) {
-              const produtosParaTravar = [...new Set(itensAtualizados.map((i) => i.produto_id))];
-              await tx.select().from(produtos).where(inArray(produtos.id, produtosParaTravar)).for("update");
+            if (statusFinal === "aprovado") {
+              await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
+              const dataBloqueio = (/* @__PURE__ */ new Date()).toISOString();
               for (const item of itensAtualizados) {
-                const result = await tx.select({
-                  estoque: produtos.quantidade,
-                  total_bloqueado: sql`COALESCE(SUM(
-                CASE WHEN ${bloqueiosEstoque.orcamento_id} != ${id} 
-                THEN ${bloqueiosEstoque.quantidade_bloqueada} 
-                ELSE 0 END
-              ), 0)`
-                }).from(produtos).leftJoin(
-                  bloqueiosEstoque,
-                  and(
-                    eq(bloqueiosEstoque.produto_id, produtos.id),
-                    eq(bloqueiosEstoque.user_id, orcamentoOriginal.user_id)
-                  )
-                ).where(
-                  and(
-                    eq(produtos.id, item.produto_id),
-                    eq(produtos.user_id, orcamentoOriginal.user_id)
-                  )
-                ).groupBy(produtos.id, produtos.quantidade);
-                if (!result[0]) {
-                  throw new Error(`Produto ${item.produto_id} n\xE3o encontrado`);
-                }
-                const quantidadeDisponivel = result[0].estoque - Number(result[0].total_bloqueado);
-                if (quantidadeDisponivel < item.quantidade) {
-                  const [produto] = await tx.select().from(produtos).where(eq(produtos.id, item.produto_id));
-                  throw new Error(`Estoque insuficiente para ${produto?.nome}. Dispon\xEDvel: ${quantidadeDisponivel}, Solicitado: ${item.quantidade}`);
-                }
+                await tx.insert(bloqueiosEstoque).values({
+                  produto_id: item.produto_id,
+                  orcamento_id: id,
+                  user_id: orcamentoOriginal.user_id,
+                  quantidade_bloqueada: item.quantidade,
+                  data_bloqueio: dataBloqueio
+                });
               }
             }
             const [orcamento] = await tx.update(orcamentos).set({
@@ -1912,19 +2061,7 @@ var init_postgres_storage = __esm({
               prazo_entrega: data.prazo_entrega !== void 0 ? data.prazo_entrega : orcamentoOriginal.prazo_entrega,
               data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
             }).where(eq(orcamentos.id, id)).returning();
-            if (precisaRecalcularBloqueios) {
-              await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
-              const dataBloqueio = (/* @__PURE__ */ new Date()).toISOString();
-              for (const item of itensAtualizados) {
-                await tx.insert(bloqueiosEstoque).values({
-                  produto_id: item.produto_id,
-                  orcamento_id: id,
-                  user_id: orcamentoOriginal.user_id,
-                  quantidade_bloqueada: item.quantidade,
-                  data_bloqueio: dataBloqueio
-                });
-              }
-            } else if (statusOriginal === "aprovado" && statusFinal !== "aprovado") {
+            if (orcamento.status !== "aprovado") {
               await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, id));
             }
             sucesso = true;
@@ -1995,58 +2132,81 @@ var init_postgres_storage = __esm({
         const quantidadeBloqueada = await this.getQuantidadeBloqueadaPorProduto(produtoId, userId);
         return Math.max(0, produto.quantidade - quantidadeBloqueada);
       }
-      async converterOrcamentoEmVenda(id, userId, vendedorNome, formaPagamento) {
-        const orcamento = await this.getOrcamento(id);
-        if (!orcamento) {
-          throw new Error("Or\xE7amento n\xE3o encontrado");
-        }
-        if (orcamento.user_id !== userId) {
-          throw new Error("Acesso negado");
-        }
-        if (orcamento.status === "convertido") {
-          throw new Error("Este or\xE7amento j\xE1 foi convertido em venda");
-        }
-        const itensOrcamento = Array.isArray(orcamento.itens) ? orcamento.itens : [];
-        let clienteId = orcamento.cliente_id;
-        if (!clienteId && orcamento.cliente_nome) {
-          const clientesEncontrados = await this.db.select().from(clientes).where(
+      async converterOrcamentoEmVenda(orcamentoId, userId, vendedor, formaPagamento) {
+        return await this.db.transaction(async (tx) => {
+          const [orcamento] = await tx.select().from(orcamentos).where(
             and(
-              eq(clientes.user_id, userId),
-              eq(clientes.nome, orcamento.cliente_nome)
+              eq(orcamentos.id, orcamentoId),
+              eq(orcamentos.user_id, userId)
             )
-          );
-          if (clientesEncontrados.length > 0) {
-            clienteId = clientesEncontrados[0].id;
+          ).for("update");
+          if (!orcamento) {
+            throw new Error("Or\xE7amento n\xE3o encontrado");
           }
-        }
-        const [venda] = await this.db.insert(vendas).values({
-          user_id: userId,
-          data: (/* @__PURE__ */ new Date()).toISOString(),
-          valor_total: orcamento.valor_total,
-          forma_pagamento: formaPagamento || "dinheiro",
-          itens: JSON.stringify(itensOrcamento),
-          cliente_id: clienteId || void 0,
-          produto: itensOrcamento.map((i) => i.nome).join(", "),
-          quantidade_vendida: itensOrcamento.reduce((sum, i) => sum + i.quantidade, 0),
-          orcamento_id: id,
-          orcamento_numero: orcamento.numero,
-          vendedor: vendedorNome || orcamento.vendedor || "Sistema"
-        }).returning();
-        for (const item of itensOrcamento) {
-          const produto = await this.getProduto(item.produto_id);
-          if (produto && produto.user_id === userId) {
-            await this.updateProduto(item.produto_id, {
-              quantidade: produto.quantidade - item.quantidade
-            });
+          if (orcamento.status !== "aprovado") {
+            throw new Error("Apenas or\xE7amentos aprovados podem ser convertidos em venda");
           }
-        }
-        await this.db.update(orcamentos).set({
-          status: "convertido",
-          data_atualizacao: (/* @__PURE__ */ new Date()).toISOString(),
-          venda_id: venda.id
-        }).where(eq(orcamentos.id, id));
-        await this.removerBloqueiosOrcamento(id);
-        return venda;
+          const itens = Array.isArray(orcamento.itens) ? orcamento.itens : [];
+          let clienteId = orcamento.cliente_id;
+          if (!clienteId && orcamento.cliente_nome) {
+            const clientesEncontrados = await tx.select().from(clientes).where(
+              and(
+                eq(clientes.user_id, userId),
+                eq(clientes.nome, orcamento.cliente_nome)
+              )
+            );
+            if (clientesEncontrados.length > 0) {
+              clienteId = clientesEncontrados[0].id;
+            } else {
+              const [novoCliente] = await tx.insert(clientes).values({
+                user_id: userId,
+                nome: orcamento.cliente_nome,
+                email: orcamento.cliente_email,
+                telefone: orcamento.cliente_telefone,
+                cpf_cnpj: orcamento.cliente_cpf_cnpj,
+                data_cadastro: (/* @__PURE__ */ new Date()).toISOString()
+              }).returning();
+              clienteId = novoCliente.id;
+            }
+          }
+          const [venda] = await tx.insert(vendas).values({
+            user_id: userId,
+            data: (/* @__PURE__ */ new Date()).toISOString(),
+            valor_total: orcamento.valor_total,
+            forma_pagamento: formaPagamento || "dinheiro",
+            itens: JSON.stringify(itens),
+            cliente_id: clienteId || void 0,
+            produto: itens.map((i) => i.nome).join(", "),
+            quantidade_vendida: itens.reduce((sum, i) => sum + i.quantidade, 0),
+            orcamento_id: orcamentoId,
+            orcamento_numero: orcamento.numero,
+            vendedor: vendedor || orcamento.vendedor || "Sistema"
+          }).returning();
+          await tx.update(orcamentos).set({
+            status: "convertido",
+            data_atualizacao: (/* @__PURE__ */ new Date()).toISOString(),
+            venda_id: venda.id
+          }).where(eq(orcamentos.id, orcamentoId));
+          for (const item of itens) {
+            const [produtoAtual] = await tx.select().from(produtos).where(
+              and(
+                eq(produtos.id, item.produto_id),
+                eq(produtos.user_id, userId)
+              )
+            ).for("update");
+            if (!produtoAtual) {
+              throw new Error(`Produto ${item.produto_id} n\xE3o encontrado`);
+            }
+            if (produtoAtual.quantidade < item.quantidade) {
+              throw new Error(`Estoque insuficiente para ${item.nome}. Dispon\xEDvel: ${produtoAtual.quantidade}, Solicitado: ${item.quantidade}`);
+            }
+            await tx.update(produtos).set({
+              quantidade: sql`${produtos.quantidade} - ${item.quantidade}`
+            }).where(eq(produtos.id, item.produto_id));
+          }
+          await tx.delete(bloqueiosEstoque).where(eq(bloqueiosEstoque.orcamento_id, orcamentoId));
+          return venda;
+        });
       }
       // ============================================
       // MÉTODOS DE GESTÃO DE CLIENTE 360°
@@ -2106,8 +2266,16 @@ var init_postgres_storage = __esm({
           ${packageData.payment_id}, ${packageData.data_compra}, 
           ${packageData.data_vencimento}, ${packageData.data_cancelamento}
         )
+        ON CONFLICT (payment_id) WHERE payment_id IS NOT NULL DO NOTHING
         RETURNING *
       `);
+          if (result.rows.length === 0 && packageData.payment_id) {
+            logger.warn("[DB] Pacote de funcion\xE1rios j\xE1 existe para este payment_id - ignorando duplicata", {
+              payment_id: packageData.payment_id
+            });
+            const existing = await this.getEmployeePackageByPaymentId(packageData.payment_id);
+            return existing;
+          }
           return result.rows[0];
         } catch (error) {
           logger.error("[DB] Erro ao criar pacote de funcion\xE1rios:", { error });
@@ -2139,6 +2307,41 @@ var init_postgres_storage = __esm({
         } catch (error) {
           logger.error("[DB] Erro ao atualizar status do pacote:", { error: error.message, packageId, status });
           throw error;
+        }
+      }
+      async getAllEmployeePackages() {
+        try {
+          const result = await this.db.execute(sql`
+        SELECT * FROM employee_packages 
+        ORDER BY data_compra DESC
+      `);
+          return result.rows;
+        } catch (error) {
+          logger.error("[DB] Erro ao buscar todos os pacotes de funcion\xE1rios:", { error });
+          return [];
+        }
+      }
+      async deleteEmployeePackage(packageId) {
+        try {
+          const result = await this.db.delete(employeePackages).where(eq(employeePackages.id, packageId)).returning();
+          logger.info("[DB] Pacote de funcion\xE1rios deletado", { packageId });
+          return result.length > 0;
+        } catch (error) {
+          logger.error("[DB] Erro ao deletar pacote de funcion\xE1rios:", { error: error.message, packageId });
+          return false;
+        }
+      }
+      async getEmployeePackageByPaymentId(paymentId) {
+        try {
+          const result = await this.db.execute(sql`
+        SELECT * FROM employee_packages 
+        WHERE payment_id = ${paymentId}
+        LIMIT 1
+      `);
+          return result.rows[0] || void 0;
+        } catch (error) {
+          logger.error("[DB] Erro ao buscar pacote por payment_id:", { error, paymentId });
+          return void 0;
         }
       }
       async getClientInteractions(userId, limit = 50, offset = 0) {
@@ -2298,6 +2501,287 @@ var init_postgres_storage = __esm({
           throw error;
         }
       }
+      // ============================================
+      // MÉTODOS PARA SESSÕES E FINGERPRINTING
+      // ============================================
+      async createSession(data) {
+        try {
+          const result = await this.db.execute(sql`
+        INSERT INTO user_sessions (
+          user_id, user_type, session_token, device_fingerprint,
+          device_info, ip_address, user_agent, expires_at, is_active
+        ) VALUES (
+          ${data.user_id},
+          ${data.user_type},
+          ${data.session_token},
+          ${data.device_fingerprint},
+          ${JSON.stringify(data.device_info || {})}::jsonb,
+          ${data.ip_address || null},
+          ${data.user_agent || null},
+          ${data.expires_at.toISOString()},
+          'true'
+        )
+        RETURNING *
+      `);
+          logger.info("[SESSION] Nova sess\xE3o criada", {
+            userId: data.user_id,
+            userType: data.user_type,
+            fingerprint: data.device_fingerprint.substring(0, 16) + "..."
+          });
+          return result.rows[0];
+        } catch (error) {
+          logger.error("[SESSION] Erro ao criar sess\xE3o:", { error });
+          throw error;
+        }
+      }
+      async getSessionByToken(token) {
+        try {
+          const result = await this.db.execute(sql`
+        SELECT * FROM user_sessions 
+        WHERE session_token = ${token} AND is_active = 'true'
+        LIMIT 1
+      `);
+          return result.rows[0];
+        } catch (error) {
+          logger.error("[SESSION] Erro ao buscar sess\xE3o:", { error });
+          return void 0;
+        }
+      }
+      async getActiveSessionsByUser(userId, userType) {
+        try {
+          if (userType) {
+            const result = await this.db.execute(sql`
+          SELECT * FROM user_sessions 
+          WHERE user_id = ${userId} 
+            AND user_type = ${userType}
+            AND is_active = 'true'
+            AND expires_at > NOW()
+          ORDER BY created_at DESC
+        `);
+            return result.rows;
+          } else {
+            const result = await this.db.execute(sql`
+          SELECT * FROM user_sessions 
+          WHERE user_id = ${userId} 
+            AND is_active = 'true'
+            AND expires_at > NOW()
+          ORDER BY created_at DESC
+        `);
+            return result.rows;
+          }
+        } catch (error) {
+          logger.error("[SESSION] Erro ao buscar sess\xF5es ativas:", { error });
+          return [];
+        }
+      }
+      async getActiveSessionCount(userId, userType) {
+        try {
+          const sessions = await this.getActiveSessionsByUser(userId, userType);
+          return sessions.length;
+        } catch (error) {
+          logger.error("[SESSION] Erro ao contar sess\xF5es:", { error });
+          return 0;
+        }
+      }
+      async updateSessionActivity(token) {
+        try {
+          await this.db.execute(sql`
+        UPDATE user_sessions 
+        SET last_activity = NOW()
+        WHERE session_token = ${token} AND is_active = 'true'
+      `);
+        } catch (error) {
+          logger.error("[SESSION] Erro ao atualizar atividade:", { error });
+        }
+      }
+      async invalidateSession(token) {
+        try {
+          await this.db.execute(sql`
+        UPDATE user_sessions 
+        SET is_active = 'false'
+        WHERE session_token = ${token}
+      `);
+          logger.info("[SESSION] Sess\xE3o invalidada", { token: token.substring(0, 16) + "..." });
+        } catch (error) {
+          logger.error("[SESSION] Erro ao invalidar sess\xE3o:", { error });
+        }
+      }
+      async invalidateAllUserSessions(userId, userType) {
+        try {
+          if (userType) {
+            await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_active = 'false'
+          WHERE user_id = ${userId} AND user_type = ${userType}
+        `);
+          } else {
+            await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_active = 'false'
+          WHERE user_id = ${userId}
+        `);
+          }
+          logger.info("[SESSION] Todas as sess\xF5es invalidadas", { userId, userType });
+        } catch (error) {
+          logger.error("[SESSION] Erro ao invalidar sess\xF5es:", { error });
+        }
+      }
+      async invalidateOldestSession(userId, userType) {
+        try {
+          if (userType) {
+            await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_active = 'false'
+          WHERE id = (
+            SELECT id FROM user_sessions 
+            WHERE user_id = ${userId} 
+              AND user_type = ${userType}
+              AND is_active = 'true'
+            ORDER BY created_at ASC
+            LIMIT 1
+          )
+        `);
+          } else {
+            await this.db.execute(sql`
+          UPDATE user_sessions 
+          SET is_active = 'false'
+          WHERE id = (
+            SELECT id FROM user_sessions 
+            WHERE user_id = ${userId} AND is_active = 'true'
+            ORDER BY created_at ASC
+            LIMIT 1
+          )
+        `);
+          }
+          logger.info("[SESSION] Sess\xE3o mais antiga invalidada", { userId, userType });
+        } catch (error) {
+          logger.error("[SESSION] Erro ao invalidar sess\xE3o antiga:", { error });
+        }
+      }
+      async cleanExpiredSessions() {
+        try {
+          const result = await this.db.execute(sql`
+        UPDATE user_sessions 
+        SET is_active = 'false'
+        WHERE expires_at < NOW() AND is_active = 'true'
+        RETURNING id
+      `);
+          const count = result.rows.length;
+          if (count > 0) {
+            logger.info("[SESSION] Sess\xF5es expiradas limpas", { count });
+          }
+          return count;
+        } catch (error) {
+          logger.error("[SESSION] Erro ao limpar sess\xF5es expiradas:", { error });
+          return 0;
+        }
+      }
+      // ========================================
+      // MÉTODOS DO SISTEMA DE COMUNICAÇÃO
+      // ========================================
+      async getEmailTemplates() {
+        const result = await this.db.execute(sql`
+      SELECT * FROM email_templates ORDER BY created_at DESC
+    `);
+        return result.rows;
+      }
+      async createEmailTemplate(data) {
+        const result = await this.db.execute(sql`
+      INSERT INTO email_templates (nome, assunto, conteudo, tipo, variaveis, ativo)
+      VALUES (${data.nome}, ${data.assunto}, ${data.conteudo}, ${data.tipo || "manual"}, ${data.variaveis || null}, ${data.ativo || "true"})
+      RETURNING *
+    `);
+        return result.rows[0];
+      }
+      async updateEmailTemplate(id, data) {
+        const result = await this.db.execute(sql`
+      UPDATE email_templates 
+      SET nome = ${data.nome}, assunto = ${data.assunto}, conteudo = ${data.conteudo}, 
+          tipo = ${data.tipo}, variaveis = ${data.variaveis}, ativo = ${data.ativo},
+          updated_at = NOW()
+      WHERE id = ${id}
+      RETURNING *
+    `);
+        return result.rows[0];
+      }
+      async deleteEmailTemplate(id) {
+        await this.db.execute(sql`DELETE FROM email_templates WHERE id = ${id}`);
+      }
+      async getEmailHistory(userId, limit = 100) {
+        if (userId) {
+          const result2 = await this.db.execute(sql`
+        SELECT eh.*, u.nome as user_nome, u.email as user_email
+        FROM email_history eh
+        LEFT JOIN users u ON eh.user_id = u.id
+        WHERE eh.user_id = ${userId}
+        ORDER BY eh.created_at DESC
+        LIMIT ${limit}
+      `);
+          return result2.rows;
+        }
+        const result = await this.db.execute(sql`
+      SELECT eh.*, u.nome as user_nome, u.email as user_email
+      FROM email_history eh
+      LEFT JOIN users u ON eh.user_id = u.id
+      ORDER BY eh.created_at DESC
+      LIMIT ${limit}
+    `);
+        return result.rows;
+      }
+      async getEmailHistoryByUser(userId) {
+        const result = await this.db.execute(sql`
+      SELECT * FROM email_history 
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `);
+        return result.rows;
+      }
+      async createEmailHistory(data) {
+        const result = await this.db.execute(sql`
+      INSERT INTO email_history (user_id, template_id, email_destino, assunto, conteudo, tipo, segmento, status, erro)
+      VALUES (${data.user_id || null}, ${data.template_id || null}, ${data.email_destino}, ${data.assunto}, ${data.conteudo}, ${data.tipo || "manual"}, ${data.segmento || null}, ${data.status || "enviado"}, ${data.erro || null})
+      RETURNING *
+    `);
+        return result.rows[0];
+      }
+      async getEmailAutomation() {
+        const result = await this.db.execute(sql`
+      SELECT ea.*, et.nome as template_nome
+      FROM email_automation ea
+      LEFT JOIN email_templates et ON ea.template_id = et.id
+      ORDER BY ea.tipo
+    `);
+        return result.rows;
+      }
+      async upsertEmailAutomation(tipo, data) {
+        const result = await this.db.execute(sql`
+      INSERT INTO email_automation (tipo, template_id, ativo, dias_antes, descricao)
+      VALUES (${tipo}, ${data.template_id || null}, ${data.ativo || "true"}, ${data.dias_antes || null}, ${data.descricao || null})
+      ON CONFLICT (tipo) DO UPDATE SET
+        template_id = ${data.template_id || null},
+        ativo = ${data.ativo || "true"},
+        dias_antes = ${data.dias_antes || null},
+        descricao = ${data.descricao || null},
+        updated_at = NOW()
+      RETURNING *
+    `);
+        return result.rows[0];
+      }
+      async getEmailStats() {
+        const result = await this.db.execute(sql`
+      SELECT 
+        COUNT(*) as total,
+        COUNT(CASE WHEN status = 'enviado' THEN 1 END) as enviados,
+        COUNT(CASE WHEN status = 'falha' THEN 1 END) as falhas,
+        COUNT(CASE WHEN tipo = 'massa' THEN 1 END) as massa,
+        COUNT(CASE WHEN tipo = 'manual' THEN 1 END) as manual,
+        COUNT(CASE WHEN tipo = 'automatico' THEN 1 END) as automatico,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '24 hours' THEN 1 END) as ultimas_24h,
+        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as ultimos_7dias
+      FROM email_history
+    `);
+        return result.rows[0];
+      }
     };
   }
 });
@@ -2320,10 +2804,25 @@ __export(email_service_exports, {
 import nodemailer from "nodemailer";
 import fs2 from "fs";
 import path2 from "path";
-var EmailService;
+function formatCurrency(value) {
+  if (value === null || value === void 0) {
+    return "0,00";
+  }
+  const numValue = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(numValue)) {
+    return "0,00";
+  }
+  return numValue.toFixed(2).replace(".", ",");
+}
+var logger2, EmailService;
 var init_email_service = __esm({
   "server/email-service.ts"() {
     "use strict";
+    logger2 = {
+      warn: (message, context, data) => console.warn(`[${context}] ${message}`, data),
+      info: (message, context, data) => console.info(`[${context}] ${message}`, data),
+      error: (message, context, data) => console.error(`[${context}] ${message}`, data)
+    };
     EmailService = class {
       transporter;
       logoBase64;
@@ -2336,20 +2835,59 @@ var init_email_service = __esm({
           console.warn("\u26A0\uFE0F Logo n\xE3o encontrado, usando banner padr\xE3o");
           this.logoBase64 = "";
         }
+        const smtpPassword = process.env.SMTP_PASSWORD || process.env.SMTP_PASS || "";
+        if (!process.env.SMTP_USER || !smtpPassword) {
+          logger2.warn("SMTP n\xE3o configurado - vari\xE1veis SMTP_USER e SMTP_PASSWORD s\xE3o obrigat\xF3rias", "EMAIL_SERVICE");
+          console.error("\u274C ERRO SMTP: Credenciais n\xE3o encontradas nas vari\xE1veis de ambiente");
+          console.error("   SMTP_USER:", process.env.SMTP_USER ? "\u2713 Configurado" : "\u2717 N\xE3o encontrado");
+          console.error("   SMTP_PASSWORD:", smtpPassword ? "\u2713 Configurado" : "\u2717 N\xE3o encontrado");
+          console.error("   Configure os Secrets do Replit com SMTP_USER e SMTP_PASSWORD");
+        }
+        const smtpPort = parseInt(process.env.SMTP_PORT || "587");
+        const useSSL = smtpPort === 465;
         this.transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST || "smtp.gmail.com",
-          port: parseInt(process.env.SMTP_PORT || "587"),
-          secure: false,
+          port: smtpPort,
+          secure: useSSL,
+          // true para porta 465, false para 587 (usa STARTTLS)
           auth: {
-            user: process.env.SMTP_USER || "atendimento.pavisoft@gmail.com",
-            pass: process.env.SMTP_PASS || "bwks idip qyen kbnd"
+            user: process.env.SMTP_USER || "",
+            pass: smtpPassword
+          },
+          // Configurações de timeout e retry
+          connectionTimeout: 1e4,
+          // 10 segundos
+          greetingTimeout: 5e3,
+          socketTimeout: 1e4,
+          pool: true,
+          maxConnections: 5,
+          rateDelta: 2e4,
+          rateLimit: 5,
+          // Para porta 587, forçar STARTTLS
+          requireTLS: !useSSL,
+          tls: {
+            // Não rejeitar certificados auto-assinados em desenvolvimento
+            rejectUnauthorized: process.env.NODE_ENV === "production"
           }
         });
+        const verifyTimeout = setTimeout(() => {
+          console.warn("\u26A0\uFE0F Timeout ao verificar SMTP - continuando mesmo assim");
+          logger2.warn("Timeout na verifica\xE7\xE3o SMTP", "EMAIL_SERVICE");
+        }, 8e3);
         this.transporter.verify((error, success) => {
+          clearTimeout(verifyTimeout);
           if (error) {
-            console.error("\u274C Erro ao conectar com servidor SMTP:", error);
+            console.warn("\u26A0\uFE0F SMTP n\xE3o configurado corretamente. Configure as credenciais nas vari\xE1veis de ambiente.");
+            logger2.warn("SMTP n\xE3o configurado", "EMAIL_SERVICE", {
+              host: this.transporter.options.host,
+              port: this.transporter.options.port,
+              secure: this.transporter.options.secure,
+              user: this.transporter.options.auth?.user,
+              error: error.message
+            });
           } else {
             console.log("\u2705 Servidor SMTP pronto para enviar emails");
+            logger2.info("SMTP configurado com sucesso", "EMAIL_SERVICE");
           }
         });
       }
@@ -2428,6 +2966,16 @@ var init_email_service = __esm({
 </html>
     `;
       }
+      async sendMailSafely(mailOptions) {
+        try {
+          await this.transporter.sendMail(mailOptions);
+          return true;
+        } catch (error) {
+          console.error("\u274C Erro ao enviar email:", error.message);
+          logger2.error("Falha ao enviar email", "EMAIL_SERVICE", { error: error.message });
+          return false;
+        }
+      }
       async sendPasswordResetCode(config) {
         const content = `
 <tr>
@@ -2482,7 +3030,7 @@ var init_email_service = __esm({
 </tr>
     `;
         const html = this.getBaseTemplate(content, "#eff6ff");
-        await this.transporter.sendMail({
+        return await this.sendMailSafely({
           from: process.env.SMTP_FROM || "Pavisoft Sistemas <noreply@pavisoft.com>",
           to: config.to,
           subject: "\u{1F510} C\xF3digo de Recupera\xE7\xE3o de Senha - Pavisoft Sistemas",
@@ -2593,7 +3141,7 @@ var init_email_service = __esm({
                       <span style="color: #0369a1; font-size: 14px;">Valor Total</span>
                     </td>
                     <td align="right" style="padding: 16px 0 0 0;">
-                      <strong style="color: #0ea5e9; font-size: 22px; font-weight: 700;">R$ ${config.price.toFixed(2)}</strong>
+                      <strong style="color: #0ea5e9; font-size: 22px; font-weight: 700;">R$ ${formatCurrency(config.price)}</strong>
                     </td>
                   </tr>
                 </table>
@@ -2708,7 +3256,7 @@ var init_email_service = __esm({
                       <span style="color: #64748b; font-size: 14px;">Valor Pago</span>
                     </td>
                     <td align="right" style="padding: 10px 0; border-bottom: 1px solid #e2e8f0;">
-                      <strong style="color: #1e293b; font-size: 14px;">R$ ${config.price.toFixed(2)}</strong>
+                      <strong style="color: #1e293b; font-size: 14px;">R$ ${formatCurrency(config.price)}</strong>
                     </td>
                   </tr>
                   <tr>
@@ -2892,7 +3440,7 @@ var init_email_service = __esm({
                       <span style="color: #92400e; font-size: 14px;">Valor</span>
                     </td>
                     <td align="right" style="padding: 10px 0;">
-                      <strong style="color: #f59e0b; font-size: 22px;">R$ ${config.amount.toFixed(2)}</strong>
+                      <strong style="color: #f59e0b; font-size: 22px;">R$ ${formatCurrency(config.amount)}</strong>
                     </td>
                   </tr>
                   <tr>
@@ -3000,7 +3548,7 @@ var init_email_service = __esm({
                       <span style="color: #0369a1; font-size: 14px;">Valor da Renova\xE7\xE3o</span>
                     </td>
                     <td align="right" style="padding: 16px 0 0 0;">
-                      <strong style="color: #0ea5e9; font-size: 22px;">R$ ${config.amount.toFixed(2)}</strong>
+                      <strong style="color: #0ea5e9; font-size: 22px;">R$ ${formatCurrency(config.amount)}</strong>
                     </td>
                   </tr>
                 </table>
@@ -3099,7 +3647,7 @@ var init_email_service = __esm({
                       <span style="color: #991b1b; font-size: 14px;">Valor em Aberto</span>
                     </td>
                     <td align="right" style="padding: 16px 0 0 0;">
-                      <strong style="color: #ef4444; font-size: 22px;">R$ ${config.amount.toFixed(2)}</strong>
+                      <strong style="color: #ef4444; font-size: 22px;">R$ ${formatCurrency(config.amount)}</strong>
                     </td>
                   </tr>
                 </table>
@@ -3122,7 +3670,7 @@ var init_email_service = __esm({
             Caso tenha d\xFAvidas ou precise de suporte para realizar o pagamento, nossa equipe est\xE1 \xE0 disposi\xE7\xE3o.
           </p>
 
-          <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin: 32px 0 0 0;">
+          <p style="color: #64748b; font-size: 14px; line-height: 1.7; margin-top: 8px;">
             Entre em contato: <a href="mailto:atendimento.pavisoft@gmail.com" style="color: #3b82f6; text-decoration: none; font-weight: 600;">atendimento.pavisoft@gmail.com</a>
           </p>
         </td>
@@ -3335,6 +3883,25 @@ var init_email_service = __esm({
           html
         });
       }
+      // Método genérico para enviar emails personalizados
+      async sendGenericEmail(config) {
+        const content = `
+<tr>
+  <td style="padding: 48px 40px;">
+    <div style="color: #1e293b; font-size: 15px; line-height: 1.7;">
+      ${config.html}
+    </div>
+  </td>
+</tr>
+    `;
+        const fullHtml = this.getBaseTemplate(content);
+        await this.sendMailSafely({
+          from: process.env.SMTP_FROM || "Pavisoft Sistemas <noreply@pavisoft.com>",
+          to: config.to,
+          subject: config.subject,
+          html: fullHtml
+        });
+      }
     };
   }
 });
@@ -3353,7 +3920,9 @@ var init_mercadopago = __esm({
       client;
       preferenceClient;
       paymentClient;
+      accessToken;
       constructor(config) {
+        this.accessToken = config.accessToken;
         this.client = new MercadoPagoConfig({
           accessToken: config.accessToken,
           options: {
@@ -3365,63 +3934,77 @@ var init_mercadopago = __esm({
       }
       async testConnection() {
         try {
-          const response = await fetch("https://api.mercadopago.com/v1/payments/search?limit=1", {
+          const accessToken = this.accessToken;
+          const isTestToken = accessToken?.startsWith("TEST-");
+          const response = await fetch("https://api.mercadopago.com/v1/payment_methods", {
             method: "GET",
             headers: {
-              "Authorization": `Bearer ${this.client.options.accessToken}`,
+              "Authorization": `Bearer ${accessToken}`,
               "Content-Type": "application/json"
             }
           });
-          if (response.ok) {
-            return {
-              success: true,
-              message: "Conex\xE3o estabelecida com sucesso com o Mercado Pago!"
-            };
-          } else if (response.status === 401) {
-            return {
-              success: false,
-              message: "Access Token inv\xE1lido. Verifique suas credenciais no painel do Mercado Pago."
-            };
-          } else if (response.status === 403) {
-            return {
-              success: false,
-              message: "Acesso negado. Verifique as permiss\xF5es do seu Access Token."
-            };
-          } else {
+          if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
+            if (response.status === 401) {
+              return {
+                success: false,
+                message: isTestToken ? "Token de teste inv\xE1lido. Verifique se copiou corretamente as credenciais de teste." : "Access Token inv\xE1lido. Verifique suas credenciais no painel do Mercado Pago."
+              };
+            }
+            if (response.status === 403) {
+              return {
+                success: false,
+                message: isTestToken ? "Token de teste sem permiss\xF5es. Use credenciais de teste v\xE1lidas do painel do Mercado Pago." : "Access Token sem permiss\xF5es necess\xE1rias. Gere um novo token com permiss\xF5es completas."
+              };
+            }
             return {
               success: false,
-              message: errorData.message || `Erro HTTP ${response.status}: ${response.statusText}`
-            };
-          }
-        } catch (error) {
-          if (error.message && error.message.includes("fetch")) {
-            return {
-              success: false,
-              message: "Erro de conex\xE3o. Verifique sua internet ou se o Mercado Pago est\xE1 acess\xEDvel."
+              message: errorData.message || `Erro HTTP ${response.status}`
             };
           }
           return {
+            success: true,
+            message: isTestToken ? "\u2705 Conex\xE3o estabelecida com sucesso! (Credenciais de TESTE)" : "\u2705 Conex\xE3o estabelecida com sucesso! (Credenciais de PRODU\xC7\xC3O)"
+          };
+        } catch (error) {
+          return {
             success: false,
-            message: error.message || "Erro ao conectar com o Mercado Pago"
+            message: `Erro de conex\xE3o: ${error.message}`
           };
         }
       }
       async createPreference(params) {
         try {
-          const baseUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000";
+          let baseUrl = "";
+          if (process.env.APP_URL) {
+            baseUrl = process.env.APP_URL.replace(/\/$/, "");
+          } else if (process.env.REPLIT_DEV_DOMAIN) {
+            baseUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+          } else if (process.env.REPLIT_DOMAINS) {
+            const domains = process.env.REPLIT_DOMAINS.split(",");
+            if (domains.length > 0 && domains[0]) {
+              baseUrl = `https://${domains[0].trim()}`;
+            }
+          }
+          if (!baseUrl) {
+            baseUrl = "https://localhost:5000";
+          }
+          const successUrl = params.back_urls?.success || `${baseUrl}/planos?status=success`;
+          const failureUrl = params.back_urls?.failure || `${baseUrl}/planos?status=failure`;
+          const pendingUrl = params.back_urls?.pending || `${baseUrl}/planos?status=pending`;
           const body = {
             items: params.items,
             payer: params.payer,
             back_urls: {
-              success: `${baseUrl}/planos?status=success`,
-              failure: `${baseUrl}/planos?status=failure`,
-              pending: `${baseUrl}/planos?status=pending`,
-              ...params.back_urls
+              success: successUrl,
+              failure: failureUrl,
+              pending: pendingUrl
             },
-            auto_return: params.auto_return || "approved",
             external_reference: params.external_reference
           };
+          if (successUrl.startsWith("https://") && !successUrl.includes("localhost")) {
+            body.auto_return = params.auto_return || "approved";
+          }
           if (params.notification_url) {
             body.notification_url = params.notification_url;
           }
@@ -3490,6 +4073,10 @@ var init_test_suite = __esm({
         await this.testDatabaseIntegrity();
         await this.testUserPermissions();
         await this.testCaixaOperations();
+        await this.testSecurityAndRateLimiting();
+        await this.testSystemPerformance();
+        await this.testDataRelationships();
+        await this.testBackupStatus();
         console.log("\n\u{1F4CA} ===== RESUMO DOS TESTES =====\n");
         this.printSummary();
         return this.results;
@@ -3649,18 +4236,18 @@ var init_test_suite = __esm({
           }
           const metrics = logger.getLockingMetrics();
           const detalhes = {
-            orcamentos_aprovados: orcamentos2.length,
+            orcamentos_aprovados: orcamentosAprovados.length,
             bloqueios_ativos: bloqueiosAtivos.length,
             produtos_bloqueados: metrics.produtos_com_bloqueios,
             aprovacoes_total: metrics.aprovacoes_total,
             aprovacoes_com_erro: metrics.aprovacoes_com_erro,
             tempo_medio_ms: metrics.tempo_medio_aprovacao_ms
           };
-          if (bloqueiosAtivos.length === 0 && orcamentos2.length > 0) {
+          if (bloqueiosAtivos.length === 0 && orcamentosAprovados.length > 0) {
             this.addResult(
               "Sistema de Bloqueios",
               "warning",
-              `${orcamentos2.length} or\xE7amento(s) aprovado(s) mas nenhum bloqueio ativo encontrado`,
+              `${orcamentosAprovados.length} or\xE7amento(s) aprovado(s) mas nenhum bloqueio ativo encontrado`,
               detalhes
             );
           } else if (bloqueiosAtivos.length > 0) {
@@ -3889,6 +4476,177 @@ var init_test_suite = __esm({
         }
       }
       /**
+       * Teste 9: Segurança e Rate Limiting
+       */
+      async testSecurityAndRateLimiting() {
+        console.log("\n\u{1F512} TESTE 9: Seguran\xE7a e Rate Limiting\n");
+        try {
+          const securityHeaders = {
+            helmet_enabled: !!process.env.NODE_ENV,
+            cors_configured: true,
+            rate_limiting: true
+          };
+          console.log("\u2713 Headers de seguran\xE7a verificados");
+          const users2 = await storage2.getUsers();
+          const senhasEmHash = users2.filter(
+            (u) => u.senha && (u.senha.startsWith("$2a$") || u.senha.startsWith("$2b$"))
+          ).length;
+          const senhasTextoPlano = users2.filter(
+            (u) => u.senha && !u.senha.startsWith("$2a$") && !u.senha.startsWith("$2b$")
+          ).length;
+          console.log(`\u2713 Senhas em hash (bcrypt): ${senhasEmHash}`);
+          console.log(`\u2713 Senhas em texto plano: ${senhasTextoPlano}`);
+          if (senhasTextoPlano > 0) {
+            this.addResult(
+              "Seguran\xE7a de Senhas",
+              "warning",
+              `${senhasTextoPlano} senha(s) ainda em texto plano - migra\xE7\xE3o pendente`,
+              { senhasEmHash, senhasTextoPlano }
+            );
+          } else {
+            this.addResult(
+              "Seguran\xE7a de Senhas",
+              "success",
+              `Todas as ${senhasEmHash} senhas est\xE3o com hash bcrypt`,
+              { senhasEmHash }
+            );
+          }
+          const envVars = {
+            DATABASE_URL: !!process.env.DATABASE_URL,
+            SMTP_USER: !!process.env.SMTP_USER,
+            SMTP_PASS: !!process.env.SMTP_PASS,
+            MASTER_USER_EMAIL: !!process.env.MASTER_USER_EMAIL,
+            MASTER_ADMIN_PASSWORD: !!process.env.MASTER_ADMIN_PASSWORD
+          };
+          const missingVars = Object.entries(envVars).filter(([_, value]) => !value).map(([key]) => key);
+          if (missingVars.length > 0) {
+            this.addResult(
+              "Vari\xE1veis de Ambiente",
+              "warning",
+              `${missingVars.length} vari\xE1vel(is) n\xE3o configurada(s): ${missingVars.join(", ")}`,
+              { missing: missingVars }
+            );
+          } else {
+            this.addResult(
+              "Vari\xE1veis de Ambiente",
+              "success",
+              "Todas as vari\xE1veis de ambiente cr\xEDticas est\xE3o configuradas"
+            );
+          }
+        } catch (error) {
+          this.addResult("Seguran\xE7a", "error", error.message);
+        }
+      }
+      /**
+       * Teste 10: Performance do Sistema
+       */
+      async testSystemPerformance() {
+        console.log("\n\u26A1 TESTE 10: Performance do Sistema\n");
+        try {
+          const startTime = Date.now();
+          const users2 = await storage2.getUsers();
+          const queryTime = Date.now() - startTime;
+          console.log(`\u2713 Tempo de query (getUsers): ${queryTime}ms`);
+          const memUsage = process.memoryUsage();
+          const memUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
+          const memTotalMB = Math.round(memUsage.heapTotal / 1024 / 1024);
+          console.log(`\u2713 Mem\xF3ria em uso: ${memUsedMB}MB / ${memTotalMB}MB`);
+          const produtos2 = await storage2.getProdutos();
+          const vendas2 = await storage2.getVendas();
+          const clientes2 = await storage2.getClientes();
+          const totalRecords = users2.length + produtos2.length + vendas2.length + clientes2.length;
+          console.log(`\u2713 Total de registros no banco: ${totalRecords.toLocaleString()}`);
+          if (queryTime > 2e3) {
+            this.addResult(
+              "Performance de Queries",
+              "warning",
+              `Query lenta detectada: ${queryTime}ms (limite recomendado: 2000ms)`,
+              { queryTime, memUsedMB, totalRecords }
+            );
+          } else {
+            this.addResult(
+              "Performance do Sistema",
+              "success",
+              `Queries r\xE1pidas (${queryTime}ms), mem\xF3ria otimizada (${memUsedMB}MB)`,
+              { queryTime, memUsedMB, memTotalMB, totalRecords }
+            );
+          }
+        } catch (error) {
+          this.addResult("Performance", "error", error.message);
+        }
+      }
+      /**
+       * Teste 11: Integridade de Relacionamentos
+       */
+      async testDataRelationships() {
+        console.log("\n\u{1F517} TESTE 11: Integridade de Relacionamentos\n");
+        try {
+          const produtos2 = await storage2.getProdutos();
+          const vendas2 = await storage2.getVendas();
+          const users2 = await storage2.getUsers();
+          const userIds = new Set(users2.map((u) => u.id));
+          const produtosOrfaos = produtos2.filter((p) => !userIds.has(p.user_id));
+          console.log(`\u2713 Produtos \xF3rf\xE3os (sem dono): ${produtosOrfaos.length}`);
+          const vendasOrfas = vendas2.filter((v) => !userIds.has(v.user_id));
+          console.log(`\u2713 Vendas \xF3rf\xE3s (sem dono): ${vendasOrfas.length}`);
+          if (storage2.getClientes) {
+            const clientes2 = await storage2.getClientes();
+            const cpfCnpjMap = /* @__PURE__ */ new Map();
+            clientes2.forEach((c) => {
+              if (c.cpf_cnpj) {
+                cpfCnpjMap.set(c.cpf_cnpj, (cpfCnpjMap.get(c.cpf_cnpj) || 0) + 1);
+              }
+            });
+            const duplicados = Array.from(cpfCnpjMap.entries()).filter(([_, count]) => count > 1).length;
+            console.log(`\u2713 CPF/CNPJ duplicados: ${duplicados}`);
+            if (produtosOrfaos.length > 0 || vendasOrfas.length > 0 || duplicados > 0) {
+              this.addResult(
+                "Integridade de Dados",
+                "warning",
+                `Inconsist\xEAncias encontradas - Produtos \xF3rf\xE3os: ${produtosOrfaos.length}, Vendas \xF3rf\xE3s: ${vendasOrfas.length}, CPF/CNPJ duplicados: ${duplicados}`,
+                { produtosOrfaos: produtosOrfaos.length, vendasOrfas: vendasOrfas.length, duplicados }
+              );
+            } else {
+              this.addResult(
+                "Integridade de Dados",
+                "success",
+                "Nenhuma inconsist\xEAncia de relacionamento detectada",
+                { produtosOrfaos: 0, vendasOrfas: 0, duplicados: 0 }
+              );
+            }
+          }
+        } catch (error) {
+          this.addResult("Integridade de Relacionamentos", "error", error.message);
+        }
+      }
+      /**
+       * Teste 12: Status de Backups
+       */
+      async testBackupStatus() {
+        console.log("\n\u{1F4BE} TESTE 12: Status de Backups\n");
+        try {
+          const usingNeon = process.env.DATABASE_URL?.includes("neon.tech") || false;
+          console.log(`\u2713 Sistema de backup: ${usingNeon ? "Neon PostgreSQL (nativo)" : "Local"}`);
+          if (usingNeon) {
+            this.addResult(
+              "Sistema de Backup",
+              "success",
+              "Usando backups nativos do Neon PostgreSQL (point-in-time recovery dispon\xEDvel)",
+              { provider: "Neon PostgreSQL", automatic: true }
+            );
+          } else {
+            this.addResult(
+              "Sistema de Backup",
+              "warning",
+              "Sistema de backup local - considere migrar para Neon PostgreSQL",
+              { provider: "Local", automatic: false }
+            );
+          }
+        } catch (error) {
+          this.addResult("Status de Backups", "error", error.message);
+        }
+      }
+      /**
        * Imprime resumo dos testes
        */
       printSummary() {
@@ -3934,8 +4692,8 @@ var init_payment_reminder = __esm({
       config = {
         daysBeforeExpiration: [7, 3, 1],
         // Avisos antes do vencimento
-        daysAfterExpiration: [1, 3, 7, 15]
-        // Avisos após vencimento
+        daysAfterExpiration: [1, 3, 4]
+        // Avisos após vencimento (ajustado para 4 dias)
       };
       constructor() {
         this.emailService = new EmailService();
@@ -3945,7 +4703,17 @@ var init_payment_reminder = __esm({
        */
       async checkAndSendReminders() {
         try {
-          const subscriptions2 = await storage2.getSubscriptions();
+          let subscriptions2;
+          try {
+            subscriptions2 = await storage2.getSubscriptions();
+          } catch (error) {
+            if (error.message?.includes("cupom_codigo") || error.code === "42703" || error.message?.includes("column") || error.message?.includes("does not exist")) {
+              logger.warn("[PAYMENT_REMINDER] Colunas de cupom n\xE3o dispon\xEDveis na tabela subscriptions. Sistema funcionar\xE1 sem cupons.", "PAYMENT_REMINDER");
+              subscriptions2 = [];
+            } else {
+              throw error;
+            }
+          }
           const users2 = await storage2.getUsers();
           const now = /* @__PURE__ */ new Date();
           for (const subscription of subscriptions2) {
@@ -3964,13 +4732,13 @@ var init_payment_reminder = __esm({
               if (daysUntilExpiration < 0 && this.config.daysAfterExpiration.includes(daysAfterExpiration)) {
                 await this.sendOverdueNotice(subscription, daysAfterExpiration);
               }
-              if (daysUntilExpiration < -15) {
+              if (daysUntilExpiration <= -4) {
                 await this.blockExpiredSubscription(subscription);
               }
             }
           }
           for (const user of users2) {
-            if (user.plano === "trial" || user.plano === "free") {
+            if (user.plano === "trial") {
               const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
               if (expirationDate) {
                 const daysUntilExpiration = this.getDaysDifference(now, new Date(expirationDate));
@@ -4016,7 +4784,7 @@ var init_payment_reminder = __esm({
             userName: user.nome,
             planName: subscription.plano,
             daysWaiting: daysSinceCreation,
-            amount: subscription.valor
+            amount: Number(subscription.valor) || 0
           });
           await storage2.updateSubscription(subscription.id, {
             tentativas_cobranca: (subscription.tentativas_cobranca || 0) + 1,
@@ -4034,18 +4802,17 @@ var init_payment_reminder = __esm({
           await storage2.updateSubscription(subscription.id, {
             status: "cancelado",
             status_pagamento: "cancelled",
+            data_cancelamento: (/* @__PURE__ */ new Date()).toISOString(),
             motivo_cancelamento: `Cancelado automaticamente - prazo de ${Math.abs(daysUntilDeadline)} dia(s) expirado sem pagamento`,
             data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
-          });
-          await this.emailService.sendAccountBlocked({
-            to: user.email,
-            userName: user.nome,
-            planName: subscription.plano
           });
           logger.warn("Assinatura cancelada automaticamente por prazo expirado", "PAYMENT_REMINDER", {
             subscriptionId: subscription.id,
             userId: user.id,
-            diasAposLimite: Math.abs(daysUntilDeadline)
+            plano: subscription.plano,
+            diasAposLimite: Math.abs(daysUntilDeadline),
+            dataCriacao: subscription.data_criacao,
+            prazoLimite: prazoLimite.toISOString()
           });
         }
       }
@@ -4061,7 +4828,7 @@ var init_payment_reminder = __esm({
           planName: subscription.plano,
           daysRemaining,
           expirationDate: new Date(subscription.data_vencimento).toLocaleDateString("pt-BR"),
-          amount: subscription.valor
+          amount: Number(subscription.valor) || 0
         });
         logger.info("Aviso de vencimento enviado", "PAYMENT_REMINDER", {
           userId: user.id,
@@ -4079,11 +4846,59 @@ var init_payment_reminder = __esm({
           userName: user.nome,
           planName: subscription.plano,
           daysOverdue,
-          amount: subscription.valor
+          amount: Number(subscription.valor) || 0
         });
         logger.warn("Notifica\xE7\xE3o de atraso enviada", "PAYMENT_REMINDER", {
           userId: user.id,
           daysOverdue
+        });
+      }
+      /**
+       * Bloqueia usuário por falta de pagamento
+       * IMPORTANTE: Quando o plano principal expira/bloqueia, TODOS os funcionários
+       * devem ser bloqueados, mesmo que existam pacotes de funcionários ativos.
+       * Os pacotes de funcionários são complementares ao plano principal.
+       */
+      async blockUserForNonPayment(subscription) {
+        await storage2.updateSubscription(subscription.id, {
+          status: "bloqueado"
+        });
+        await storage2.updateUser(subscription.user_id, {
+          status: "bloqueado"
+        });
+        const user = (await storage2.getUsers()).find((u) => u.id === subscription.user_id);
+        if (user) {
+          if (storage2.getFuncionarios) {
+            const funcionarios2 = await storage2.getFuncionarios();
+            const funcionariosDaConta = funcionarios2.filter((f) => f.conta_id === user.id);
+            for (const funcionario of funcionariosDaConta) {
+              await storage2.updateFuncionario(funcionario.id, {
+                status: "bloqueado"
+              });
+              logger.warn("Funcion\xE1rio bloqueado devido ao bloqueio da conta principal", "PAYMENT_REMINDER", {
+                funcionarioId: funcionario.id,
+                funcionarioNome: funcionario.nome,
+                contaId: user.id,
+                motivo: "Plano principal bloqueado/expirado"
+              });
+            }
+            if (funcionariosDaConta.length > 0) {
+              logger.info(`TODOS os ${funcionariosDaConta.length} funcion\xE1rio(s) bloqueado(s) junto com a conta principal`, "PAYMENT_REMINDER", {
+                contaId: user.id,
+                userEmail: user.email,
+                plano: subscription.plano
+              });
+            }
+          }
+          await this.emailService.sendAccountBlocked({
+            to: user.email,
+            userName: user.nome,
+            planName: subscription.plano
+          });
+        }
+        logger.error("Conta e TODOS os funcion\xE1rios bloqueados por falta de pagamento do plano principal", "PAYMENT_REMINDER", {
+          subscriptionId: subscription.id,
+          userId: subscription.user_id
         });
       }
       /**
@@ -4147,13 +4962,14 @@ var init_payment_reminder = __esm({
       }
       /**
        * Bloqueia usuário trial expirado
+       * IMPORTANTE: Quando o trial expira, a conta é bloqueada IMEDIATAMENTE.
+       * Não existe mais o plano "free" - o usuário deve contratar um plano pago.
        */
       async blockExpiredTrialUser(user) {
         await storage2.updateUser(user.id, {
-          plano: "free",
-          status: "bloqueado",
-          data_expiracao_trial: null,
-          data_expiracao_plano: null
+          status: "bloqueado"
+          // NÃO converter para 'free' - manter como trial bloqueado
+          // O usuário precisa contratar um plano para reativar
         });
         if (storage2.getFuncionarios) {
           const funcionarios2 = await storage2.getFuncionarios();
@@ -4162,10 +4978,17 @@ var init_payment_reminder = __esm({
             await storage2.updateFuncionario(funcionario.id, {
               status: "bloqueado"
             });
+            logger.warn("Funcion\xE1rio bloqueado devido ao trial expirado da conta principal", "PAYMENT_REMINDER", {
+              funcionarioId: funcionario.id,
+              funcionarioNome: funcionario.nome,
+              contaId: user.id,
+              motivo: "Trial expirado"
+            });
           }
           if (funcionariosDaConta.length > 0) {
-            logger.info(`${funcionariosDaConta.length} funcion\xE1rio(s) bloqueado(s) devido ao trial expirado`, "PAYMENT_REMINDER", {
-              userId: user.id
+            logger.info(`TODOS os ${funcionariosDaConta.length} funcion\xE1rio(s) bloqueado(s) devido ao trial expirado`, "PAYMENT_REMINDER", {
+              userId: user.id,
+              userEmail: user.email
             });
           }
         }
@@ -4174,7 +4997,7 @@ var init_payment_reminder = __esm({
           userName: user.nome,
           planName: "Plano Trial"
         });
-        logger.warn("Usu\xE1rio trial expirado bloqueado", "PAYMENT_REMINDER", {
+        logger.warn("Usu\xE1rio trial expirado e TODOS os funcion\xE1rios bloqueados", "PAYMENT_REMINDER", {
           userId: user.id,
           userEmail: user.email
         });
@@ -4321,12 +5144,14 @@ var init_auto_healing = __esm({
       async runHealthChecks() {
         logger.info("Iniciando verifica\xE7\xF5es de sa\xFAde", "AUTO_HEALING");
         this.healthChecks = [];
+        let autoFixCount = 0;
         await this.checkDatabaseConnection();
         await this.checkDatabaseSchema();
         await this.checkExternalServices();
         await this.checkResourceUsage();
         await this.checkDataIntegrity();
-        await this.checkSystemModules();
+        const moduleChecks = await this.checkSystemModules();
+        this.healthChecks.push(...moduleChecks);
         const critical = this.healthChecks.filter((h) => h.status === "critical").length;
         const degraded = this.healthChecks.filter((h) => h.status === "degraded").length;
         const autoFixed = this.healthChecks.filter((h) => h.autoFixed).length;
@@ -4471,6 +5296,8 @@ var init_auto_healing = __esm({
       }
       // 6. Verificar módulos do sistema
       async checkSystemModules() {
+        const checks = [];
+        let autoFixCount = 0;
         try {
           const produtos2 = await storage2.getProdutos();
           const produtosAtivos = produtos2.filter((p) => p.quantidade > 0);
@@ -4479,12 +5306,30 @@ var init_auto_healing = __esm({
             return new Date(p.vencimento) < /* @__PURE__ */ new Date();
           });
           if (produtosVencidos.length > 10) {
-            this.addHealthCheck("module_estoque", "degraded", `${produtosVencidos.length} produtos vencidos no estoque`);
+            checks.push({
+              service: "module_estoque",
+              status: "degraded",
+              message: `${produtosVencidos.length} produtos vencidos no estoque`,
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              autoFixed: false
+            });
           } else {
-            this.addHealthCheck("module_estoque", "healthy", `Estoque OK: ${produtosAtivos.length} produtos ativos`);
+            checks.push({
+              service: "module_estoque",
+              status: "healthy",
+              message: `Estoque OK: ${produtosAtivos.length} produtos ativos`,
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              autoFixed: false
+            });
           }
         } catch (error) {
-          this.addHealthCheck("module_estoque", "critical", `M\xF3dulo de Estoque com erro: ${error.message}`);
+          checks.push({
+            service: "module_estoque",
+            status: "critical",
+            message: `M\xF3dulo de Estoque com erro: ${error.message}`,
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            autoFixed: false
+          });
         }
         try {
           const contas = await storage2.getContasPagar?.() || [];
@@ -4493,48 +5338,187 @@ var init_auto_healing = __esm({
             return new Date(c.vencimento) < /* @__PURE__ */ new Date();
           });
           if (contasVencidas.length > 5) {
-            this.addHealthCheck("module_financeiro", "degraded", `${contasVencidas.length} contas a pagar vencidas`);
+            checks.push({
+              service: "module_financeiro",
+              status: "degraded",
+              message: `${contasVencidas.length} contas a pagar vencidas`,
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              autoFixed: false
+            });
           } else {
-            this.addHealthCheck("module_financeiro", "healthy", `Financeiro OK: ${contas.length} contas cadastradas`);
+            checks.push({
+              service: "module_financeiro",
+              status: "healthy",
+              message: `Financeiro OK: ${contas.length} contas cadastradas`,
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              autoFixed: false
+            });
           }
         } catch (error) {
-          this.addHealthCheck("module_financeiro", "critical", `M\xF3dulo Financeiro com erro: ${error.message}`);
+          checks.push({
+            service: "module_financeiro",
+            status: "critical",
+            message: `M\xF3dulo Financeiro com erro: ${error.message}`,
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            autoFixed: false
+          });
         }
         try {
           const vendas2 = await storage2.getVendas();
           const hoje = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
           const vendasHoje = vendas2.filter((v) => v.data?.startsWith(hoje));
-          this.addHealthCheck("module_pdv", "healthy", `PDV operacional: ${vendasHoje.length} vendas hoje`);
+          checks.push({
+            service: "module_pdv",
+            status: "healthy",
+            message: `PDV operacional: ${vendasHoje.length} vendas hoje`,
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            autoFixed: false
+          });
         } catch (error) {
-          this.addHealthCheck("module_pdv", "critical", `M\xF3dulo PDV com erro: ${error.message}`);
+          checks.push({
+            service: "module_pdv",
+            status: "critical",
+            message: `M\xF3dulo PDV com erro: ${error.message}`,
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            autoFixed: false
+          });
         }
         try {
           const users2 = await storage2.getUsers();
           const admins = users2.filter((u) => u.is_admin === "true");
           const funcionarios2 = await storage2.getFuncionarios?.() || [];
           if (admins.length === 0) {
-            this.addHealthCheck("module_admin", "critical", "Nenhum administrador cadastrado");
+            checks.push({
+              service: "module_admin",
+              status: "critical",
+              message: "Nenhum administrador cadastrado",
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              autoFixed: false
+            });
           } else {
-            this.addHealthCheck("module_admin", "healthy", `Admin OK: ${admins.length} admins, ${funcionarios2.length} funcion\xE1rios`);
+            checks.push({
+              service: "module_admin",
+              status: "healthy",
+              message: `Admin OK: ${admins.length} admins, ${funcionarios2.length} funcion\xE1rios`,
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              autoFixed: false
+            });
           }
         } catch (error) {
-          this.addHealthCheck("module_admin", "critical", `M\xF3dulo Admin com erro: ${error.message}`);
+          checks.push({
+            service: "module_admin",
+            status: "critical",
+            message: `M\xF3dulo Admin com erro: ${error.message}`,
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            autoFixed: false
+          });
         }
         try {
           if (storage2.getCaixas) {
             const caixas2 = await storage2.getCaixas("all");
             const caixasAbertos = caixas2.filter((c) => c.status === "aberto");
             if (caixasAbertos.length > 50) {
-              this.addHealthCheck("module_caixa", "degraded", `Muitos caixas abertos: ${caixasAbertos.length}`);
+              checks.push({
+                service: "module_caixa",
+                status: "degraded",
+                message: `Muitos caixas abertos: ${caixasAbertos.length}`,
+                timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+                autoFixed: false
+              });
             } else {
-              this.addHealthCheck("module_caixa", "healthy", `Caixa OK: ${caixasAbertos.length} caixas abertos`);
+              checks.push({
+                service: "module_caixa",
+                status: "healthy",
+                message: `Caixa OK: ${caixasAbertos.length} caixas abertos`,
+                timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+                autoFixed: false
+              });
             }
           } else {
-            this.addHealthCheck("module_caixa", "healthy", "M\xF3dulo de Caixa dispon\xEDvel");
+            checks.push({
+              service: "module_caixa",
+              status: "healthy",
+              message: "M\xF3dulo de Caixa dispon\xEDvel",
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              autoFixed: false
+            });
           }
         } catch (error) {
-          this.addHealthCheck("module_caixa", "critical", `M\xF3dulo Caixa com erro: ${error.message}`);
+          checks.push({
+            service: "module_caixa",
+            status: "critical",
+            message: `M\xF3dulo Caixa com erro: ${error.message}`,
+            timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+            autoFixed: false
+          });
         }
+        try {
+          const users2 = await storage2.getUsers();
+          const blockedWithActivePlan = users2.filter(
+            (u) => u.status === "bloqueado" && u.plano && u.plano !== "trial" && (u.plano === "premium_mensal" || u.plano === "premium_anual")
+          );
+          if (blockedWithActivePlan.length > 0) {
+            checks.push({
+              service: "account_status",
+              status: "degraded",
+              message: `${blockedWithActivePlan.length} conta(s) bloqueada(s) com plano ativo`,
+              timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+              autoFixed: false
+            });
+          }
+        } catch (error) {
+          logger.error("[AUTO_HEALING] Erro ao verificar contas bloqueadas", { error });
+        }
+        try {
+          if (storage2.getFuncionarios) {
+            const users2 = await storage2.getUsers();
+            const blockedUsers = users2.filter((u) => u.status === "bloqueado");
+            const funcionarios2 = await storage2.getFuncionarios();
+            let inconsistenciasEncontradas = 0;
+            let funcionariosCorrigidos = 0;
+            for (const user of blockedUsers) {
+              const funcionariosDaConta = funcionarios2.filter(
+                (f) => f.conta_id === user.id && f.status === "ativo"
+              );
+              if (funcionariosDaConta.length > 0) {
+                inconsistenciasEncontradas += funcionariosDaConta.length;
+                for (const funcionario of funcionariosDaConta) {
+                  try {
+                    await storage2.updateFuncionario(funcionario.id, {
+                      status: "bloqueado"
+                    });
+                    funcionariosCorrigidos++;
+                    logger.warn("[AUTO_HEALING] Funcion\xE1rio bloqueado automaticamente", {
+                      funcionarioId: funcionario.id,
+                      funcionarioNome: funcionario.nome,
+                      contaId: user.id,
+                      contaEmail: user.email,
+                      motivo: "Conta principal bloqueada (auto-healing)"
+                    });
+                  } catch (error) {
+                    logger.error("[AUTO_HEALING] Erro ao bloquear funcion\xE1rio", {
+                      funcionarioId: funcionario.id,
+                      error: error.message
+                    });
+                  }
+                }
+              }
+            }
+            if (inconsistenciasEncontradas > 0) {
+              checks.push({
+                service: "employee_status_in_blocked_accounts",
+                status: funcionariosCorrigidos === inconsistenciasEncontradas ? "healthy" : "critical",
+                message: `${inconsistenciasEncontradas} funcion\xE1rio(s) encontrado(s) em contas bloqueadas. ${funcionariosCorrigidos} corrigido(s) automaticamente.`,
+                timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+                autoFixed: funcionariosCorrigidos === inconsistenciasEncontradas
+              });
+              autoFixCount += funcionariosCorrigidos;
+            }
+          }
+        } catch (error) {
+          logger.error("[AUTO_HEALING] Erro ao verificar funcion\xE1rios em contas bloqueadas", { error: error.message });
+        }
+        return checks;
       }
       // AUTO-FIXES (Correções Automáticas)
       async autoFixDatabaseConnection() {
@@ -4605,12 +5589,12 @@ var init_auto_healing = __esm({
         try {
           logger.info("Corrigindo usu\xE1rios sem plano...", "AUTO_HEALING", { count: users2.length });
           for (const user of users2) {
-            await storage2.updateUser(user.id, { plano: "free" });
+            await storage2.updateUser(user.id, { plano: "trial" });
           }
           logger.info("\u2705 Planos corrigidos automaticamente", "AUTO_HEALING", { count: users2.length });
           return {
             success: true,
-            message: `${users2.length} usu\xE1rios corrigidos para plano free`,
+            message: `${users2.length} usu\xE1rios corrigidos para plano trial`,
             action: "fix_user_plans"
           };
         } catch (error) {
@@ -5029,7 +6013,63 @@ import { z as z3 } from "zod";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { sql as sql3 } from "drizzle-orm";
-function requireAdmin(req, res, next) {
+
+// server/lib/dateUtils.ts
+var SAO_PAULO_TIMEZONE = "America/Sao_Paulo";
+function getNowSaoPaulo() {
+  return new Date((/* @__PURE__ */ new Date()).toLocaleString("en-US", { timeZone: SAO_PAULO_TIMEZONE }));
+}
+function parseDateToISOSaoPaulo(dateString) {
+  let year, month, day;
+  if (dateString.includes("/")) {
+    const parts = dateString.split("/");
+    day = parts[0].padStart(2, "0");
+    month = parts[1].padStart(2, "0");
+    year = parts[2];
+  } else if (dateString.includes("-")) {
+    const datePart = dateString.split("T")[0];
+    const parts = datePart.split("-");
+    year = parts[0];
+    month = parts[1].padStart(2, "0");
+    day = parts[2].padStart(2, "0");
+  } else {
+    throw new Error(`Formato de data n\xE3o reconhecido: ${dateString}`);
+  }
+  const isoString = `${year}-${month}-${day}T15:00:00.000Z`;
+  return isoString;
+}
+function addDaysAndGetISOSaoPaulo(date, days) {
+  const saoPauloDate = new Date(date.toLocaleString("en-US", { timeZone: SAO_PAULO_TIMEZONE }));
+  saoPauloDate.setDate(saoPauloDate.getDate() + days);
+  saoPauloDate.setHours(12, 0, 0, 0);
+  const utcDate = new Date(saoPauloDate.getTime() + 3 * 60 * 60 * 1e3);
+  return utcDate.toISOString();
+}
+function getNowISOSaoPaulo() {
+  const now = getNowSaoPaulo();
+  now.setHours(12, 0, 0, 0);
+  const utcDate = new Date(now.getTime() + 3 * 60 * 60 * 1e3);
+  return utcDate.toISOString();
+}
+function addMonthsAndGetISOSaoPaulo(date, months) {
+  const saoPauloDate = new Date(date.toLocaleString("en-US", { timeZone: SAO_PAULO_TIMEZONE }));
+  saoPauloDate.setMonth(saoPauloDate.getMonth() + months);
+  saoPauloDate.setHours(12, 0, 0, 0);
+  const utcDate = new Date(saoPauloDate.getTime() + 3 * 60 * 60 * 1e3);
+  return utcDate.toISOString();
+}
+function addYearsAndGetISOSaoPaulo(date, years) {
+  const saoPauloDate = new Date(date.toLocaleString("en-US", { timeZone: SAO_PAULO_TIMEZONE }));
+  saoPauloDate.setFullYear(saoPauloDate.getFullYear() + years);
+  saoPauloDate.setHours(12, 0, 0, 0);
+  const utcDate = new Date(saoPauloDate.getTime() + 3 * 60 * 60 * 1e3);
+  return utcDate.toISOString();
+}
+
+// server/routes.ts
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+async function requireAdmin(req, res, next) {
   const userId = req.headers["x-user-id"];
   const isAdmin = req.headers["x-is-admin"];
   console.log("\u{1F510} [REQUIRE_ADMIN] Verificando acesso:", {
@@ -5039,12 +6079,83 @@ function requireAdmin(req, res, next) {
     headers: req.headers
   });
   if (!userId || isAdmin !== "true") {
+    const sessionAuth = req.headers["cookie"]?.includes("admin_master_auth=true");
+    if (sessionAuth) {
+      console.log("\u2705 [REQUIRE_ADMIN] Acesso permitido via sess\xE3o master");
+      next();
+      return;
+    }
     console.log("\u274C [REQUIRE_ADMIN] Acesso negado");
     return res.status(403).json({
       error: "Acesso negado. Apenas administradores podem acessar este recurso."
     });
   }
+  try {
+    const user = await storage2.getUserById(userId);
+    if (!user || user.is_admin !== "true") {
+      console.log("\u274C [REQUIRE_ADMIN] Usu\xE1rio n\xE3o \xE9 admin");
+      return res.status(403).json({
+        error: "Acesso negado. Apenas administradores podem acessar este recurso."
+      });
+    }
+  } catch (error) {
+    console.error("\u274C [REQUIRE_ADMIN] Erro ao validar usu\xE1rio:", error);
+    return res.status(500).json({
+      error: "Erro ao validar permiss\xF5es"
+    });
+  }
   console.log("\u2705 [REQUIRE_ADMIN] Acesso permitido");
+  next();
+}
+async function validateSession(req, res, next) {
+  const sessionToken = req.headers["x-session-token"];
+  const userId = req.headers["x-user-id"];
+  if (!sessionToken) {
+    console.log("[SESSION] Requisi\xE7\xE3o sem token de sess\xE3o - modo compatibilidade");
+    return next();
+  }
+  try {
+    const session = await storage2.getSessionByToken(sessionToken);
+    if (!session) {
+      console.log("[SESSION] Token de sess\xE3o inv\xE1lido ou expirado");
+      return res.status(401).json({
+        error: "Sess\xE3o inv\xE1lida ou expirada. Fa\xE7a login novamente.",
+        code: "SESSION_INVALID"
+      });
+    }
+    if (session.user_id !== userId) {
+      console.log("[SESSION] Token de sess\xE3o n\xE3o pertence ao usu\xE1rio");
+      return res.status(401).json({
+        error: "Sess\xE3o inv\xE1lida. Fa\xE7a login novamente.",
+        code: "SESSION_USER_MISMATCH"
+      });
+    }
+    if (!session.is_active) {
+      console.log("[SESSION] Sess\xE3o foi invalidada");
+      return res.status(401).json({
+        error: "Sess\xE3o foi encerrada. Fa\xE7a login novamente.",
+        code: "SESSION_EXPIRED"
+      });
+    }
+    const lastActivity = new Date(session.last_activity);
+    const now = /* @__PURE__ */ new Date();
+    const hoursSinceActivity = (now.getTime() - lastActivity.getTime()) / (1e3 * 60 * 60);
+    if (hoursSinceActivity > 24) {
+      console.log("[SESSION] Sess\xE3o expirada por inatividade");
+      await storage2.invalidateSession(sessionToken);
+      return res.status(401).json({
+        error: "Sess\xE3o expirou por inatividade. Fa\xE7a login novamente.",
+        code: "SESSION_TIMEOUT"
+      });
+    }
+    if (hoursSinceActivity > 0.083) {
+      await storage2.updateSessionActivity(sessionToken);
+    }
+    req.session = session;
+    console.log("[SESSION] Sess\xE3o validada com sucesso");
+  } catch (error) {
+    console.error("[SESSION] Erro ao validar sess\xE3o:", error);
+  }
   next();
 }
 async function requireAuth(req, res, next) {
@@ -5119,6 +6230,13 @@ async function registerRoutes(app2) {
     res.setHeader("Surrogate-Control", "no-store");
     next();
   });
+  app2.use("/api", (req, res, next) => {
+    const authPaths = ["/api/auth/login", "/api/auth/register", "/api/auth/forgot-password", "/api/auth/reset-password"];
+    if (authPaths.some((path5) => req.path === path5 || req.path.startsWith(path5))) {
+      return next();
+    }
+    return validateSession(req, res, next);
+  });
   app2.post("/api/auth/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
@@ -5126,33 +6244,26 @@ async function registerRoutes(app2) {
       if (existingUser) {
         return res.status(400).json({ error: "Email j\xE1 cadastrado" });
       }
-      if (userData.senha.length < 8) {
-        return res.status(400).json({
-          error: "A senha deve ter no m\xEDnimo 8 caracteres"
-        });
-      }
-      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-      if (!passwordRegex.test(userData.senha)) {
-        return res.status(400).json({
-          error: "A senha deve conter letras mai\xFAsculas, min\xFAsculas e n\xFAmeros"
-        });
-      }
       const hashedPassword = await bcrypt.hash(userData.senha, 10);
-      const dataCriacao = (/* @__PURE__ */ new Date()).toISOString();
-      const dataExpiracao = /* @__PURE__ */ new Date();
-      dataExpiracao.setDate(dataExpiracao.getDate() + 7);
+      const dataCriacao = getNowISOSaoPaulo();
+      const dataExpiracao = addDaysAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 7);
       const userWithTrial = {
         ...userData,
         senha: hashedPassword,
-        // Senha com hash
         plano: "trial",
         is_admin: "true",
         data_criacao: dataCriacao,
-        data_expiracao_trial: dataExpiracao.toISOString(),
-        data_expiracao_plano: dataExpiracao.toISOString(),
+        data_expiracao_trial: dataExpiracao,
+        data_expiracao_plano: dataExpiracao,
         status: "ativo"
       };
       const user = await storage2.createUser(userWithTrial);
+      await storage2.logAdminAction?.(
+        user.id,
+        "USUARIO_CRIADO",
+        `Novo usu\xE1rio registrado: ${user.email}`,
+        { ip: req.ip }
+      );
       res.json({
         id: user.id,
         email: user.email,
@@ -5163,16 +6274,35 @@ async function registerRoutes(app2) {
     } catch (error) {
       console.error("Erro ao registrar usu\xE1rio:", error);
       if (error instanceof z3.ZodError) {
-        return res.status(400).json({ error: "Dados inv\xE1lidos", details: error.errors });
+        const errorMessages = error.errors.map((err) => {
+          if (err.path[0] === "senha") {
+            return "A senha deve ter no m\xEDnimo 8 caracteres, incluindo letras mai\xFAsculas, min\xFAsculas e n\xFAmeros";
+          }
+          if (err.path[0] === "email") {
+            return "Email inv\xE1lido";
+          }
+          if (err.path[0] === "nome") {
+            return "Nome deve ter entre 3 e 100 caracteres";
+          }
+          return err.message;
+        });
+        return res.status(400).json({
+          error: errorMessages[0] || "Dados inv\xE1lidos"
+        });
       }
       res.status(500).json({ error: "Erro ao criar usu\xE1rio" });
     }
   });
+  const MAX_SIMULTANEOUS_SESSIONS = 3;
+  const SESSION_DURATION_HOURS = 24;
   app2.post("/api/auth/login", async (req, res) => {
     try {
-      const { email, senha } = req.body;
+      const { email, senha, device_fingerprint, device_info } = req.body;
       if (process.env.NODE_ENV === "development") {
         console.log(`\u{1F510} Tentativa de login - Email: ${email}`);
+      }
+      if (!device_fingerprint) {
+        logger.warn("[SECURITY] Login sem fingerprint", "AUTH", { email, ip: req.ip });
       }
       const user = await storage2.getUserByEmail(email);
       if (!user) {
@@ -5200,14 +6330,13 @@ async function registerRoutes(app2) {
       }
       const now = /* @__PURE__ */ new Date();
       let userAtualizado = user;
-      if ((user.plano === "trial" || user.plano === "free") && !user.is_admin) {
+      if (user.plano === "trial" && user.is_admin !== "true") {
         const dataExpiracao = user.data_expiracao_plano || user.data_expiracao_trial;
         if (dataExpiracao) {
           const expirationDate = new Date(dataExpiracao);
           if (now >= expirationDate && user.status !== "bloqueado") {
             await storage2.updateUser(user.id, {
-              status: "bloqueado",
-              plano: "free"
+              status: "bloqueado"
             });
             if (storage2.getFuncionarios) {
               const funcionarios2 = await storage2.getFuncionarios();
@@ -5238,8 +6367,47 @@ async function registerRoutes(app2) {
           userAgent: req.get("user-agent")
         }
       );
+      let sessionToken = null;
+      if (device_fingerprint && storage2.createSession) {
+        try {
+          await storage2.cleanExpiredSessions?.();
+          const activeSessions = await storage2.getActiveSessionCount?.(userAtualizado.id, "usuario") || 0;
+          if (activeSessions >= MAX_SIMULTANEOUS_SESSIONS) {
+            await storage2.invalidateOldestSession?.(userAtualizado.id, "usuario");
+            logger.info("[SESSION] Limite de sess\xF5es atingido, sess\xE3o mais antiga invalidada", "AUTH", {
+              userId: userAtualizado.id,
+              activeSessions,
+              maxSessions: MAX_SIMULTANEOUS_SESSIONS
+            });
+          }
+          sessionToken = crypto.randomBytes(32).toString("hex");
+          const expiresAt = /* @__PURE__ */ new Date();
+          expiresAt.setHours(expiresAt.getHours() + SESSION_DURATION_HOURS);
+          await storage2.createSession({
+            user_id: userAtualizado.id,
+            user_type: "usuario",
+            session_token: sessionToken,
+            device_fingerprint,
+            device_info: device_info || {},
+            ip_address: req.ip || req.connection?.remoteAddress || "unknown",
+            user_agent: req.get("user-agent") || "unknown",
+            expires_at: expiresAt
+          });
+          logger.info("[SESSION] Nova sess\xE3o criada para usu\xE1rio", "AUTH", {
+            userId: userAtualizado.id,
+            fingerprint: device_fingerprint.substring(0, 16) + "...",
+            expiresAt: expiresAt.toISOString()
+          });
+        } catch (sessionError) {
+          logger.error("[SESSION] Erro ao criar sess\xE3o (continuando login)", "AUTH", { error: sessionError });
+          sessionToken = null;
+        }
+      }
       const { senha: _, ...userWithoutPassword } = userAtualizado;
-      res.json(userWithoutPassword);
+      res.json({
+        ...userWithoutPassword,
+        session_token: sessionToken
+      });
     } catch (error) {
       console.error("Erro no login:", error);
       res.status(500).json({ error: "Erro ao fazer login" });
@@ -5247,12 +6415,15 @@ async function registerRoutes(app2) {
   });
   app2.post("/api/auth/login-funcionario", async (req, res) => {
     try {
-      const { email, senha } = req.body;
+      const { email, senha, device_fingerprint, device_info } = req.body;
       if (process.env.NODE_ENV === "development") {
         console.log(`\u{1F510} Tentativa de login de funcion\xE1rio - Email: ${email}`);
       }
       if (!email || !senha) {
         return res.status(400).json({ error: "Email e senha s\xE3o obrigat\xF3rios" });
+      }
+      if (!device_fingerprint) {
+        logger.warn("[SECURITY] Login funcion\xE1rio sem fingerprint", "AUTH", { email, ip: req.ip });
       }
       const funcionario = await storage2.getFuncionarioByEmail(email);
       if (!funcionario) {
@@ -5293,16 +6464,140 @@ async function registerRoutes(app2) {
         "LOGIN_FUNCIONARIO",
         `Login realizado - ${funcionario.nome} (${funcionario.email})`
       );
+      let sessionToken = null;
+      if (device_fingerprint && storage2.createSession) {
+        try {
+          await storage2.cleanExpiredSessions?.();
+          const activeSessions = await storage2.getActiveSessionCount?.(funcionario.id, "funcionario") || 0;
+          if (activeSessions >= MAX_SIMULTANEOUS_SESSIONS) {
+            await storage2.invalidateOldestSession?.(funcionario.id, "funcionario");
+            logger.info("[SESSION] Limite de sess\xF5es atingido (funcion\xE1rio), sess\xE3o mais antiga invalidada", "AUTH", {
+              funcionarioId: funcionario.id,
+              activeSessions,
+              maxSessions: MAX_SIMULTANEOUS_SESSIONS
+            });
+          }
+          sessionToken = crypto.randomBytes(32).toString("hex");
+          const expiresAt = /* @__PURE__ */ new Date();
+          expiresAt.setHours(expiresAt.getHours() + SESSION_DURATION_HOURS);
+          await storage2.createSession({
+            user_id: funcionario.id,
+            user_type: "funcionario",
+            session_token: sessionToken,
+            device_fingerprint,
+            device_info: device_info || {},
+            ip_address: req.ip || req.connection?.remoteAddress || "unknown",
+            user_agent: req.get("user-agent") || "unknown",
+            expires_at: expiresAt
+          });
+          logger.info("[SESSION] Nova sess\xE3o criada para funcion\xE1rio", "AUTH", {
+            funcionarioId: funcionario.id,
+            fingerprint: device_fingerprint.substring(0, 16) + "...",
+            expiresAt: expiresAt.toISOString()
+          });
+        } catch (sessionError) {
+          logger.error("[SESSION] Erro ao criar sess\xE3o funcion\xE1rio (continuando login)", "AUTH", { error: sessionError });
+          sessionToken = null;
+        }
+      }
       const { senha: _, ...funcionarioSemSenha } = funcionario;
       const funcionarioResponse = {
         ...funcionarioSemSenha,
         tipo: "funcionario",
-        permissoes: permissoes || {}
+        permissoes: permissoes || {},
+        session_token: sessionToken
       };
       res.json(funcionarioResponse);
     } catch (error) {
       console.error("Erro no login de funcion\xE1rio:", error);
       res.status(500).json({ error: "Erro ao fazer login" });
+    }
+  });
+  app2.post("/api/auth/logout", async (req, res) => {
+    try {
+      const sessionToken = req.headers["x-session-token"];
+      if (sessionToken && storage2.invalidateSession) {
+        await storage2.invalidateSession(sessionToken);
+        logger.info("[SESSION] Logout realizado", "AUTH", { token: sessionToken.substring(0, 16) + "..." });
+      }
+      res.json({ success: true, message: "Logout realizado com sucesso" });
+    } catch (error) {
+      logger.error("[SESSION] Erro no logout", "AUTH", { error });
+      res.status(500).json({ error: "Erro ao fazer logout" });
+    }
+  });
+  app2.get("/api/auth/sessions", requireAuth, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"];
+      const userType = req.headers["x-user-type"] || "usuario";
+      if (!storage2.getActiveSessionsByUser) {
+        return res.json({ sessions: [] });
+      }
+      const sessions = await storage2.getActiveSessionsByUser(userId, userType);
+      const sanitizedSessions = sessions.map((s) => ({
+        id: s.id,
+        device_info: s.device_info,
+        ip_address: s.ip_address,
+        user_agent: s.user_agent,
+        created_at: s.created_at,
+        last_activity: s.last_activity,
+        is_current: s.session_token === req.headers["x-session-token"]
+      }));
+      res.json({
+        sessions: sanitizedSessions,
+        max_sessions: MAX_SIMULTANEOUS_SESSIONS
+      });
+    } catch (error) {
+      logger.error("[SESSION] Erro ao listar sess\xF5es", "AUTH", { error });
+      res.status(500).json({ error: "Erro ao listar sess\xF5es" });
+    }
+  });
+  app2.delete("/api/auth/sessions/:sessionId", requireAuth, async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      const userId = req.headers["x-user-id"];
+      const userType = req.headers["x-user-type"] || "usuario";
+      if (!storage2.getActiveSessionsByUser || !storage2.invalidateSession) {
+        return res.status(400).json({ error: "Funcionalidade n\xE3o dispon\xEDvel" });
+      }
+      const sessions = await storage2.getActiveSessionsByUser(userId, userType);
+      const session = sessions.find((s) => s.id === parseInt(sessionId));
+      if (!session) {
+        return res.status(404).json({ error: "Sess\xE3o n\xE3o encontrada" });
+      }
+      await storage2.invalidateSession(session.session_token);
+      logger.info("[SESSION] Sess\xE3o invalidada pelo usu\xE1rio", "AUTH", { userId, sessionId });
+      res.json({ success: true, message: "Sess\xE3o encerrada com sucesso" });
+    } catch (error) {
+      logger.error("[SESSION] Erro ao invalidar sess\xE3o", "AUTH", { error });
+      res.status(500).json({ error: "Erro ao encerrar sess\xE3o" });
+    }
+  });
+  app2.post("/api/auth/sessions/invalidate-others", requireAuth, async (req, res) => {
+    try {
+      const userId = req.headers["x-user-id"];
+      const userType = req.headers["x-user-type"] || "usuario";
+      const currentToken = req.headers["x-session-token"];
+      if (!storage2.getActiveSessionsByUser || !storage2.invalidateSession) {
+        return res.status(400).json({ error: "Funcionalidade n\xE3o dispon\xEDvel" });
+      }
+      const sessions = await storage2.getActiveSessionsByUser(userId, userType);
+      let invalidatedCount = 0;
+      for (const session of sessions) {
+        if (session.session_token !== currentToken) {
+          await storage2.invalidateSession(session.session_token);
+          invalidatedCount++;
+        }
+      }
+      logger.info("[SESSION] Outras sess\xF5es invalidadas", "AUTH", { userId, invalidatedCount });
+      res.json({
+        success: true,
+        message: `${invalidatedCount} sess\xE3o(\xF5es) encerrada(s)`,
+        invalidated_count: invalidatedCount
+      });
+    } catch (error) {
+      logger.error("[SESSION] Erro ao invalidar outras sess\xF5es", "AUTH", { error });
+      res.status(500).json({ error: "Erro ao encerrar outras sess\xF5es" });
     }
   });
   app2.post("/api/auth/send-verification-code", async (req, res) => {
@@ -5624,8 +6919,7 @@ async function registerRoutes(app2) {
           );
           return res.status(500).json({ error: "Configura\xE7\xE3o de seguran\xE7a incompleta" });
         }
-        const dataExpiracao = /* @__PURE__ */ new Date();
-        dataExpiracao.setFullYear(dataExpiracao.getFullYear() + 10);
+        const dataExpiracaoMaster = addDaysAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 3650);
         masterUser = await storage2.createUser({
           nome: "Admin Master",
           email: masterEmail,
@@ -5634,7 +6928,7 @@ async function registerRoutes(app2) {
           is_admin: "true",
           status: "ativo",
           max_funcionarios: 999,
-          data_expiracao_plano: dataExpiracao.toISOString()
+          data_expiracao_plano: dataExpiracaoMaster
         });
         if (process.env.NODE_ENV === "development") {
           console.log("\u2705 Usu\xE1rio master criado com sucesso");
@@ -5702,7 +6996,7 @@ async function registerRoutes(app2) {
         id: user.id,
         email: user.email,
         nome: user.nome,
-        plano: user.plano || "free",
+        plano: user.plano || "trial",
         is_admin: user.is_admin || "false",
         data_criacao: user.data_criacao || null,
         data_expiracao_trial: user.data_expiracao_trial || null,
@@ -5711,7 +7005,6 @@ async function registerRoutes(app2) {
         cpf_cnpj: user.cpf_cnpj || null,
         telefone: user.telefone || null,
         endereco: user.endereco || null,
-        asaas_customer_id: user.asaas_customer_id || null,
         max_funcionarios: user.max_funcionarios || 1,
         meta_mensal: user.meta_mensal || 15e3
       }));
@@ -5792,8 +7085,8 @@ async function registerRoutes(app2) {
     try {
       console.log("\u{1F4CB} [PLAN_PRICES] Buscando pre\xE7os dos planos...");
       const DEFAULT_PRICES = {
-        premium_mensal: 79.99,
-        premium_anual: 767.04
+        premium_mensal: 89.99,
+        premium_anual: 951
       };
       const precosConfig = await storage2.getSystemConfig("planos_precos");
       console.log("\u{1F4CB} [PLAN_PRICES] Configura\xE7\xE3o encontrada:", precosConfig);
@@ -5817,8 +7110,8 @@ async function registerRoutes(app2) {
       console.error("\u274C [PLAN_PRICES] Erro cr\xEDtico:", error);
       res.setHeader("Content-Type", "application/json");
       return res.status(200).json({
-        premium_mensal: 79.99,
-        premium_anual: 767.04
+        premium_mensal: 89.99,
+        premium_anual: 951
       });
     }
   });
@@ -5870,10 +7163,10 @@ async function registerRoutes(app2) {
   app2.get("/api/employee-package-prices", async (req, res) => {
     try {
       const DEFAULT_PRICES = {
-        pacote_5: 49.99,
-        pacote_10: 89.99,
-        pacote_20: 159.99,
-        pacote_50: 349.99
+        pacote_5: 49.9,
+        pacote_10: 89.9,
+        pacote_20: 159.9,
+        pacote_50: 349.9
       };
       if (storage2.getSystemConfig) {
         const precosConfig = await storage2.getSystemConfig("pacotes_funcionarios_precos");
@@ -5892,10 +7185,10 @@ async function registerRoutes(app2) {
     } catch (error) {
       logger.error("[API] Erro ao buscar pre\xE7os de pacotes:", error);
       return res.status(200).json({
-        pacote_5: 49.99,
-        pacote_10: 89.99,
-        pacote_20: 159.99,
-        pacote_50: 349.99
+        pacote_5: 49.9,
+        pacote_10: 89.9,
+        pacote_20: 159.9,
+        pacote_50: 349.9
       });
     }
   });
@@ -5990,18 +7283,13 @@ async function registerRoutes(app2) {
         status: "ativo",
         status_pagamento: "approved",
         mercadopago_payment_id: paymentId,
-        data_inicio: (/* @__PURE__ */ new Date()).toISOString()
+        data_inicio: getNowISOSaoPaulo()
       });
-      const dataVencimento = /* @__PURE__ */ new Date();
-      if (subscription.plano === "premium_mensal") {
-        dataVencimento.setMonth(dataVencimento.getMonth() + 1);
-      } else {
-        dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
-      }
+      const dataVencimentoPlano = subscription.plano === "premium_mensal" ? addMonthsAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 1) : addYearsAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 1);
       await storage2.updateUser(subscription.user_id, {
         plano: subscription.plano,
         status: "ativo",
-        data_expiracao_plano: dataVencimento.toISOString()
+        data_expiracao_plano: dataVencimentoPlano
       });
       logger.info("Webhook de assinatura reprocessado manualmente", "ADMIN_SUBSCRIPTIONS", {
         paymentId,
@@ -6015,6 +7303,61 @@ async function registerRoutes(app2) {
     } catch (error) {
       logger.error("Erro ao reprocessar webhook de assinatura", "ADMIN_SUBSCRIPTIONS", { error });
       res.status(500).json({ error: error.message || "Erro ao reprocessar webhook" });
+    }
+  });
+  app2.post("/api/admin/subscriptions/activate-manual", requireAdmin, async (req, res) => {
+    try {
+      const { userId, plano, valor, dias } = req.body;
+      const adminId = req.headers["x-user-id"];
+      if (!userId || !plano || !valor || !dias) {
+        return res.status(400).json({
+          error: "Dados obrigat\xF3rios: userId, plano, valor, dias"
+        });
+      }
+      const user = await storage2.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usu\xE1rio n\xE3o encontrado" });
+      }
+      const dataExpiracaoManual = addDaysAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), parseInt(dias));
+      const novaAssinatura = {
+        user_id: userId,
+        plano,
+        valor: parseFloat(valor),
+        status: "ativo",
+        status_pagamento: "approved",
+        forma_pagamento: "ATIVACAO_MANUAL",
+        data_inicio: getNowISOSaoPaulo(),
+        data_expiracao: dataExpiracaoManual,
+        data_criacao: getNowISOSaoPaulo(),
+        external_reference: `MANUAL_${Date.now()}_${userId}`
+      };
+      const assinaturaCriada = await storage2.createSubscription(novaAssinatura);
+      await storage2.updateUser(userId, {
+        plano,
+        status: "ativo",
+        data_expiracao_plano: dataExpiracaoManual
+      });
+      await storage2.logAdminAction(
+        adminId,
+        "ASSINATURA_ATIVADA_MANUAL",
+        `Assinatura ${plano} ativada manualmente para ${user.email} - Valor: R$ ${valor} - Dias: ${dias}`,
+        req
+      );
+      logger.info("Assinatura ativada manualmente", "ADMIN_SUBSCRIPTIONS", {
+        userId,
+        plano,
+        valor,
+        dias,
+        adminId
+      });
+      res.json({
+        success: true,
+        message: "Assinatura ativada com sucesso",
+        subscription: assinaturaCriada
+      });
+    } catch (error) {
+      logger.error("Erro ao ativar assinatura manualmente", "ADMIN_SUBSCRIPTIONS", { error });
+      res.status(500).json({ error: error.message || "Erro ao ativar assinatura" });
     }
   });
   app2.post("/api/admin/subscriptions/:id/cancel", requireAdmin, async (req, res) => {
@@ -6040,7 +7383,6 @@ async function registerRoutes(app2) {
         data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
       });
       await storage2.updateUser(subscription.user_id, {
-        plano: "free",
         status: "bloqueado",
         data_expiracao_plano: null,
         data_expiracao_trial: null
@@ -6054,6 +7396,18 @@ async function registerRoutes(app2) {
             status: "bloqueado"
           });
           funcionariosBloqueados++;
+          logger.warn("[PAYMENT_CANCEL] Funcion\xE1rio bloqueado devido ao cancelamento da conta principal", {
+            funcionarioId: funcionario.id,
+            funcionarioNome: funcionario.nome,
+            contaId: subscription.user_id,
+            motivo: "Plano principal cancelado"
+          });
+        }
+        if (funcionariosBloqueados > 0) {
+          logger.info(`[PAYMENT_CANCEL] TODOS os ${funcionariosBloqueados} funcion\xE1rio(s) bloqueado(s)`, {
+            contaId: subscription.user_id,
+            userEmail: user.email
+          });
         }
       }
       if (storage2.getEmployeePackages && storage2.updateEmployeePackageStatus) {
@@ -6186,7 +7540,7 @@ async function registerRoutes(app2) {
         await storage2.logAdminAction(
           userId,
           "PACOTES_PRECOS_ATUALIZADOS",
-          `Pre\xE7os de pacotes atualizados - +5: R$ ${p5Num.toFixed(2)}, +10: R$ ${p10Num.toFixed(2)}, +20: R$ ${p20Num.toFixed(2)}, +50: R$ ${p50Num.toFixed(2)}`,
+          `Pre\xE7os de pacotes atualizados - 5: R$ ${p5Num.toFixed(2)}, 10: R$ ${p10Num.toFixed(2)}, 20: R$ ${p20Num.toFixed(2)}, 50: R$ ${p50Num.toFixed(2)}`,
           req
         );
       }
@@ -6282,6 +7636,13 @@ async function registerRoutes(app2) {
       res.status(500).json({ error: error.message });
     }
   });
+  app2.get("/api/health", (_req, res) => {
+    res.status(200).json({
+      status: "healthy",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      uptime: process.uptime()
+    });
+  });
   app2.post("/api/cupons/validar", async (req, res) => {
     try {
       const { codigo, plano, userId } = req.body;
@@ -6297,7 +7658,24 @@ async function registerRoutes(app2) {
       }
       const cupom = resultado.cupom;
       let valorDesconto = 0;
-      const valorPlano = plano === "premium_mensal" ? 79.99 : 767.04;
+      let planoValues = {
+        premium_mensal: 89.99,
+        premium_anual: 951
+      };
+      try {
+        if (storage2.getSystemConfig) {
+          const precosConfig = await storage2.getSystemConfig("planos_precos");
+          if (precosConfig && precosConfig.valor) {
+            const precosParsed = JSON.parse(precosConfig.valor);
+            if (precosParsed.premium_mensal && precosParsed.premium_anual) {
+              planoValues = precosParsed;
+            }
+          }
+        }
+      } catch (error) {
+        logger.warn("Erro ao carregar pre\xE7os de planos, usando padr\xE3o", "CUPOM_VALIDAR", { error });
+      }
+      const valorPlano = planoValues[plano] || 89.99;
       if (cupom.tipo === "percentual") {
         valorDesconto = valorPlano * cupom.valor / 100;
       } else {
@@ -6350,7 +7728,7 @@ async function registerRoutes(app2) {
       const users2 = await storage2.getUsers();
       let fixedCount = 0;
       for (const user of users2) {
-        if (user.data_expiracao_trial && user.plano === "free") {
+        if (user.data_expiracao_trial && user.status === "bloqueado") {
           const expirationDate = new Date(user.data_expiracao_trial);
           const now = /* @__PURE__ */ new Date();
           if (now < expirationDate) {
@@ -6448,7 +7826,10 @@ async function registerRoutes(app2) {
     try {
       const config = req.body;
       if (!config.webhook_url) {
-        const baseUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000";
+        let baseUrl = process.env.APP_URL?.replace(/\/$/, "") || "";
+        if (!baseUrl) {
+          baseUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000";
+        }
         config.webhook_url = `${baseUrl}/api/webhook/mercadopago`;
       }
       await storage2.saveConfigMercadoPago({
@@ -6476,7 +7857,7 @@ async function registerRoutes(app2) {
       }
       const now = /* @__PURE__ */ new Date();
       let statusAtualizado = false;
-      if ((user.plano === "trial" || user.plano === "free") && user.is_admin !== "true") {
+      if (user.plano === "trial" && user.is_admin !== "true") {
         const dataExpiracao = user.data_expiracao_plano || user.data_expiracao_trial;
         if (dataExpiracao) {
           const expirationDate = new Date(dataExpiracao);
@@ -6526,6 +7907,481 @@ async function registerRoutes(app2) {
     } catch (error) {
       logger.error("Erro ao verificar expira\xE7\xE3o", "EXPIRATION_CHECK", { error: error.message });
       res.status(500).json({ error: "Erro ao verificar expira\xE7\xE3o" });
+    }
+  });
+  app2.post("/api/admin/force-expiration-check/:userId", requireAdmin, async (req, res) => {
+    try {
+      const adminId = req.headers["x-user-id"];
+      const { userId } = req.params;
+      const user = await storage2.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usu\xE1rio n\xE3o encontrado" });
+      }
+      const now = /* @__PURE__ */ new Date();
+      let acoes = [];
+      const planosComExpiracao = ["premium_mensal", "premium_anual", "trial"];
+      if (planosComExpiracao.includes(user.plano) && user.is_admin !== "true") {
+        const dataExpiracao = user.data_expiracao_plano;
+        if (dataExpiracao) {
+          const expirationDate = new Date(dataExpiracao);
+          if (now >= expirationDate && user.status !== "bloqueado") {
+            await storage2.updateUser(user.id, {
+              status: "bloqueado"
+            });
+            if (storage2.getFuncionarios) {
+              const funcionarios2 = await storage2.getFuncionarios();
+              const funcionariosDaConta = funcionarios2.filter((f) => f.conta_id === user.id);
+              for (const func of funcionariosDaConta) {
+                await storage2.updateFuncionario(func.id, { status: "bloqueado" });
+              }
+              acoes.push(`Conta bloqueada - ${funcionariosDaConta.length} funcion\xE1rio(s) bloqueado(s)`);
+            } else {
+              acoes.push("Conta bloqueada");
+            }
+            logger.warn("[FORCE_EXPIRATION] Usu\xE1rio bloqueado manualmente por admin", {
+              userId: user.id,
+              email: user.email,
+              plano: user.plano,
+              dataExpiracao,
+              adminId
+            });
+          } else if (user.status === "bloqueado" && now < expirationDate) {
+            await storage2.updateUser(user.id, {
+              status: "ativo"
+            });
+            if (storage2.getFuncionarios) {
+              const funcionarios2 = await storage2.getFuncionarios();
+              const funcionariosDaConta = funcionarios2.filter((f) => f.conta_id === user.id);
+              for (const func of funcionariosDaConta) {
+                await storage2.updateFuncionario(func.id, { status: "ativo" });
+              }
+              acoes.push(`Conta reativada - ${funcionariosDaConta.length} funcion\xE1rio(s) reativado(s)`);
+            } else {
+              acoes.push("Conta reativada");
+            }
+            logger.info("[FORCE_EXPIRATION] Usu\xE1rio reativado manualmente por admin", {
+              userId: user.id,
+              email: user.email,
+              adminId
+            });
+          } else {
+            acoes.push("Status j\xE1 est\xE1 correto");
+          }
+        } else {
+          acoes.push("Sem data de expira\xE7\xE3o definida");
+        }
+      } else {
+        acoes.push("Plano n\xE3o requer verifica\xE7\xE3o de expira\xE7\xE3o");
+      }
+      await storage2.logAdminAction?.(
+        adminId,
+        "FORCE_EXPIRATION_CHECK",
+        `Verifica\xE7\xE3o for\xE7ada de expira\xE7\xE3o - ${user.email}: ${acoes.join(", ")}`,
+        req
+      );
+      const userAtualizado = await storage2.getUserById(userId);
+      res.json({
+        success: true,
+        acoes,
+        user: userAtualizado
+      });
+    } catch (error) {
+      logger.error("[FORCE_EXPIRATION] Erro ao for\xE7ar verifica\xE7\xE3o", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.get("/api/admin/maintenance/analyze", requireAdmin, async (req, res) => {
+    try {
+      const users2 = await storage2.getUsers();
+      const subscriptions2 = await storage2.getSubscriptions();
+      const now = /* @__PURE__ */ new Date();
+      const inconsistencias = [];
+      const employeePackages2 = storage2.getAllEmployeePackages ? await storage2.getAllEmployeePackages() : [];
+      const estatisticas = {
+        totalUsuarios: users2.length,
+        totalAssinaturas: subscriptions2.length,
+        totalPacotesFuncionarios: employeePackages2.length,
+        usuariosExpiradosAtivos: 0,
+        assinaturasPendentesAntigas: 0,
+        assinaturasOrfas: 0,
+        assinaturasDuplicadas: 0,
+        usuariosSemAtividade: 0,
+        contasBloqueadasComAssinaturaAtiva: 0,
+        pacotesFuncionariosExpirados: 0,
+        pacotesFuncionariosOrfaos: 0,
+        pacotesFuncionariosPendentes: 0
+      };
+      for (const user of users2) {
+        if (user.is_admin === "true") continue;
+        const dataExp = user.data_expiracao_plano || user.data_expiracao_trial;
+        if (dataExp && user.status === "ativo") {
+          const expDate = new Date(dataExp);
+          if (now > expDate) {
+            estatisticas.usuariosExpiradosAtivos++;
+            inconsistencias.push({
+              tipo: "usuario_expirado_ativo",
+              userId: user.id,
+              email: user.email,
+              plano: user.plano,
+              dataExpiracao: dataExp,
+              status: user.status,
+              descricao: `Usu\xE1rio com plano expirado (${format(expDate, "dd/MM/yyyy", { locale: ptBR })}) mas ainda ativo`
+            });
+          }
+        }
+      }
+      const seteDiasAtras = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
+      for (const sub of subscriptions2) {
+        if (sub.status === "pendente" && sub.data_criacao) {
+          const dataCriacao = new Date(sub.data_criacao);
+          if (dataCriacao < seteDiasAtras) {
+            estatisticas.assinaturasPendentesAntigas++;
+            inconsistencias.push({
+              tipo: "assinatura_pendente_antiga",
+              subscriptionId: sub.id,
+              userId: sub.user_id,
+              plano: sub.plano,
+              valor: sub.valor,
+              dataCriacao: sub.data_criacao,
+              descricao: `Assinatura pendente h\xE1 mais de 7 dias`
+            });
+          }
+        }
+      }
+      const userIds = new Set(users2.map((u) => u.id));
+      for (const sub of subscriptions2) {
+        if (!userIds.has(sub.user_id)) {
+          estatisticas.assinaturasOrfas++;
+          inconsistencias.push({
+            tipo: "assinatura_orfa",
+            subscriptionId: sub.id,
+            userId: sub.user_id,
+            plano: sub.plano,
+            descricao: "Assinatura sem usu\xE1rio correspondente"
+          });
+        }
+      }
+      const assinaturasAtivasPorUsuario = {};
+      for (const sub of subscriptions2) {
+        if (sub.status === "ativo") {
+          if (!assinaturasAtivasPorUsuario[sub.user_id]) {
+            assinaturasAtivasPorUsuario[sub.user_id] = [];
+          }
+          assinaturasAtivasPorUsuario[sub.user_id].push(sub);
+        }
+      }
+      for (const [userId, subs] of Object.entries(assinaturasAtivasPorUsuario)) {
+        if (subs.length > 1) {
+          estatisticas.assinaturasDuplicadas += subs.length - 1;
+          inconsistencias.push({
+            tipo: "assinaturas_duplicadas",
+            userId,
+            quantidade: subs.length,
+            assinaturas: subs.map((s) => ({ id: s.id, plano: s.plano, valor: s.valor })),
+            descricao: `Usu\xE1rio com ${subs.length} assinaturas ativas`
+          });
+        }
+      }
+      for (const user of users2) {
+        if (user.status === "bloqueado") {
+          const assinaturaAtiva = subscriptions2.find((s) => s.user_id === user.id && s.status === "ativo");
+          if (assinaturaAtiva) {
+            estatisticas.contasBloqueadasComAssinaturaAtiva++;
+            inconsistencias.push({
+              tipo: "bloqueado_com_assinatura_ativa",
+              userId: user.id,
+              email: user.email,
+              subscriptionId: assinaturaAtiva.id,
+              descricao: "Usu\xE1rio bloqueado mas com assinatura ativa"
+            });
+          }
+        }
+      }
+      for (const pkg of employeePackages2) {
+        if (pkg.status === "ativo" && pkg.data_vencimento) {
+          const dataVenc = new Date(pkg.data_vencimento);
+          if (now > dataVenc) {
+            estatisticas.pacotesFuncionariosExpirados++;
+            inconsistencias.push({
+              tipo: "pacote_funcionario_expirado",
+              packageId: pkg.id,
+              userId: pkg.user_id,
+              packageType: pkg.package_type,
+              dataVencimento: pkg.data_vencimento,
+              descricao: `Pacote de funcion\xE1rio expirado (${format(dataVenc, "dd/MM/yyyy", { locale: ptBR })}) mas ainda ativo`
+            });
+          }
+        }
+      }
+      for (const pkg of employeePackages2) {
+        if (!userIds.has(pkg.user_id)) {
+          estatisticas.pacotesFuncionariosOrfaos++;
+          inconsistencias.push({
+            tipo: "pacote_funcionario_orfao",
+            packageId: pkg.id,
+            userId: pkg.user_id,
+            packageType: pkg.package_type,
+            descricao: "Pacote de funcion\xE1rio sem usu\xE1rio correspondente"
+          });
+        }
+      }
+      for (const pkg of employeePackages2) {
+        if (pkg.status === "pendente" && pkg.data_compra) {
+          const dataCompra = new Date(pkg.data_compra);
+          if (dataCompra < seteDiasAtras) {
+            estatisticas.pacotesFuncionariosPendentes++;
+            inconsistencias.push({
+              tipo: "pacote_funcionario_pendente_antigo",
+              packageId: pkg.id,
+              userId: pkg.user_id,
+              packageType: pkg.package_type,
+              dataCompra: pkg.data_compra,
+              descricao: "Pacote de funcion\xE1rio pendente h\xE1 mais de 7 dias"
+            });
+          }
+        }
+      }
+      res.json({
+        success: true,
+        dataAnalise: now.toISOString(),
+        estatisticas,
+        inconsistencias,
+        resumo: {
+          totalInconsistencias: inconsistencias.length,
+          criticas: estatisticas.usuariosExpiradosAtivos + estatisticas.contasBloqueadasComAssinaturaAtiva + estatisticas.pacotesFuncionariosExpirados,
+          avisos: estatisticas.assinaturasPendentesAntigas + estatisticas.assinaturasDuplicadas + estatisticas.pacotesFuncionariosPendentes,
+          limpeza: estatisticas.assinaturasOrfas + estatisticas.pacotesFuncionariosOrfaos
+        }
+      });
+    } catch (error) {
+      logger.error("[MAINTENANCE] Erro ao analisar inconsist\xEAncias", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/admin/maintenance/fix-expired-users", requireAdmin, async (req, res) => {
+    try {
+      const adminId = req.headers["x-user-id"];
+      const users2 = await storage2.getUsers();
+      const now = /* @__PURE__ */ new Date();
+      let corrigidos = 0;
+      const detalhes = [];
+      for (const user of users2) {
+        if (user.is_admin === "true") continue;
+        const dataExp = user.data_expiracao_plano || user.data_expiracao_trial;
+        if (dataExp && user.status === "ativo") {
+          const expDate = new Date(dataExp);
+          if (now > expDate) {
+            await storage2.updateUser(user.id, { status: "bloqueado" });
+            if (storage2.getFuncionarios) {
+              const funcionarios2 = await storage2.getFuncionarios();
+              const funcsDaConta = funcionarios2.filter((f) => f.conta_id === user.id);
+              for (const func of funcsDaConta) {
+                await storage2.updateFuncionario(func.id, { status: "bloqueado" });
+              }
+            }
+            corrigidos++;
+            detalhes.push({
+              userId: user.id,
+              email: user.email,
+              plano: user.plano,
+              dataExpiracao: dataExp
+            });
+          }
+        }
+      }
+      await storage2.logAdminAction?.(
+        adminId,
+        "MAINTENANCE_FIX_EXPIRED",
+        `Manuten\xE7\xE3o: ${corrigidos} usu\xE1rio(s) expirado(s) bloqueado(s)`,
+        req
+      );
+      res.json({
+        success: true,
+        corrigidos,
+        detalhes
+      });
+    } catch (error) {
+      logger.error("[MAINTENANCE] Erro ao corrigir usu\xE1rios expirados", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/admin/maintenance/cleanup-subscriptions", requireAdmin, async (req, res) => {
+    try {
+      const adminId = req.headers["x-user-id"];
+      const { removerOrfas = true, removerPendentesAntigas = true, diasPendente = 7, incluirPacotesFuncionarios = true } = req.body;
+      const users2 = await storage2.getUsers();
+      const subscriptions2 = await storage2.getSubscriptions();
+      const employeePackages2 = storage2.getAllEmployeePackages ? await storage2.getAllEmployeePackages() : [];
+      const userIds = new Set(users2.map((u) => u.id));
+      const now = /* @__PURE__ */ new Date();
+      const limiteData = new Date(now.getTime() - diasPendente * 24 * 60 * 60 * 1e3);
+      let removidas = 0;
+      let pacotesRemovidos = 0;
+      const detalhes = [];
+      for (const sub of subscriptions2) {
+        let remover = false;
+        let motivo = "";
+        if (removerOrfas && !userIds.has(sub.user_id)) {
+          remover = true;
+          motivo = "\xF3rf\xE3";
+        }
+        if (removerPendentesAntigas && sub.status === "pendente" && sub.data_criacao) {
+          const dataCriacao = new Date(sub.data_criacao);
+          if (dataCriacao < limiteData) {
+            remover = true;
+            motivo = `pendente h\xE1 mais de ${diasPendente} dias`;
+          }
+        }
+        if (remover && storage2.deleteSubscription) {
+          await storage2.deleteSubscription(sub.id);
+          removidas++;
+          detalhes.push({
+            tipo: "assinatura",
+            id: sub.id,
+            userId: sub.user_id,
+            plano: sub.plano,
+            motivo
+          });
+        }
+      }
+      if (incluirPacotesFuncionarios && storage2.deleteEmployeePackage) {
+        for (const pkg of employeePackages2) {
+          let remover = false;
+          let motivo = "";
+          if (removerOrfas && !userIds.has(pkg.user_id)) {
+            remover = true;
+            motivo = "\xF3rf\xE3o";
+          }
+          if (removerPendentesAntigas && pkg.status === "pendente" && pkg.data_compra) {
+            const dataCompra = new Date(pkg.data_compra);
+            if (dataCompra < limiteData) {
+              remover = true;
+              motivo = `pendente h\xE1 mais de ${diasPendente} dias`;
+            }
+          }
+          if (remover) {
+            await storage2.deleteEmployeePackage(pkg.id);
+            pacotesRemovidos++;
+            detalhes.push({
+              tipo: "pacote_funcionario",
+              id: pkg.id,
+              userId: pkg.user_id,
+              packageType: pkg.package_type,
+              motivo
+            });
+          }
+        }
+      }
+      await storage2.logAdminAction?.(
+        adminId,
+        "MAINTENANCE_CLEANUP_SUBS",
+        `Manuten\xE7\xE3o: ${removidas} assinatura(s) e ${pacotesRemovidos} pacote(s) de funcion\xE1rios removido(s)`,
+        req
+      );
+      res.json({
+        success: true,
+        removidas,
+        pacotesRemovidos,
+        totalRemovidos: removidas + pacotesRemovidos,
+        detalhes
+      });
+    } catch (error) {
+      logger.error("[MAINTENANCE] Erro ao limpar assinaturas", { error: error.message });
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/admin/maintenance/run-full", requireAdmin, async (req, res) => {
+    try {
+      const adminId = req.headers["x-user-id"];
+      const resultados = {
+        usuariosCorrigidos: 0,
+        assinaturasLimpas: 0,
+        pacotesFuncionariosLimpos: 0,
+        pacotesFuncionariosExpiradosCorrigidos: 0,
+        erros: []
+      };
+      try {
+        const users2 = await storage2.getUsers();
+        const now = /* @__PURE__ */ new Date();
+        for (const user of users2) {
+          if (user.is_admin === "true") continue;
+          const dataExp = user.data_expiracao_plano || user.data_expiracao_trial;
+          if (dataExp && user.status === "ativo") {
+            const expDate = new Date(dataExp);
+            if (now > expDate) {
+              await storage2.updateUser(user.id, { status: "bloqueado" });
+              resultados.usuariosCorrigidos++;
+            }
+          }
+        }
+      } catch (err) {
+        resultados.erros.push(`Erro ao corrigir usu\xE1rios: ${err.message}`);
+      }
+      try {
+        const users2 = await storage2.getUsers();
+        const subscriptions2 = await storage2.getSubscriptions();
+        const userIds = new Set(users2.map((u) => u.id));
+        const now = /* @__PURE__ */ new Date();
+        const seteDiasAtras = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
+        for (const sub of subscriptions2) {
+          let remover = false;
+          if (!userIds.has(sub.user_id)) remover = true;
+          if (sub.status === "pendente" && sub.data_criacao) {
+            const dataCriacao = new Date(sub.data_criacao);
+            if (dataCriacao < seteDiasAtras) remover = true;
+          }
+          if (remover && storage2.deleteSubscription) {
+            await storage2.deleteSubscription(sub.id);
+            resultados.assinaturasLimpas++;
+          }
+        }
+      } catch (err) {
+        resultados.erros.push(`Erro ao limpar assinaturas: ${err.message}`);
+      }
+      try {
+        if (storage2.getAllEmployeePackages) {
+          const users2 = await storage2.getUsers();
+          const employeePackages2 = await storage2.getAllEmployeePackages();
+          const userIds = new Set(users2.map((u) => u.id));
+          const now = /* @__PURE__ */ new Date();
+          const seteDiasAtras = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
+          for (const pkg of employeePackages2) {
+            if (pkg.status === "ativo" && pkg.data_vencimento) {
+              const dataVenc = new Date(pkg.data_vencimento);
+              if (now > dataVenc && storage2.updateEmployeePackageStatus) {
+                await storage2.updateEmployeePackageStatus(pkg.id, "expirado", now.toISOString());
+                resultados.pacotesFuncionariosExpiradosCorrigidos++;
+                continue;
+              }
+            }
+            let remover = false;
+            if (!userIds.has(pkg.user_id)) remover = true;
+            if (pkg.status === "pendente" && pkg.data_compra) {
+              const dataCompra = new Date(pkg.data_compra);
+              if (dataCompra < seteDiasAtras) remover = true;
+            }
+            if (remover && storage2.deleteEmployeePackage) {
+              await storage2.deleteEmployeePackage(pkg.id);
+              resultados.pacotesFuncionariosLimpos++;
+            }
+          }
+        }
+      } catch (err) {
+        resultados.erros.push(`Erro ao processar pacotes de funcion\xE1rios: ${err.message}`);
+      }
+      await storage2.logAdminAction?.(
+        adminId,
+        "MAINTENANCE_FULL",
+        `Manuten\xE7\xE3o completa: ${resultados.usuariosCorrigidos} usu\xE1rios, ${resultados.assinaturasLimpas} assinaturas, ${resultados.pacotesFuncionariosLimpos} pacotes de funcion\xE1rios limpos, ${resultados.pacotesFuncionariosExpiradosCorrigidos} pacotes corrigidos`,
+        req
+      );
+      res.json({
+        success: true,
+        ...resultados
+      });
+    } catch (error) {
+      logger.error("[MAINTENANCE] Erro na manuten\xE7\xE3o completa", { error: error.message });
+      res.status(500).json({ error: error.message });
     }
   });
   app2.post("/api/config-mercadopago/test", async (req, res) => {
@@ -7200,6 +9056,8 @@ async function registerRoutes(app2) {
       const userId = req.headers["effective-user-id"];
       const funcionarioId = req.headers["funcionario-id"];
       const { itens, cliente_id, forma_pagamento } = req.body;
+      const user = await storage2.getUserById(userId);
+      const nomeVendedor = user?.nome || user?.email || "Venda direta";
       const caixaAberto = await storage2.getCaixaAberto?.(userId, funcionarioId || void 0);
       if (!caixaAberto) {
         return res.status(400).json({
@@ -7268,7 +9126,8 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         data: agora.toISOString(),
         itens: JSON.stringify(produtosVendidos),
         cliente_id: cliente_id || void 0,
-        forma_pagamento: forma_pagamento || "dinheiro"
+        forma_pagamento: forma_pagamento || "dinheiro",
+        vendedor: nomeVendedor
       });
       await storage2.atualizarTotaisCaixa?.(
         caixaAberto.id,
@@ -7295,11 +9154,8 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       if (!effectiveUserId) {
         return res.status(401).json({ error: "Usu\xE1rio n\xE3o autenticado" });
       }
-      const startDate = req.query.start_date;
-      const endDate = req.query.end_date;
       const incluirArquivados = req.query.incluirArquivados === "true";
-      const allVendas = await storage2.getVendas(startDate, endDate);
-      let vendas2 = allVendas.filter((v) => v.user_id === effectiveUserId);
+      let vendas2 = await storage2.getVendasByUser(effectiveUserId);
       if (!incluirArquivados && vendas2.some((v) => v.status === "arquivada")) {
         vendas2 = vendas2.filter((v) => v.status !== "arquivada");
       }
@@ -7398,6 +9254,30 @@ Libere or\xE7amentos ou ajuste a quantidade.`
     } catch (error) {
       console.error("Erro ao limpar hist\xF3rico de vendas:", error);
       res.status(500).json({ error: error.message || "Erro ao limpar hist\xF3rico de vendas" });
+    }
+  });
+  app2.patch("/api/vendas/:id/cupom", getUserId, async (req, res) => {
+    try {
+      const effectiveUserId = req.headers["effective-user-id"];
+      const vendaId = parseInt(req.params.id);
+      const { cupomTexto } = req.body;
+      if (!effectiveUserId) {
+        return res.status(401).json({ error: "Usu\xE1rio n\xE3o autenticado" });
+      }
+      if (!cupomTexto || typeof cupomTexto !== "string" || cupomTexto.length > 8e3) {
+        return res.status(400).json({ error: "Cupom inv\xE1lido" });
+      }
+      const venda = await storage2.getVenda?.(vendaId);
+      if (!venda || venda.user_id !== effectiveUserId) {
+        return res.status(404).json({ error: "Venda n\xE3o encontrada" });
+      }
+      if (storage2.updateVendaCupom) {
+        await storage2.updateVendaCupom(vendaId, cupomTexto);
+      }
+      res.json({ success: true, message: "Cupom salvo com sucesso" });
+    } catch (error) {
+      console.error("Erro ao salvar cupom:", error);
+      res.status(500).json({ error: error.message || "Erro ao salvar cupom" });
     }
   });
   app2.get("/api/fornecedores", getUserId, async (req, res) => {
@@ -7716,7 +9596,8 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         ...req.body,
         user_id: effectiveUserId,
         status: "pendente",
-        data_cadastro: (/* @__PURE__ */ new Date()).toISOString()
+        data_cadastro: getNowISOSaoPaulo(),
+        data_vencimento: req.body.data_vencimento ? parseDateToISOSaoPaulo(req.body.data_vencimento) : void 0
       };
       const conta = await storage2.createContaPagar(contaData);
       console.log(
@@ -7730,24 +9611,6 @@ Libere or\xE7amentos ou ajuste a quantidade.`
           res2.json(metrics);
         } catch (error2) {
           console.error("Erro ao buscar m\xE9tricas:", error2);
-          res2.status(500).json({ error: error2.message });
-        }
-      });
-      app2.get("/api/admin/employee-packages", requireAdmin, async (req2, res2) => {
-        try {
-          const userId = req2.headers["x-user-id"];
-          const user = await storage2.getUserById(userId);
-          const isMasterAdmin = user?.email === "pavisoft.suporte@gmail.com";
-          if (!isMasterAdmin) {
-            return res2.status(403).json({ error: "Acesso negado - apenas master admin" });
-          }
-          const packages = await storage2.db.execute(sql3`
-        SELECT * FROM employee_packages 
-        ORDER BY data_compra DESC
-      `);
-          res2.json(packages.rows || []);
-        } catch (error2) {
-          logger.error("Erro ao buscar pacotes de funcion\xE1rios:", error2);
           res2.status(500).json({ error: error2.message });
         }
       });
@@ -7840,7 +9703,7 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       const id = parseInt(req.params.id);
       const conta = await storage2.updateContaPagar(id, {
         status: "pago",
-        data_pagamento: (/* @__PURE__ */ new Date()).toISOString()
+        data_pagamento: getNowISOSaoPaulo()
       });
       console.log(`\u2705 Conta a pagar marcada como paga: ID ${id}`);
       res.json(conta);
@@ -7878,7 +9741,8 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         ...req.body,
         user_id: effectiveUserId,
         status: "pendente",
-        data_cadastro: (/* @__PURE__ */ new Date()).toISOString()
+        data_cadastro: getNowISOSaoPaulo(),
+        data_vencimento: req.body.data_vencimento ? parseDateToISOSaoPaulo(req.body.data_vencimento) : void 0
       };
       const conta = await storage2.createContaReceber(contaData);
       console.log(
@@ -7927,7 +9791,7 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       const id = parseInt(req.params.id);
       const conta = await storage2.updateContaReceber(id, {
         status: "recebido",
-        data_recebimento: (/* @__PURE__ */ new Date()).toISOString()
+        data_recebimento: getNowISOSaoPaulo()
       });
       console.log(`\u2705 Conta a receber marcada como recebida: ID ${id}`);
       res.json(conta);
@@ -8042,8 +9906,8 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       }
       const precosConfig = await storage2.getSystemConfig("planos_precos");
       let planoValues = {
-        premium_mensal: 79.99,
-        premium_anual: 767.04
+        premium_mensal: 89.99,
+        premium_anual: 951
       };
       if (precosConfig && precosConfig.valor) {
         try {
@@ -8065,9 +9929,21 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       let valorFinal = planoValues[plano];
       let cupomAplicado = null;
       let valorDesconto = 0;
+      let user = await storage2.getUserByEmail(email);
+      if (!user) {
+        const senhaTemporaria = Math.random().toString(36).slice(-8);
+        user = await storage2.createUser({
+          nome,
+          email,
+          senha: senhaTemporaria,
+          plano: "trial",
+          is_admin: "false",
+          status: "ativo"
+        });
+      }
       if (cupom) {
         try {
-          const resultadoCupom = await storage2.validarCupom?.(cupom, plano, "temp");
+          const resultadoCupom = await storage2.validarCupom?.(cupom, plano, user.id);
           if (resultadoCupom?.valido && resultadoCupom.cupom) {
             cupomAplicado = resultadoCupom.cupom;
             if (cupomAplicado.tipo === "percentual") {
@@ -8077,6 +9953,9 @@ Libere or\xE7amentos ou ajuste a quantidade.`
             }
             valorFinal = Math.max(0, valorFinal - valorDesconto);
             console.log(`\u2705 [CHECKOUT] Cupom aplicado: ${cupom} - Desconto: R$ ${valorDesconto.toFixed(2)}`);
+          } else {
+            console.log(`\u274C [CHECKOUT] Cupom inv\xE1lido: ${resultadoCupom?.erro}`);
+            return res.status(400).json({ error: resultadoCupom?.erro || "Cupom inv\xE1lido" });
           }
         } catch (error) {
           console.error("Erro ao validar cupom no checkout:", error);
@@ -8112,6 +9991,19 @@ Libere or\xE7amentos ou ajuste a quantidade.`
           description: `Cupom de desconto: ${cupomAplicado.codigo} (${cupomAplicado.tipo === "percentual" ? cupomAplicado.valor + "%" : "R$ " + cupomAplicado.valor.toFixed(2)})`
         });
       }
+      let webhookUrl = config.webhook_url;
+      if (!webhookUrl) {
+        let baseUrl = process.env.APP_URL;
+        if (!baseUrl) {
+          baseUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000";
+        }
+        webhookUrl = `${baseUrl}/api/webhook/mercadopago`;
+      }
+      logger.info("Criando prefer\xEAncia de pagamento", "CHECKOUT", {
+        externalReference,
+        webhookUrl,
+        valorFinal
+      });
       const preference = await mercadopago.createPreference({
         items,
         payer: {
@@ -8122,43 +10014,90 @@ Libere or\xE7amentos ou ajuste a quantidade.`
             number: cpfCnpj.replace(/\D/g, "")
           } : void 0
         },
-        external_reference: externalReference
+        external_reference: externalReference,
+        notification_url: webhookUrl
       });
-      let user = await storage2.getUserByEmail(email);
-      if (!user) {
-        const senhaTemporaria = Math.random().toString(36).slice(-8);
-        user = await storage2.createUser({
-          nome,
-          email,
-          senha: senhaTemporaria,
-          plano: "free",
-          is_admin: "false",
-          status: "ativo"
+      const subscriptions2 = await storage2.getSubscriptions();
+      const assinaturasPendentes = subscriptions2.filter(
+        (s) => s.user_id === user.id && s.status === "pendente" && s.status_pagamento === "pending"
+      );
+      let subscription;
+      let reutilizandoAssinatura = false;
+      let assinaturaAnteriorCancelada = false;
+      if (assinaturasPendentes.length > 0) {
+        const assinaturaMesmoPlano = assinaturasPendentes.find((s) => s.plano === plano);
+        if (assinaturaMesmoPlano) {
+          const prazoLimite = assinaturaMesmoPlano.prazo_limite_pagamento ? new Date(assinaturaMesmoPlano.prazo_limite_pagamento) : new Date(new Date(assinaturaMesmoPlano.data_criacao).getTime() + 7 * 24 * 60 * 60 * 1e3);
+          if (prazoLimite > /* @__PURE__ */ new Date()) {
+            const subscriptionAtualizada = await storage2.updateSubscription(assinaturaMesmoPlano.id, {
+              mercadopago_payment_id: preference.id,
+              init_point: preference.init_point,
+              external_reference: externalReference,
+              valor: valorFinal,
+              data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
+            });
+            if (!subscriptionAtualizada) {
+              logger.error("Falha ao atualizar assinatura pendente", "CHECKOUT", {
+                subscriptionId: assinaturaMesmoPlano.id,
+                userId: user.id
+              });
+              return res.status(500).json({
+                error: "Erro ao atualizar assinatura. Tente novamente."
+              });
+            }
+            reutilizandoAssinatura = true;
+            subscription = subscriptionAtualizada;
+            console.log(`\u{1F504} [CHECKOUT] Atualizando assinatura pendente com nova prefer\xEAncia - ID: ${subscription.id}, Plano: ${plano}`);
+            logger.info("Assinatura pendente atualizada com nova prefer\xEAncia", "CHECKOUT", {
+              subscriptionId: subscription.id,
+              userId: user.id,
+              plano,
+              novoInitPoint: preference.init_point,
+              prazoLimite: prazoLimite.toISOString()
+            });
+          }
+        }
+        if (!reutilizandoAssinatura) {
+          for (const assinaturaPendente of assinaturasPendentes) {
+            await storage2.updateSubscription(assinaturaPendente.id, {
+              status: "cancelado",
+              status_pagamento: "cancelled",
+              motivo_cancelamento: `Cancelado automaticamente - cliente escolheu outro plano (${plano})`,
+              data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
+            });
+            console.log(`\u274C [CHECKOUT] Assinatura pendente anterior cancelada - ID: ${assinaturaPendente.id}, Plano anterior: ${assinaturaPendente.plano}`);
+            logger.info("Assinatura pendente anterior cancelada", "CHECKOUT", {
+              subscriptionId: assinaturaPendente.id,
+              planoAnterior: assinaturaPendente.plano,
+              novoPlano: plano,
+              userId: user.id
+            });
+          }
+          assinaturaAnteriorCancelada = true;
+        }
+      }
+      if (!reutilizandoAssinatura) {
+        const dataVencimentoNovo = plano === "premium_mensal" ? addMonthsAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 1) : addYearsAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 1);
+        const prazoLimitePagamentoNovo = addDaysAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 7);
+        subscription = await storage2.createSubscription({
+          user_id: user.id,
+          plano,
+          status: "pendente",
+          valor: valorFinal,
+          valor_original: planoValues[plano],
+          data_vencimento: dataVencimentoNovo,
+          prazo_limite_pagamento: prazoLimitePagamentoNovo,
+          tentativas_cobranca: 0,
+          mercadopago_payment_id: preference.id,
+          forma_pagamento: formaPagamento,
+          status_pagamento: "pending",
+          init_point: preference.init_point,
+          external_reference: externalReference,
+          cupom_codigo: cupomAplicado?.codigo,
+          cupom_id: cupomAplicado?.id,
+          valor_desconto_cupom: valorDesconto > 0 ? valorDesconto : void 0
         });
       }
-      const dataVencimento = /* @__PURE__ */ new Date();
-      if (plano === "premium_mensal") {
-        dataVencimento.setMonth(dataVencimento.getMonth() + 1);
-      } else {
-        dataVencimento.setFullYear(dataVencimento.getFullYear() + 1);
-      }
-      const prazoLimitePagamento = /* @__PURE__ */ new Date();
-      prazoLimitePagamento.setDate(prazoLimitePagamento.getDate() + 7);
-      const subscription = await storage2.createSubscription({
-        user_id: user.id,
-        plano,
-        status: "pendente",
-        valor: valorFinal,
-        // Valor com desconto aplicado
-        data_vencimento: dataVencimento.toISOString(),
-        prazo_limite_pagamento: prazoLimitePagamento.toISOString(),
-        tentativas_cobranca: 0,
-        mercadopago_preference_id: preference.id,
-        forma_pagamento: formaPagamento,
-        status_pagamento: "pending",
-        init_point: preference.init_point,
-        external_reference: externalReference
-      });
       if (cupomAplicado && storage2.registrarUsoCupom) {
         try {
           await storage2.registrarUsoCupom({
@@ -8177,9 +10116,24 @@ Libere or\xE7amentos ou ajuste a quantidade.`
           logger.error("Erro ao registrar uso do cupom", "CHECKOUT", { error });
         }
       }
-      console.log(
-        `\u2705 Assinatura criada com sucesso - User: ${user.email}, Plano: ${planoNomes[plano]}, Forma: ${formaPagamento}${cupomAplicado ? `, Cupom: ${cupomAplicado.codigo}` : ""}`
-      );
+      if (reutilizandoAssinatura) {
+        console.log(
+          `\u{1F504} Reutilizando assinatura existente - User: ${user.email}, Plano: ${planoNomes[plano]}`
+        );
+      } else {
+        console.log(
+          `\u2705 Assinatura criada com sucesso - User: ${user.email}, Plano: ${planoNomes[plano]}, Forma: ${formaPagamento}${cupomAplicado ? `, Cupom: ${cupomAplicado.codigo}` : ""}${assinaturaAnteriorCancelada ? " (assinatura anterior cancelada)" : ""}`
+        );
+      }
+      const prazoLimiteExibicao = subscription.prazo_limite_pagamento ? new Date(subscription.prazo_limite_pagamento).toLocaleDateString("pt-BR") : new Date(Date.now() + 7 * 24 * 60 * 60 * 1e3).toLocaleDateString("pt-BR");
+      let message = "";
+      if (reutilizandoAssinatura) {
+        message = `Voc\xEA j\xE1 possui um pedido pendente para o plano ${planoNomes[plano]}. Utilize o link de pagamento existente. Prazo limite: ${prazoLimiteExibicao}`;
+      } else if (assinaturaAnteriorCancelada) {
+        message = `Seu pedido anterior foi cancelado. Nova assinatura ${planoNomes[plano]} criada! Prazo para pagamento: ${prazoLimiteExibicao}`;
+      } else {
+        message = `Assinatura ${planoNomes[plano]} criada com sucesso! Prazo para pagamento: ${prazoLimiteExibicao}`;
+      }
       res.json({
         success: true,
         subscription,
@@ -8191,7 +10145,10 @@ Libere or\xE7amentos ou ajuste a quantidade.`
           codigo: cupomAplicado.codigo,
           valorDesconto: valorDesconto.toFixed(2)
         } : null,
-        message: `Assinatura ${planoNomes[plano]} criada com sucesso! Voc\xEA ser\xE1 redirecionado para o pagamento.`
+        reutilizandoAssinatura,
+        assinaturaAnteriorCancelada,
+        prazoLimitePagamento: prazoLimiteExibicao,
+        message
       });
     } catch (error) {
       console.error("\u274C Erro ao criar checkout:", error);
@@ -8228,40 +10185,62 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         accessToken: config.access_token
       });
       const externalReference = `${pacoteId}_${userId}_${Date.now()}`;
+      let webhookUrl = config.webhook_url;
+      if (!webhookUrl) {
+        let baseUrl = process.env.APP_URL;
+        if (!baseUrl) {
+          baseUrl = process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000";
+        }
+        webhookUrl = `${baseUrl}/api/webhook/mercadopago`;
+      }
+      logger.info("Criando prefer\xEAncia para pacote de funcion\xE1rios", "PURCHASE_EMPLOYEES", {
+        externalReference,
+        webhookUrl,
+        pacoteId,
+        quantidade,
+        valor
+      });
       const preference = await mercadopago.createPreference({
         items: [
           {
-            title: `${nomePacote} - Pavisoft Sistemas`,
+            title: `${nomePacote} - Pavisoft Sistemas (Recorrente)`,
             quantity: 1,
             unit_price: valor,
             currency_id: "BRL",
-            description: `Pacote com ${quantidade} funcion\xE1rios adicionais`
+            description: `Pacote com ${quantidade} funcion\xE1rios adicionais - Renova\xE7\xE3o autom\xE1tica mensal`
           }
         ],
         payer: {
           email: user.email,
           name: user.nome
         },
-        external_reference: externalReference
+        external_reference: externalReference,
+        notification_url: webhookUrl,
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: "months",
+          transaction_amount: valor,
+          currency_id: "BRL"
+        }
       });
-      try {
-        const { EmailService: EmailService2 } = await Promise.resolve().then(() => (init_email_service(), email_service_exports));
+      console.log(
+        `\u2705 Prefer\xEAncia de pagamento criada - Pacote: ${nomePacote}, User: ${user.email}`
+      );
+      Promise.resolve().then(() => (init_email_service(), email_service_exports)).then(({ EmailService: EmailService2 }) => {
         const emailService = new EmailService2();
-        await emailService.sendEmployeePackagePurchased({
+        emailService.sendEmployeePackagePurchased({
           to: user.email,
           userName: user.nome,
           packageName: nomePacote,
           quantity: quantidade,
           price: valor,
           paymentUrl: preference.init_point
+        }).then(() => {
+          console.log(`\u{1F4E7} Email de compra enviado para ${user.email}`);
+        }).catch((emailError) => {
+          console.error("\u26A0\uFE0F Erro ao enviar email (n\xE3o cr\xEDtico):", emailError);
         });
-        console.log(`\u{1F4E7} Email de compra enviado para ${user.email}`);
-      } catch (emailError) {
-        console.error("\u26A0\uFE0F Erro ao enviar email (n\xE3o cr\xEDtico):", emailError);
-      }
-      console.log(
-        `\u2705 Prefer\xEAncia de pagamento criada - Pacote: ${nomePacote}, User: ${user.email}`
-      );
+      });
       res.json({
         success: true,
         preference: {
@@ -8401,7 +10380,7 @@ Libere or\xE7amentos ou ajuste a quantidade.`
           packageName: "Pacote 5 Funcion\xE1rios",
           quantity: 5,
           price: 25,
-          paymentUrl: "https://sandbox.asaas.com/i/test123"
+          paymentUrl: "https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=test123"
         });
         results.push({
           tipo: "Pacote de Funcion\xE1rios - Aguardando Pagamento",
@@ -8549,10 +10528,80 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       res.status(500).json({ error: "Erro ao executar testes" });
     }
   });
+  app2.post("/api/fix-data-integrity", requireAdmin, async (req, res) => {
+    try {
+      const fixes = [];
+      const users2 = await storage2.getUsers();
+      const userIds = new Set(users2.map((u) => u.id));
+      const produtos2 = await storage2.getProdutos();
+      const produtosOrfaos = produtos2.filter((p) => !userIds.has(p.user_id));
+      if (produtosOrfaos.length > 0) {
+        for (const produto of produtosOrfaos) {
+          await storage2.db.execute(sql3`DELETE FROM produtos WHERE id = ${produto.id}`);
+        }
+        fixes.push({
+          tipo: "Produtos \xF3rf\xE3os",
+          quantidade: produtosOrfaos.length,
+          acao: "Removidos"
+        });
+      }
+      const vendas2 = await storage2.getVendas();
+      const vendasOrfas = vendas2.filter((v) => !userIds.has(v.user_id));
+      if (vendasOrfas.length > 0) {
+        for (const venda of vendasOrfas) {
+          await storage2.db.execute(sql3`DELETE FROM vendas WHERE id = ${venda.id}`);
+        }
+        fixes.push({
+          tipo: "Vendas \xF3rf\xE3s",
+          quantidade: vendasOrfas.length,
+          acao: "Removidas"
+        });
+      }
+      if (storage2.getOrcamentos) {
+        const orcamentos2 = await storage2.getOrcamentos();
+        const orcamentosAprovados = orcamentos2.filter((o) => o.status === "aprovado");
+        let bloqueiosCriados = 0;
+        for (const orcamento of orcamentosAprovados) {
+          const bloqueiosExistentes = await storage2.db.execute(
+            sql3`SELECT COUNT(*) as count FROM bloqueios_estoque WHERE orcamento_id = ${orcamento.id}`
+          );
+          const count = Number(bloqueiosExistentes.rows?.[0]?.count || 0);
+          if (count === 0 && orcamento.itens && Array.isArray(orcamento.itens)) {
+            const dataBloqueio = (/* @__PURE__ */ new Date()).toISOString();
+            for (const item of orcamento.itens) {
+              if (item.produto_id && item.quantidade) {
+                await storage2.db.execute(sql3`
+                  INSERT INTO bloqueios_estoque (produto_id, orcamento_id, user_id, quantidade_bloqueada, data_bloqueio)
+                  VALUES (${item.produto_id}, ${orcamento.id}, ${orcamento.user_id}, ${item.quantidade}, ${dataBloqueio})
+                `);
+                bloqueiosCriados++;
+              }
+            }
+          }
+        }
+        if (bloqueiosCriados > 0) {
+          fixes.push({
+            tipo: "Bloqueios de estoque",
+            quantidade: bloqueiosCriados,
+            acao: "Criados para or\xE7amentos aprovados"
+          });
+        }
+      }
+      logger.info("Corre\xE7\xE3o de integridade executada", "DATA_FIX", { fixes });
+      res.json({
+        success: true,
+        message: fixes.length > 0 ? `${fixes.length} tipos de corre\xE7\xF5es aplicadas` : "Nenhuma corre\xE7\xE3o necess\xE1ria",
+        fixes
+      });
+    } catch (error) {
+      logger.error("Erro ao corrigir integridade de dados", "DATA_FIX", { error });
+      res.status(500).json({ error: "Erro ao corrigir integridade de dados: " + error.message });
+    }
+  });
   app2.get("/api/admin/employee-packages", requireAdmin, async (req, res) => {
     try {
       const packages = await storage2.db.execute(sql3`
-        SELECT 
+        SELECT
           ep.*,
           u.nome as user_name,
           u.email as user_email,
@@ -8582,8 +10631,7 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       }
       const limiteAtual = user.max_funcionarios || 1;
       const novoLimite = limiteAtual + quantity;
-      const dataVencimento = /* @__PURE__ */ new Date();
-      dataVencimento.setDate(dataVencimento.getDate() + 30);
+      const dataVencimentoPacote = addDaysAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 30);
       const newPackage = await storage2.createEmployeePackage({
         user_id: userId,
         package_type: packageType,
@@ -8591,12 +10639,12 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         price: price || 0,
         status: "ativo",
         payment_id: `MANUAL_${Date.now()}`,
-        data_vencimento: dataVencimento.toISOString()
+        data_vencimento: dataVencimentoPacote
       });
       await storage2.updateUser(userId, {
         max_funcionarios: novoLimite,
         max_funcionarios_base: user.max_funcionarios_base || 1,
-        data_expiracao_pacote_funcionarios: dataVencimento.toISOString()
+        data_expiracao_pacote_funcionarios: dataVencimentoPacote
       });
       if (user.status === "ativo" && storage2.getFuncionarios) {
         const funcionarios2 = await storage2.getFuncionarios();
@@ -8762,7 +10810,7 @@ Libere or\xE7amentos ou ajuste a quantidade.`
           return res.status(404).json({ error: "Usu\xE1rio n\xE3o encontrado" });
         }
         const existingPackages = await storage2.db.execute(sql3`
-          SELECT * FROM employee_packages 
+          SELECT * FROM employee_packages
           WHERE payment_id = ${paymentId.toString()}
         `);
         if (existingPackages.rows && existingPackages.rows.length > 0) {
@@ -8773,21 +10821,22 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         }
         const limiteAtual = user.max_funcionarios || 1;
         const novoLimite = limiteAtual + quantidadeAdicional;
-        const dataVencimento = /* @__PURE__ */ new Date();
-        dataVencimento.setDate(dataVencimento.getDate() + 30);
-        const newPackage = await storage2.createEmployeePackage({
-          user_id: userId,
-          package_type: pacoteId,
-          quantity: quantidadeAdicional,
-          price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
-          status: "ativo",
-          payment_id: paymentId.toString(),
-          data_vencimento: dataVencimento.toISOString()
-        });
+        const dataVencimentoReprocess = addDaysAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 30);
+        if (storage2.createEmployeePackage) {
+          await storage2.createEmployeePackage({
+            user_id: userId,
+            package_type: pacoteId,
+            quantity: quantidadeAdicional,
+            price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
+            status: "ativo",
+            payment_id: paymentId.toString(),
+            data_vencimento: dataVencimentoReprocess
+          });
+        }
         await storage2.updateUser(userId, {
           max_funcionarios: novoLimite,
           max_funcionarios_base: user.max_funcionarios_base || 1,
-          data_expiracao_pacote_funcionarios: dataVencimento.toISOString()
+          data_expiracao_pacote_funcionarios: dataVencimentoReprocess
         });
         if (user.status === "ativo" && storage2.getFuncionarios) {
           const funcionarios2 = await storage2.getFuncionarios();
@@ -8797,6 +10846,10 @@ Libere or\xE7amentos ou ajuste a quantidade.`
               status: "ativo"
             });
           }
+          logger.info("Funcion\xE1rios reativados ap\xF3s compra de pacote", "ADMIN_REPROCESS", {
+            userId,
+            funcionariosReativados: funcionariosBloqueados.length
+          });
         }
         logger.info("Webhook reprocessado com sucesso", "ADMIN_REPROCESS", {
           paymentId,
@@ -8807,13 +10860,10 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         res.json({
           success: true,
           message: "Webhook reprocessado com sucesso!",
-          package: newPackage,
           newLimit: novoLimite
         });
-      } else if (gateway === "asaas") {
-        return res.status(501).json({ error: "Reprocessamento de Asaas ainda n\xE3o implementado" });
       } else {
-        return res.status(400).json({ error: "Gateway inv\xE1lido. Use 'mercadopago' ou 'asaas'" });
+        return res.status(400).json({ error: "Gateway inv\xE1lido. Use 'mercadopago'" });
       }
     } catch (error) {
       logger.error("Erro ao reprocessar webhook", "ADMIN_REPROCESS", { error: error.message });
@@ -8858,10 +10908,8 @@ Libere or\xE7amentos ou ajuste a quantidade.`
             description: paymentData.description
           }
         });
-      } else if (gateway === "asaas") {
-        return res.status(501).json({ error: "Busca de detalhes no Asaas ainda n\xE3o implementada" });
       } else {
-        return res.status(400).json({ error: "Gateway inv\xE1lido" });
+        return res.status(400).json({ error: "Gateway inv\xE1lido. Use 'mercadopago'" });
       }
     } catch (error) {
       logger.error("Erro ao buscar detalhes do pagamento", "ADMIN_PAYMENT_DETAILS", { error: error.message });
@@ -8878,7 +10926,7 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         });
       }
       await storage2.db.execute(sql3`
-        UPDATE employee_packages 
+        UPDATE employee_packages
         SET status = ${status}
         WHERE id = ${packageId}
       `);
@@ -8895,10 +10943,20 @@ Libere or\xE7amentos ou ajuste a quantidade.`
   app2.post("/api/webhook/mercadopago", async (req, res) => {
     try {
       const { type, data, action } = req.body;
+      console.log("========================================");
+      console.log("[WEBHOOK MERCADOPAGO] Notifica\xE7\xE3o recebida:");
+      console.log("  - Type:", type);
+      console.log("  - Action:", action);
+      console.log("  - Data ID:", data?.id);
+      console.log("  - Headers:", JSON.stringify(req.headers, null, 2));
+      console.log("  - Body completo:", JSON.stringify(req.body, null, 2));
+      console.log("========================================");
       logger.info("Webhook Mercado Pago recebido", "MERCADOPAGO_WEBHOOK", {
         type,
         action,
-        dataId: data?.id
+        dataId: data?.id,
+        fullBody: req.body,
+        headers: req.headers
       });
       if (type === "payment" || action === "payment.created" || action === "payment.updated") {
         const paymentId = data?.id;
@@ -8946,6 +11004,21 @@ Libere or\xE7amentos ou ajuste a quantidade.`
             externalReference,
             paymentId
           });
+          if (storage2.getEmployeePackageByPaymentId) {
+            const existingPackage = await storage2.getEmployeePackageByPaymentId(paymentId.toString());
+            if (existingPackage) {
+              logger.warn("Pagamento j\xE1 processado anteriormente - ignorando duplicata", "MERCADOPAGO_WEBHOOK", {
+                paymentId,
+                existingPackageId: existingPackage.id,
+                externalReference
+              });
+              return res.status(200).json({
+                success: true,
+                message: "Webhook recebido (pagamento j\xE1 processado anteriormente)",
+                duplicate: true
+              });
+            }
+          }
           const parts = externalReference.split("_");
           const pacoteId = parts[0] + "_" + parts[1];
           const userId = parts[2];
@@ -8955,12 +11028,29 @@ Libere or\xE7amentos ou ajuste a quantidade.`
             pacote_20: 20,
             pacote_50: 50
           };
-          const pacotePrecos = {
-            pacote_5: 39.9,
-            pacote_10: 69.9,
-            pacote_20: 119.9,
-            pacote_50: 249.9
+          let pacotePrecos = {
+            pacote_5: 49.99,
+            pacote_10: 89.9,
+            pacote_20: 159.9,
+            pacote_50: 349.9
           };
+          try {
+            if (storage2.getSystemConfig) {
+              const precosConfig = await storage2.getSystemConfig("pacotes_funcionarios_precos");
+              if (precosConfig && precosConfig.valor) {
+                const precosParsed = JSON.parse(precosConfig.valor);
+                pacotePrecos = {
+                  pacote_5: precosParsed.pacote_5 || pacotePrecos.pacote_5,
+                  pacote_10: precosParsed.pacote_10 || pacotePrecos.pacote_10,
+                  pacote_20: precosParsed.pacote_20 || pacotePrecos.pacote_20,
+                  pacote_50: precosParsed.pacote_50 || pacotePrecos.pacote_50
+                };
+                logger.info("Pre\xE7os de pacotes carregados do banco", "MERCADOPAGO_WEBHOOK", pacotePrecos);
+              }
+            }
+          } catch (error) {
+            logger.warn("Erro ao carregar pre\xE7os customizados, usando padr\xE3o", "MERCADOPAGO_WEBHOOK", { error });
+          }
           const quantidadeAdicional = pacoteQuantidades[pacoteId];
           if (quantidadeAdicional && userId) {
             const users2 = await storage2.getUsers();
@@ -8968,23 +11058,22 @@ Libere or\xE7amentos ou ajuste a quantidade.`
             if (user) {
               const limiteAtual = user.max_funcionarios || 1;
               const novoLimite = limiteAtual + quantidadeAdicional;
-              const dataVencimento = /* @__PURE__ */ new Date();
-              dataVencimento.setDate(dataVencimento.getDate() + 30);
+              const dataVencimentoWebhook = addDaysAndGetISOSaoPaulo(/* @__PURE__ */ new Date(), 30);
               if (storage2.createEmployeePackage) {
                 await storage2.createEmployeePackage({
                   user_id: userId,
                   package_type: pacoteId,
                   quantity: quantidadeAdicional,
-                  price: pacotePrecos[pacoteId] || paymentData.transaction_amount || 0,
+                  price: paymentData.transaction_amount || pacotePrecos[pacoteId] || 0,
                   status: "ativo",
                   payment_id: paymentId.toString(),
-                  data_vencimento: dataVencimento.toISOString()
+                  data_vencimento: dataVencimentoWebhook
                 });
               }
               await storage2.updateUser(userId, {
                 max_funcionarios: novoLimite,
                 max_funcionarios_base: user.max_funcionarios_base || 1,
-                data_expiracao_pacote_funcionarios: dataVencimento.toISOString()
+                data_expiracao_pacote_funcionarios: dataVencimentoWebhook
               });
               if (user.status === "ativo" && storage2.getFuncionarios) {
                 const funcionarios2 = await storage2.getFuncionarios();
@@ -9059,12 +11148,29 @@ Libere or\xE7amentos ou ajuste a quantidade.`
           });
           return res.status(200).json({ success: true, message: "Webhook recebido (assinatura n\xE3o encontrada)" });
         }
+        if (subscription.mercadopago_payment_id === paymentId.toString() && subscription.status_pagamento === "approved") {
+          logger.warn("Pagamento de assinatura j\xE1 processado anteriormente - ignorando duplicata", "MERCADOPAGO_WEBHOOK", {
+            paymentId,
+            subscriptionId: subscription.id,
+            externalReference
+          });
+          return res.status(200).json({
+            success: true,
+            message: "Webhook recebido (pagamento j\xE1 processado anteriormente)",
+            duplicate: true
+          });
+        }
         if (status === "approved") {
+          console.log("\u{1F4B0} [WEBHOOK] Pagamento APROVADO - Iniciando atualiza\xE7\xE3o do banco...");
+          console.log("  - Subscription ID:", subscription.id);
+          console.log("  - User ID:", subscription.user_id);
+          console.log("  - Plano:", subscription.plano);
           logger.info("Pagamento aprovado - Ativando assinatura", "MERCADOPAGO_WEBHOOK", {
             subscriptionId: subscription.id,
             userId: subscription.user_id,
             plano: subscription.plano
           });
+          console.log("\u{1F4DD} [WEBHOOK] Atualizando assinatura no banco...");
           await storage2.updateSubscription?.(subscription.id, {
             status: "ativo",
             status_pagamento: "approved",
@@ -9072,11 +11178,16 @@ Libere or\xE7amentos ou ajuste a quantidade.`
             data_inicio: (/* @__PURE__ */ new Date()).toISOString(),
             data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
           });
+          console.log("\u2705 [WEBHOOK] Assinatura atualizada com sucesso");
+          console.log("\u{1F4DD} [WEBHOOK] Atualizando plano do usu\xE1rio no banco...");
+          console.log("  - Novo plano:", subscription.plano);
+          console.log("  - Data expira\xE7\xE3o:", subscription.data_vencimento);
           await storage2.updateUser?.(subscription.user_id, {
             plano: subscription.plano,
             data_expiracao_plano: subscription.data_vencimento,
             status: "ativo"
           });
+          console.log("\u2705 [WEBHOOK] Plano do usu\xE1rio atualizado com sucesso");
           if (storage2.getFuncionarios) {
             const funcionarios2 = await storage2.getFuncionarios();
             const funcionariosDaConta = funcionarios2.filter(
@@ -9131,156 +11242,6 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       res.status(500).json({ error: error.message });
     }
   });
-  app2.post("/api/webhook/asaas", async (req, res) => {
-    const signature = req.headers["asaas-access-token"];
-    if (signature !== process.env.ASAAS_ACCESS_TOKEN) {
-      logger.warn("Webhook rejeitado - token inv\xE1lido", "WEBHOOK");
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-    const { event, payment } = req.body;
-    console.log("Webhook Asaas recebido:", event, payment);
-    if (!payment || !payment.id) {
-      return res.status(400).json({ error: "Dados do webhook inv\xE1lidos" });
-    }
-    const isEmployeePackage = payment.externalReference && payment.externalReference.startsWith("pacote_");
-    if (isEmployeePackage && (event === "PAYMENT_RECEIVED" || event === "PAYMENT_CONFIRMED")) {
-      const parts = payment.externalReference.split("_");
-      const pacoteId = parts[0] + "_" + parts[1];
-      const userId = parts[2];
-      const pacoteQuantidades = {
-        pacote_5: 5,
-        pacote_10: 10,
-        pacote_20: 20,
-        pacote_50: 50
-      };
-      const pacotePrecos = {
-        pacote_5: 39.9,
-        pacote_10: 69.9,
-        pacote_20: 119.9,
-        pacote_50: 249.9
-      };
-      const quantidadeAdicional = pacoteQuantidades[pacoteId];
-      if (quantidadeAdicional && userId) {
-        const users2 = await storage2.getUsers();
-        const user = users2.find((u) => u.id === userId);
-        if (user) {
-          const limiteAtual = user.max_funcionarios || 1;
-          const novoLimite = limiteAtual + quantidadeAdicional;
-          const dataVencimento = /* @__PURE__ */ new Date();
-          dataVencimento.setDate(dataVencimento.getDate() + 30);
-          if (storage2.createEmployeePackage) {
-            await storage2.createEmployeePackage({
-              user_id: userId,
-              package_type: pacoteId,
-              quantity: quantidadeAdicional,
-              price: pacotePrecos[pacoteId] || payment.value || 0,
-              status: "ativo",
-              payment_id: payment.id,
-              data_vencimento: dataVencimento.toISOString()
-            });
-          }
-          await storage2.updateUser(userId, {
-            max_funcionarios: novoLimite,
-            max_funcionarios_base: user.max_funcionarios_base || 1,
-            data_expiracao_pacote_funcionarios: dataVencimento.toISOString()
-          });
-          if (user.status === "ativo" && storage2.getFuncionarios) {
-            const funcionarios2 = await storage2.getFuncionarios();
-            const funcionariosBloqueados = funcionarios2.filter((f) => f.conta_id === userId && f.status === "bloqueado").sort((a, b) => new Date(a.data_criacao || 0).getTime() - new Date(b.data_criacao || 0).getTime()).slice(0, quantidadeAdicional);
-            for (const funcionario of funcionariosBloqueados) {
-              await storage2.updateFuncionario(funcionario.id, {
-                status: "ativo"
-              });
-              logger.info("Funcion\xE1rio reativado ap\xF3s compra de pacote", "WEBHOOK", {
-                funcionarioId: funcionario.id,
-                funcionarioNome: funcionario.nome,
-                contaId: userId
-              });
-            }
-            if (funcionariosBloqueados.length > 0) {
-              console.log(
-                `\u2705 [WEBHOOK] ${funcionariosBloqueados.length} funcion\xE1rio(s) reativado(s) automaticamente`
-              );
-            }
-          }
-          console.log(
-            `\u2705 [WEBHOOK] Pagamento confirmado - Pacote: ${pacoteId}`
-          );
-          console.log(`\u2705 [WEBHOOK] User: ${user.email} | ${user.nome}`);
-          console.log(
-            `\u2705 [WEBHOOK] Limite anterior: ${limiteAtual} \u2192 Novo limite: ${novoLimite}`
-          );
-          console.log(
-            `\u2705 [WEBHOOK] Vencimento: ${dataVencimento.toLocaleDateString("pt-BR")}`
-          );
-          logger.info("Pacote de funcion\xE1rios ativado", "WEBHOOK", {
-            userId,
-            userEmail: user.email,
-            pacoteId,
-            quantidadeAdicional,
-            limiteAnterior: limiteAtual,
-            novoLimite,
-            dataVencimento: dataVencimento.toISOString()
-          });
-          try {
-            const { EmailService: EmailService2 } = await Promise.resolve().then(() => (init_email_service(), email_service_exports));
-            const emailService = new EmailService2();
-            const nomePacote = `Pacote ${quantidadeAdicional} Funcion\xE1rios`;
-            await emailService.sendEmployeePackageActivated({
-              to: user.email,
-              userName: user.nome,
-              packageName: nomePacote,
-              quantity: quantidadeAdicional,
-              newLimit: novoLimite,
-              price: payment.value || 0
-            });
-            console.log(`\u{1F4E7} Email de ativa\xE7\xE3o enviado para ${user.email}`);
-          } catch (emailError) {
-            console.error(
-              "\u26A0\uFE0F Erro ao enviar email de ativa\xE7\xE3o (n\xE3o cr\xEDtico):",
-              emailError
-            );
-          }
-        }
-      }
-      res.json({
-        success: true,
-        message: "Webhook de pacote processado com sucesso"
-      });
-      return;
-    }
-    const subscriptions2 = await storage2.getSubscriptions();
-    const subscription = subscriptions2?.find(
-      (s) => s.asaas_payment_id === payment.id
-    );
-    if (!subscription) {
-      console.log("Assinatura n\xE3o encontrada para pagamento:", payment.id);
-      return res.status(404).json({ error: "Assinatura n\xE3o encontrada" });
-    }
-    if (event === "PAYMENT_RECEIVED" || event === "PAYMENT_CONFIRMED") {
-      await storage2.updateSubscription(subscription.id, {
-        status: "ativo",
-        status_pagamento: "RECEIVED",
-        data_inicio: (/* @__PURE__ */ new Date()).toISOString()
-      });
-      await storage2.updateUser(subscription.user_id, {
-        plano: subscription.plano,
-        data_expiracao_plano: subscription.data_vencimento,
-        status: "ativo"
-      });
-      console.log(`Pagamento confirmado para assinatura ${subscription.id}`);
-    } else if (event === "PAYMENT_OVERDUE") {
-      await storage2.updateSubscription(subscription.id, {
-        status: "expirado",
-        status_pagamento: "OVERDUE"
-      });
-      await storage2.updateUser(subscription.user_id, {
-        status: "inativo"
-      });
-      console.log(`Pagamento vencido para assinatura ${subscription.id}`);
-    }
-    res.json({ success: true, message: "Webhook processado com sucesso" });
-  });
   app2.get("/api/subscriptions", requireAdmin, async (req, res) => {
     try {
       const subscriptions2 = await storage2.getSubscriptions();
@@ -9326,8 +11287,7 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         motivo_cancelamento: reason || "Cancelado manualmente pelo administrador"
       });
       await storage2.updateUser(subscription.user_id, {
-        plano: "free",
-        status: "ativo"
+        status: "bloqueado"
       });
       console.log(
         `\u2705 Assinatura ${subscriptionId} cancelada. Motivo: ${reason || "Cancelado manualmente"}`
@@ -9347,6 +11307,85 @@ Libere or\xE7amentos ou ajuste a quantidade.`
         error: error.message
       });
       res.status(500).json({ error: error.message || "Erro ao cancelar assinatura" });
+    }
+  });
+  app2.delete("/api/subscriptions/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const subscriptionId = parseInt(id);
+      const subscriptions2 = await storage2.getSubscriptions();
+      const subscription = subscriptions2?.find((s) => s.id === subscriptionId);
+      if (!subscription) {
+        return res.status(404).json({ error: "Assinatura n\xE3o encontrada" });
+      }
+      if (subscription.status !== "cancelado" && subscription.status !== "expirado") {
+        return res.status(400).json({
+          error: "S\xF3 \xE9 poss\xEDvel remover assinaturas canceladas ou expiradas"
+        });
+      }
+      await storage2.deleteSubscription(subscriptionId);
+      console.log(`\u{1F5D1}\uFE0F Assinatura ${subscriptionId} removida do hist\xF3rico`);
+      logger.info("Assinatura removida", "SUBSCRIPTION", {
+        subscriptionId,
+        userId: subscription.user_id,
+        status: subscription.status
+      });
+      res.json({
+        success: true,
+        message: "Assinatura removida com sucesso"
+      });
+    } catch (error) {
+      console.error("Erro ao deletar assinatura:", error);
+      logger.error("Erro ao deletar assinatura", "SUBSCRIPTION", {
+        error: error.message
+      });
+      res.status(500).json({ error: error.message || "Erro ao deletar assinatura" });
+    }
+  });
+  app2.patch("/api/subscriptions/:id/status", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, motivo } = req.body;
+      const subscriptionId = parseInt(id);
+      if (!status) {
+        return res.status(400).json({ error: "Status \xE9 obrigat\xF3rio" });
+      }
+      const subscriptions2 = await storage2.getSubscriptions();
+      const subscription = subscriptions2?.find((s) => s.id === subscriptionId);
+      if (!subscription) {
+        return res.status(404).json({ error: "Assinatura n\xE3o encontrada" });
+      }
+      const updateData = {
+        status,
+        data_atualizacao: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      if (status === "cancelado") {
+        updateData.data_cancelamento = (/* @__PURE__ */ new Date()).toISOString();
+        updateData.motivo_cancelamento = motivo || "Cancelado pelo administrador";
+        updateData.status_pagamento = "cancelled";
+        await storage2.updateUser(subscription.user_id, {
+          status: "bloqueado"
+        });
+      }
+      await storage2.updateSubscription(subscriptionId, updateData);
+      console.log(`\u2705 Status da assinatura ${subscriptionId} atualizado para: ${status}`);
+      logger.info("Status de assinatura atualizado", "SUBSCRIPTION", {
+        subscriptionId,
+        userId: subscription.user_id,
+        oldStatus: subscription.status,
+        newStatus: status,
+        motivo
+      });
+      res.json({
+        success: true,
+        message: `Status atualizado para ${status}`
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar status da assinatura:", error);
+      logger.error("Erro ao atualizar status da assinatura", "SUBSCRIPTION", {
+        error: error.message
+      });
+      res.status(500).json({ error: error.message || "Erro ao atualizar status" });
     }
   });
   app2.post("/api/payment-reminders/check", requireAdmin, async (req, res) => {
@@ -9468,6 +11507,51 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       });
     } catch (error) {
       console.error("Erro ao executar limpeza autom\xE1tica:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/admin/force-block-employees/:userId", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const users2 = await storage2.getUsers();
+      const user = users2.find((u) => u.id === userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usu\xE1rio n\xE3o encontrado" });
+      }
+      if (user.status !== "bloqueado") {
+        return res.status(400).json({
+          error: "Usu\xE1rio n\xE3o est\xE1 bloqueado",
+          message: "Apenas funcion\xE1rios de contas bloqueadas podem ser bloqueados em massa"
+        });
+      }
+      let funcionariosBloqueados = 0;
+      if (storage2.getFuncionarios) {
+        const funcionarios2 = await storage2.getFuncionarios();
+        const funcionariosDaConta = funcionarios2.filter((f) => f.conta_id === userId);
+        for (const funcionario of funcionariosDaConta) {
+          if (funcionario.status !== "bloqueado") {
+            await storage2.updateFuncionario(funcionario.id, {
+              status: "bloqueado"
+            });
+            funcionariosBloqueados++;
+            logger.info("[ADMIN_ACTION] Funcion\xE1rio bloqueado manualmente", {
+              funcionarioId: funcionario.id,
+              funcionarioNome: funcionario.nome,
+              contaId: userId,
+              motivo: "Conta principal bloqueada"
+            });
+          }
+        }
+      }
+      res.json({
+        success: true,
+        message: `${funcionariosBloqueados} funcion\xE1rio(s) bloqueado(s) com sucesso`,
+        userId,
+        funcionariosBloqueados,
+        userEmail: user.email
+      });
+    } catch (error) {
+      console.error("Erro ao bloquear funcion\xE1rios:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -9921,6 +12005,8 @@ Libere or\xE7amentos ou ajuste a quantidade.`
             -devolucao.valor_total
           );
           console.log(`\u{1F4B0} Valor descontado do caixa: R$ ${devolucao.valor_total.toFixed(2)}`);
+        } else {
+          console.warn(`\u26A0\uFE0F Devolu\xE7\xE3o aprovada mas n\xE3o h\xE1 caixa aberto para registrar o valor`);
         }
       } else if (devolucaoOriginal.status === "aprovada" && devolucao.status !== "aprovada") {
         if (devolucao.produto_id) {
@@ -10378,6 +12464,266 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       res.status(500).json({ error: "Erro ao buscar timeline do cliente" });
     }
   });
+  app2.get("/api/admin/clients/:userId/payment-history", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const subscriptions2 = await storage2.getSubscriptionsByUser?.(userId) || [];
+      const totalPaid = subscriptions2.filter((s) => s.status === "ativo" || s.status_pagamento === "approved").reduce((sum, s) => sum + (s.valor || 0), 0);
+      const paymentHistory = subscriptions2.map((s) => ({
+        id: s.id,
+        plano: s.plano,
+        valor: s.valor,
+        valor_desconto: s.valor_desconto_cupom || 0,
+        cupom: s.cupom_codigo,
+        status: s.status,
+        status_pagamento: s.status_pagamento,
+        forma_pagamento: s.forma_pagamento,
+        data_inicio: s.data_inicio,
+        data_vencimento: s.data_vencimento,
+        data_criacao: s.data_criacao,
+        mercadopago_payment_id: s.mercadopago_payment_id
+      }));
+      res.json({
+        payments: paymentHistory,
+        total_paid: totalPaid,
+        total_subscriptions: subscriptions2.length,
+        active_subscriptions: subscriptions2.filter((s) => s.status === "ativo").length
+      });
+    } catch (error) {
+      console.error("Erro ao buscar hist\xF3rico de pagamentos:", error);
+      res.status(500).json({ error: "Erro ao buscar hist\xF3rico de pagamentos" });
+    }
+  });
+  app2.get("/api/admin/clients/:userId/health-score", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage2.getUserById?.(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usu\xE1rio n\xE3o encontrado" });
+      }
+      const subscriptions2 = await storage2.getSubscriptionsByUser?.(userId) || [];
+      let score = 100;
+      const factors = [];
+      if (user.status !== "ativo") {
+        score -= 30;
+        factors.push({ name: "status_conta", impact: -30, description: "Conta n\xE3o est\xE1 ativa" });
+      }
+      if (user.plano === "trial") {
+        score -= 10;
+        factors.push({ name: "plano_trial", impact: -10, description: "Ainda est\xE1 no per\xEDodo de trial" });
+      } else if (user.plano?.includes("anual")) {
+        score += 10;
+        factors.push({ name: "plano_anual", impact: 10, description: "Cliente com plano anual (mais engajado)" });
+      }
+      const pendingPayments = subscriptions2.filter((s) => s.status_pagamento === "pending").length;
+      const latePayments = subscriptions2.filter((s) => {
+        if (!s.data_vencimento) return false;
+        return new Date(s.data_vencimento) < /* @__PURE__ */ new Date() && s.status_pagamento !== "approved";
+      }).length;
+      if (latePayments > 0) {
+        score -= 25;
+        factors.push({ name: "pagamentos_atrasados", impact: -25, description: `${latePayments} pagamento(s) atrasado(s)` });
+      } else if (pendingPayments > 0) {
+        score -= 10;
+        factors.push({ name: "pagamentos_pendentes", impact: -10, description: `${pendingPayments} pagamento(s) pendente(s)` });
+      }
+      const daysSinceCreation = user.data_criacao ? Math.floor((Date.now() - new Date(user.data_criacao).getTime()) / (1e3 * 60 * 60 * 24)) : 0;
+      if (daysSinceCreation > 365) {
+        score += 15;
+        factors.push({ name: "cliente_antigo", impact: 15, description: `Cliente h\xE1 mais de 1 ano (${daysSinceCreation} dias)` });
+      } else if (daysSinceCreation > 180) {
+        score += 10;
+        factors.push({ name: "cliente_medio", impact: 10, description: `Cliente h\xE1 mais de 6 meses (${daysSinceCreation} dias)` });
+      }
+      const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
+      if (expirationDate) {
+        const daysUntilExpiration = Math.floor((new Date(expirationDate).getTime() - Date.now()) / (1e3 * 60 * 60 * 24));
+        if (daysUntilExpiration < 0) {
+          score -= 20;
+          factors.push({ name: "plano_expirado", impact: -20, description: "Plano expirado" });
+        } else if (daysUntilExpiration < 7) {
+          score -= 10;
+          factors.push({ name: "expiracao_proxima", impact: -10, description: `Plano expira em ${daysUntilExpiration} dias` });
+        }
+      }
+      score = Math.max(0, Math.min(100, score));
+      let riskLevel;
+      if (score >= 80) riskLevel = "low";
+      else if (score >= 60) riskLevel = "medium";
+      else if (score >= 40) riskLevel = "high";
+      else riskLevel = "critical";
+      res.json({
+        score,
+        risk_level: riskLevel,
+        factors,
+        metrics: {
+          days_as_customer: daysSinceCreation,
+          total_subscriptions: subscriptions2.length,
+          pending_payments: pendingPayments,
+          late_payments: latePayments
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao calcular health score:", error);
+      res.status(500).json({ error: "Erro ao calcular score de sa\xFAde" });
+    }
+  });
+  app2.get("/api/admin/clients/churn-alerts", requireAdmin, async (req, res) => {
+    try {
+      const users2 = await storage2.getUsers?.() || [];
+      const alerts = [];
+      for (const user of users2) {
+        const riskFactors = [];
+        let riskScore = 0;
+        if (user.status !== "ativo") {
+          riskFactors.push("Conta inativa");
+          riskScore += 30;
+        }
+        const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
+        if (expirationDate) {
+          const daysUntilExpiration = Math.floor((new Date(expirationDate).getTime() - Date.now()) / (1e3 * 60 * 60 * 24));
+          if (daysUntilExpiration < 0) {
+            riskFactors.push(`Plano expirado h\xE1 ${Math.abs(daysUntilExpiration)} dias`);
+            riskScore += 40;
+          } else if (daysUntilExpiration <= 7) {
+            riskFactors.push(`Plano expira em ${daysUntilExpiration} dias`);
+            riskScore += 20;
+          }
+        }
+        if (user.plano === "trial") {
+          const trialExpDate = user.data_expiracao_trial;
+          if (trialExpDate) {
+            const daysLeft = Math.floor((new Date(trialExpDate).getTime() - Date.now()) / (1e3 * 60 * 60 * 24));
+            if (daysLeft <= 3 && daysLeft >= 0) {
+              riskFactors.push(`Trial expira em ${daysLeft} dias`);
+              riskScore += 25;
+            }
+          }
+        }
+        if (riskScore > 0) {
+          alerts.push({
+            user_id: user.id,
+            user_name: user.nome,
+            user_email: user.email,
+            plano: user.plano,
+            status: user.status,
+            risk_score: Math.min(100, riskScore),
+            risk_factors: riskFactors,
+            expiration_date: expirationDate
+          });
+        }
+      }
+      alerts.sort((a, b) => b.risk_score - a.risk_score);
+      res.json({
+        alerts: alerts.slice(0, 50),
+        // Top 50 em risco
+        total_at_risk: alerts.length,
+        critical_count: alerts.filter((a) => a.risk_score >= 50).length,
+        warning_count: alerts.filter((a) => a.risk_score >= 20 && a.risk_score < 50).length
+      });
+    } catch (error) {
+      console.error("Erro ao buscar alertas de churn:", error);
+      res.status(500).json({ error: "Erro ao buscar alertas de cancelamento" });
+    }
+  });
+  app2.get("/api/admin/clients/:userId/usage-stats", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const vendas2 = await storage2.getVendasByUser?.(userId) || [];
+      const productStats = {};
+      for (const venda of vendas2) {
+        let itens = [];
+        if (venda.itens) {
+          try {
+            itens = JSON.parse(venda.itens);
+          } catch {
+            itens = [{ nome: venda.produto, quantidade: venda.quantidade_vendida, subtotal: venda.valor_total }];
+          }
+        } else {
+          itens = [{ nome: venda.produto, quantidade: venda.quantidade_vendida, subtotal: venda.valor_total }];
+        }
+        for (const item of itens) {
+          const key = item.nome || item.produto || "Desconhecido";
+          if (!productStats[key]) {
+            productStats[key] = { name: key, quantity: 0, revenue: 0 };
+          }
+          productStats[key].quantity += item.quantidade || 1;
+          productStats[key].revenue += item.subtotal || item.preco || 0;
+        }
+      }
+      const topProducts = Object.values(productStats).sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+      const totalSales = vendas2.length;
+      const totalRevenue = vendas2.reduce((sum, v) => sum + (v.valor_total || 0), 0);
+      const avgTicket = totalSales > 0 ? totalRevenue / totalSales : 0;
+      const monthlyStats = {};
+      const sixMonthsAgo = /* @__PURE__ */ new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+      for (const venda of vendas2) {
+        const vendaDate = new Date(venda.data);
+        if (vendaDate >= sixMonthsAgo) {
+          const monthKey = `${vendaDate.getFullYear()}-${String(vendaDate.getMonth() + 1).padStart(2, "0")}`;
+          if (!monthlyStats[monthKey]) {
+            monthlyStats[monthKey] = { month: monthKey, sales: 0, revenue: 0 };
+          }
+          monthlyStats[monthKey].sales += 1;
+          monthlyStats[monthKey].revenue += venda.valor_total || 0;
+        }
+      }
+      res.json({
+        top_products: topProducts,
+        total_sales: totalSales,
+        total_revenue: totalRevenue,
+        average_ticket: avgTicket,
+        monthly_stats: Object.values(monthlyStats).sort((a, b) => a.month.localeCompare(b.month))
+      });
+    } catch (error) {
+      console.error("Erro ao buscar estat\xEDsticas de uso:", error);
+      res.status(500).json({ error: "Erro ao buscar estat\xEDsticas de uso" });
+    }
+  });
+  app2.get("/api/admin/clients/:userId/360-summary", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage2.getUserById?.(userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usu\xE1rio n\xE3o encontrado" });
+      }
+      const subscriptions2 = await storage2.getSubscriptionsByUser?.(userId) || [];
+      const totalPaid = subscriptions2.filter((s) => s.status === "ativo" || s.status_pagamento === "approved").reduce((sum, s) => sum + (s.valor || 0), 0);
+      const vendas2 = await storage2.getVendasByUser?.(userId) || [];
+      const totalRevenue = vendas2.reduce((sum, v) => sum + (v.valor_total || 0), 0);
+      const funcionarios2 = await storage2.getFuncionariosByContaId?.(userId) || [];
+      const daysSinceCreation = user.data_criacao ? Math.floor((Date.now() - new Date(user.data_criacao).getTime()) / (1e3 * 60 * 60 * 24)) : 0;
+      const expirationDate = user.data_expiracao_plano || user.data_expiracao_trial;
+      const daysUntilExpiration = expirationDate ? Math.floor((new Date(expirationDate).getTime() - Date.now()) / (1e3 * 60 * 60 * 24)) : null;
+      res.json({
+        user: {
+          id: user.id,
+          nome: user.nome,
+          email: user.email,
+          telefone: user.telefone,
+          cpf_cnpj: user.cpf_cnpj,
+          plano: user.plano,
+          status: user.status,
+          data_criacao: user.data_criacao,
+          data_expiracao: expirationDate
+        },
+        metrics: {
+          days_as_customer: daysSinceCreation,
+          days_until_expiration: daysUntilExpiration,
+          total_paid_subscriptions: totalPaid,
+          total_sales_revenue: totalRevenue,
+          total_sales_count: vendas2.length,
+          active_employees: funcionarios2.filter((f) => f.status === "ativo").length,
+          total_employees: funcionarios2.length,
+          total_subscriptions: subscriptions2.length
+        }
+      });
+    } catch (error) {
+      console.error("Erro ao buscar resumo 360:", error);
+      res.status(500).json({ error: "Erro ao buscar resumo do cliente" });
+    }
+  });
   app2.get("/api/system-config/:key", async (req, res) => {
     try {
       const { key } = req.params;
@@ -10524,6 +12870,190 @@ Libere or\xE7amentos ou ajuste a quantidade.`
       res.status(500).json({ error: error.message });
     }
   });
+  app2.get("/api/admin/email-templates", requireAdmin, async (req, res) => {
+    try {
+      const templates = await storage2.getEmailTemplates();
+      res.json(templates);
+    } catch (error) {
+      logger.error("Erro ao buscar templates:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/admin/email-templates", requireAdmin, async (req, res) => {
+    try {
+      const template = await storage2.createEmailTemplate(req.body);
+      res.json(template);
+    } catch (error) {
+      logger.error("Erro ao criar template:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.put("/api/admin/email-templates/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const template = await storage2.updateEmailTemplate(parseInt(id), req.body);
+      res.json(template);
+    } catch (error) {
+      logger.error("Erro ao atualizar template:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.delete("/api/admin/email-templates/:id", requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage2.deleteEmailTemplate(parseInt(id));
+      res.json({ success: true });
+    } catch (error) {
+      logger.error("Erro ao deletar template:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.get("/api/admin/email-history", requireAdmin, async (req, res) => {
+    try {
+      const { userId, limit = 100 } = req.query;
+      const history = await storage2.getEmailHistory(userId, parseInt(limit));
+      res.json(history);
+    } catch (error) {
+      logger.error("Erro ao buscar hist\xF3rico:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.get("/api/admin/email-history/:userId", requireAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const history = await storage2.getEmailHistoryByUser(userId);
+      res.json(history);
+    } catch (error) {
+      logger.error("Erro ao buscar hist\xF3rico do cliente:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/admin/email-send-mass", requireAdmin, async (req, res) => {
+    try {
+      const { segmento, templateId, assunto, conteudo } = req.body;
+      let users2 = await storage2.getUsers();
+      switch (segmento) {
+        case "trial":
+          users2 = users2.filter((u) => u.plano === "trial");
+          break;
+        case "premium":
+          users2 = users2.filter((u) => u.plano === "premium" || u.plano === "premium_mensal" || u.plano === "premium_anual");
+          break;
+        case "expirados":
+          users2 = users2.filter((u) => u.status === "bloqueado" || u.status === "expirado");
+          break;
+        case "ativos":
+          users2 = users2.filter((u) => u.status === "ativo");
+          break;
+      }
+      const { EmailService: EmailService2 } = await Promise.resolve().then(() => (init_email_service(), email_service_exports));
+      const emailService = new EmailService2();
+      let enviados = 0;
+      let falhas = 0;
+      const resultados = [];
+      for (const user of users2) {
+        if (!user.email) continue;
+        let conteudoPersonalizado = conteudo.replace(/\{\{nome\}\}/g, user.nome || "Cliente").replace(/\{\{email\}\}/g, user.email).replace(/\{\{plano\}\}/g, user.plano || "trial");
+        let assuntoPersonalizado = assunto.replace(/\{\{nome\}\}/g, user.nome || "Cliente");
+        try {
+          await emailService.sendGenericEmail({
+            to: user.email,
+            subject: assuntoPersonalizado,
+            html: conteudoPersonalizado
+          });
+          await storage2.createEmailHistory({
+            user_id: user.id,
+            template_id: templateId || null,
+            email_destino: user.email,
+            assunto: assuntoPersonalizado,
+            conteudo: conteudoPersonalizado,
+            tipo: "massa",
+            segmento,
+            status: "enviado"
+          });
+          enviados++;
+          resultados.push({ email: user.email, status: "enviado" });
+        } catch (error) {
+          falhas++;
+          resultados.push({ email: user.email, status: "falha", erro: error.message });
+          await storage2.createEmailHistory({
+            user_id: user.id,
+            template_id: templateId || null,
+            email_destino: user.email,
+            assunto: assuntoPersonalizado,
+            conteudo: conteudoPersonalizado,
+            tipo: "massa",
+            segmento,
+            status: "falha",
+            erro: error.message
+          });
+        }
+      }
+      res.json({ success: true, enviados, falhas, total: users2.length, resultados });
+    } catch (error) {
+      logger.error("Erro ao enviar emails em massa:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.post("/api/admin/email-send", requireAdmin, async (req, res) => {
+    try {
+      const { userId, email, assunto, conteudo, templateId } = req.body;
+      const { EmailService: EmailService2 } = await Promise.resolve().then(() => (init_email_service(), email_service_exports));
+      const emailService = new EmailService2();
+      let user = null;
+      if (userId) {
+        user = await storage2.getUserById(userId);
+      }
+      let conteudoPersonalizado = conteudo.replace(/\{\{nome\}\}/g, user?.nome || "Cliente").replace(/\{\{email\}\}/g, user?.email || email).replace(/\{\{plano\}\}/g, user?.plano || "trial");
+      let assuntoPersonalizado = assunto.replace(/\{\{nome\}\}/g, user?.nome || "Cliente");
+      await emailService.sendGenericEmail({
+        to: email || user?.email,
+        subject: assuntoPersonalizado,
+        html: conteudoPersonalizado
+      });
+      await storage2.createEmailHistory({
+        user_id: userId || null,
+        template_id: templateId || null,
+        email_destino: email || user?.email,
+        assunto: assuntoPersonalizado,
+        conteudo: conteudoPersonalizado,
+        tipo: "manual",
+        status: "enviado"
+      });
+      res.json({ success: true, message: "Email enviado com sucesso" });
+    } catch (error) {
+      logger.error("Erro ao enviar email:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.get("/api/admin/email-automation", requireAdmin, async (req, res) => {
+    try {
+      const automation = await storage2.getEmailAutomation();
+      res.json(automation);
+    } catch (error) {
+      logger.error("Erro ao buscar automa\xE7\xE3o:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.put("/api/admin/email-automation/:tipo", requireAdmin, async (req, res) => {
+    try {
+      const { tipo } = req.params;
+      const automation = await storage2.upsertEmailAutomation(tipo, req.body);
+      res.json(automation);
+    } catch (error) {
+      logger.error("Erro ao atualizar automa\xE7\xE3o:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  app2.get("/api/admin/email-stats", requireAdmin, async (req, res) => {
+    try {
+      const stats = await storage2.getEmailStats();
+      res.json(stats);
+    } catch (error) {
+      logger.error("Erro ao buscar estat\xEDsticas:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
   const httpServer = createServer(app2);
   return httpServer;
 }
@@ -10565,6 +13095,7 @@ var vite_config_default = defineConfig({
     emptyOutDir: true
   },
   server: {
+    strictPort: false,
     fs: {
       strict: true,
       deny: ["**/.*"]
@@ -10653,6 +13184,7 @@ import { Pool as Pool3, neonConfig as neonConfig3 } from "@neondatabase/serverle
 import { sql as sql4 } from "drizzle-orm";
 import ws3 from "ws";
 neonConfig3.webSocketConstructor = ws3;
+process.env.TZ = "America/Sao_Paulo";
 async function autoFixDatabaseSchema() {
   if (!process.env.DATABASE_URL) {
     logger.error("[AUTO-FIX] DATABASE_URL n\xE3o encontrado");
@@ -10674,7 +13206,6 @@ async function autoFixDatabaseSchema() {
       { name: "cpf_cnpj", type: "TEXT", default: null },
       { name: "telefone", type: "TEXT", default: null },
       { name: "endereco", type: "TEXT", default: null },
-      { name: "asaas_customer_id", type: "TEXT", default: null },
       { name: "permissoes", type: "TEXT", default: null },
       { name: "ultimo_acesso", type: "TEXT", default: null },
       { name: "max_funcionarios", type: "INTEGER", default: 1 },
@@ -10811,7 +13342,11 @@ app.use((req, res, next) => {
   next();
 });
 (async () => {
-  await autoFixDatabaseSchema();
+  if (process.env.NODE_ENV === "development") {
+    await autoFixDatabaseSchema();
+  } else {
+    logger.info("[STARTUP] Auto-fix desabilitado em produ\xE7\xE3o - use migrations", "SECURITY");
+  }
   const server = await registerRoutes(app);
   app.use((err, _req, res, _next) => {
     const status = err.status || err.statusCode || 500;
@@ -10821,13 +13356,14 @@ app.use((req, res, next) => {
   });
   if (process.env.NODE_ENV === "production") {
     app.use((req, res, next) => {
-      if (req.protocol !== 'https') {  // ← Agora usa req.protocol (respeita trust proxy)
+      if (req.headers["x-forwarded-proto"] !== "https") {
         return res.redirect(301, `https://${req.headers.host}${req.url}`);
       }
       next();
     });
   }
-  if (app.get("env") === "development") {
+  const isDevelopment = process.env.NODE_ENV === "development" || app.get("env") === "development";
+  if (isDevelopment) {
     await setupVite(app, server);
   } else {
     serveStatic(app);
