@@ -261,6 +261,7 @@ export const subscriptions = pgTable("subscriptions", {
   plano: text("plano").notNull(),
   status: text("status").notNull().default("pendente"),
   valor: real("valor").notNull().default(0),
+  valor_original: real("valor_original").notNull().default(0),
   data_inicio: text("data_inicio"),
   data_vencimento: text("data_vencimento"),
   mercadopago_payment_id: text("mercadopago_payment_id"),

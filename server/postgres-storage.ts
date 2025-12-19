@@ -344,6 +344,29 @@ export class PostgresStorage implements IStorage {
         return { valido: false, erro: 'Cupom esgotado' };
       }
 
+      // ✅ NOVA VALIDAÇÃO: Verificar se o usuário já usou este cupom
+      if (userId && userId !== 'temp') {
+        const usuarioJaUsouCupom = await this.db
+          .select()
+          .from(usoCupons)
+          .where(
+            and(
+              eq(usoCupons.cupom_id, cupom.id),
+              eq(usoCupons.user_id, userId)
+            )
+          )
+          .limit(1);
+
+        if (usuarioJaUsouCupom.length > 0) {
+          logger.warn('[DB] Usuário tentou reusar cupom', {
+            cupomId: cupom.id,
+            cupomCodigo: cupom.codigo,
+            userId
+          });
+          return { valido: false, erro: 'Você já utilizou este cupom em uma compra anterior' };
+        }
+      }
+
       return { 
         valido: true, 
         cupom: {

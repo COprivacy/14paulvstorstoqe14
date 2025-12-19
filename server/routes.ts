@@ -5101,10 +5101,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let cupomAplicado = null;
       let valorDesconto = 0;
 
-      // Aplicar cupom se fornecido
+      // Criar ou atualizar usuário PRIMEIRO (antes de validar cupom)
+      let user = await storage.getUserByEmail(email);
+      if (!user) {
+        const senhaTemporaria = Math.random().toString(36).slice(-8);
+        user = await storage.createUser({
+          nome,
+          email,
+          senha: senhaTemporaria,
+          plano: "trial",
+          is_admin: "false",
+          status: "ativo",
+        });
+      }
+
+      // Aplicar cupom se fornecido (agora com userId real)
       if (cupom) {
         try {
-          const resultadoCupom = await storage.validarCupom?.(cupom, plano, 'temp');
+          const resultadoCupom = await storage.validarCupom?.(cupom, plano, user.id);
 
           if (resultadoCupom?.valido && resultadoCupom.cupom) {
             cupomAplicado = resultadoCupom.cupom;
@@ -5119,6 +5133,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             valorFinal = Math.max(0, valorFinal - valorDesconto);
 
             console.log(`✅ [CHECKOUT] Cupom aplicado: ${cupom} - Desconto: R$ ${valorDesconto.toFixed(2)}`);
+          } else {
+            console.log(`❌ [CHECKOUT] Cupom inválido: ${resultadoCupom?.erro}`);
+            return res.status(400).json({ error: resultadoCupom?.erro || 'Cupom inválido' });
           }
         } catch (error) {
           console.error('Erro ao validar cupom no checkout:', error);
@@ -5198,20 +5215,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         external_reference: externalReference,
         notification_url: webhookUrl,
       });
-
-      // Criar ou atualizar usuário
-      let user = await storage.getUserByEmail(email);
-      if (!user) {
-        const senhaTemporaria = Math.random().toString(36).slice(-8);
-        user = await storage.createUser({
-          nome,
-          email,
-          senha: senhaTemporaria,
-          plano: "trial",
-          is_admin: "false",
-          status: "ativo",
-        });
-      }
 
       // Verificar se existe assinatura pendente para este usuário
       const subscriptions = await storage.getSubscriptions();
@@ -5309,6 +5312,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           plano,
           status: "pendente",
           valor: valorFinal,
+          valor_original: planoValues[plano as keyof typeof planoValues],
           data_vencimento: dataVencimentoNovo,
           prazo_limite_pagamento: prazoLimitePagamentoNovo,
           tentativas_cobranca: 0,
@@ -5317,6 +5321,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status_pagamento: "pending",
           init_point: preference.init_point,
           external_reference: externalReference,
+          cupom_codigo: cupomAplicado?.codigo,
+          cupom_id: cupomAplicado?.id,
+          valor_desconto_cupom: valorDesconto > 0 ? valorDesconto : undefined,
         });
       }
 
