@@ -1760,6 +1760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Criar a assinatura
       const novaAssinatura = {
         user_id: userId,
+        user_name: user.email,
         plano: plano,
         valor: parseFloat(valor),
         status: 'ativo' as const,
@@ -5309,6 +5310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Criar registro de assinatura
         subscription = await storage.createSubscription({
           user_id: user.id,
+          user_name: user.email,
           plano,
           status: "pendente",
           valor: valorFinal,

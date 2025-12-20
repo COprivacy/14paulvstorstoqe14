@@ -277,6 +277,7 @@ export const logsAdmin = pgTable("logs_admin", {
 export const subscriptions = pgTable("subscriptions", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   user_id: text("user_id").notNull(),
+  user_name: text("user_name"),
   plano: text("plano").notNull(),
   status: text("status").notNull().default("pendente"),
   valor: real("valor").notNull().default(0),
