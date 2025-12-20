@@ -6,7 +6,7 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 
 import { apiRequest } from "@/lib/api";
 
@@ -33,10 +33,22 @@ export default function Products() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: products = [], isLoading, isError } = useQuery({
+  const { data: products = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["/api/produtos"],
-    refetchInterval: 5000, // Auto-refresh a cada 5 segundos para sincronizar bloqueios
+    refetchInterval: 3000, // Auto-refresh a cada 3 segundos para sincronizar bloqueios e mudanças de orçamento
   });
+
+  // Refetch automático quando página volta para foco (quando usuário volta de outra aba)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refetch();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [refetch]);
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm) {
