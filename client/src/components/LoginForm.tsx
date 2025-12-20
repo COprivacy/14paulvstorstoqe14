@@ -257,6 +257,7 @@ export default function LoginForm({
                     className="pl-10 h-11"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
                     required
                     data-testid="input-email"
                   />
@@ -301,6 +302,7 @@ export default function LoginForm({
                                   className="pl-10"
                                   value={forgotPasswordEmail}
                                   onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                                  autoComplete="email"
                                   required
                                   data-testid="input-forgot-email"
                                 />
@@ -352,6 +354,7 @@ export default function LoginForm({
                                 placeholder="Mínimo 8 caracteres (letras e números)"
                                 value={newPassword}
                                 onChange={(e) => setNewPassword(e.target.value)}
+                                autoComplete="new-password"
                                 required
                               />
                             </div>
@@ -363,6 +366,7 @@ export default function LoginForm({
                                 placeholder="Digite a senha novamente"
                                 value={confirmNewPassword}
                                 onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                autoComplete="new-password"
                                 required
                               />
                             </div>
@@ -405,6 +409,7 @@ export default function LoginForm({
                     className="pl-10 pr-10 h-11" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
                     required
                     data-testid="input-password"
                   />
