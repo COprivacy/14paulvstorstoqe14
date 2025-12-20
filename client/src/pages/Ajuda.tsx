@@ -121,7 +121,7 @@ export default function Ajuda() {
     {
       icon: Phone,
       titulo: "Telefone",
-      descricao: "(98) 98426-7488",
+      descricao: "98 984267488",
       disponibilidade: "Seg-Sex: 8h às 18h",
       link: "tel:+5598984267488",
       badge: "Urgências",
@@ -691,8 +691,8 @@ export default function Ajuda() {
                       <ul className="list-none space-y-2">
                         <li><strong>Email:</strong> termos@pavisoft.com.br</li>
                         <li><strong>Suporte:</strong> atendimento.pavisoft@gmail.com</li>
-                        <li><strong>WhatsApp:</strong> (98) 98426-7488</li>
-                        <li><strong>Telefone:</strong> (98) 98426-7488</li>
+                        <li><strong>WhatsApp:</strong> 98 984267488</li>
+                        <li><strong>Telefone:</strong> 98 984267488</li>
                       </ul>
                     </section>
 

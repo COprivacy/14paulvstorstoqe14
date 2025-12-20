@@ -378,7 +378,7 @@ export default function Privacy() {
                     </p>
                     <ul className="list-disc ml-6 space-y-1">
                       <li>Email: atendimento.pavisoft@gmail.com</li>
-                      <li>WhatsApp: (98) 98426-7488</li>
+                      <li>WhatsApp: 98 984267488</li>
                     </ul>
                   </div>
                 </section>
@@ -486,7 +486,7 @@ export default function Privacy() {
                   <ul className="list-disc pl-6 space-y-2">
                     <li>Acessar as configurações da sua conta no sistema</li>
                     <li>Enviar email para: <strong className="text-white">atendimento.pavisoft@gmail.com</strong></li>
-                    <li>Entrar em contato pelo WhatsApp: <strong className="text-white">(98) 98426-7488</strong></li>
+                    <li>Entrar em contato pelo WhatsApp: <strong className="text-white">98 984267488</strong></li>
                   </ul>
                   <p className="mt-4">
                     Responderemos sua solicitação em até 15 dias úteis, conforme previsto na LGPD.
@@ -604,7 +604,7 @@ export default function Privacy() {
                       <Phone className="h-5 w-5 text-blue-400" />
                       <div>
                         <p className="text-sm text-gray-400">WhatsApp</p>
-                        <p className="text-white font-medium">(98) 98426-7488</p>
+                        <p className="text-white font-medium">98 984267488</p>
                       </div>
                     </div>
                   </div>

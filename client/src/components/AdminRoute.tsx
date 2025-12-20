@@ -115,7 +115,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
                 Precisa de ajuda? Entre em contato:{" "}
                 <a 
-                  href="https://wa.me/5581989842677" 
+                  href="https://wa.me/5598984267488" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
