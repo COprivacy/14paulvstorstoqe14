@@ -143,7 +143,20 @@ export default function AssinaturasFuncionarios() {
   const { toast } = useToast();
   const { user } = useUser();
   const [, setLocation] = useLocation();
+  
+  // Declarar TODOS os hooks no topo, antes de qualquer early return
   const [isPasswordProtected, setIsPasswordProtected] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<string>("todos");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [reprocessDialogOpen, setReprocessDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedPackageType, setSelectedPackageType] = useState("pacote_5");
+  const [selectedQuantity, setSelectedQuantity] = useState(5);
+  const [selectedPrice, setSelectedPrice] = useState(39.90);
+  const [reprocessPaymentId, setReprocessPaymentId] = useState("");
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
   
   // Verificação de acesso - apenas Admin Master
   useEffect(() => {
@@ -164,68 +177,7 @@ export default function AssinaturasFuncionarios() {
     };
   }, []);
 
-  // Se não é o usuário master, mostrar mensagem de acesso negado
-  if (!user || user.email !== "pavisoft.suporte@gmail.com" || user.is_admin !== "true") {
-    return (
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <ShieldAlert className="h-8 w-8 text-red-600" />
-              <div>
-                <CardTitle className="text-red-600">Acesso Negado</CardTitle>
-                <CardDescription>Área Restrita</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Alert variant="destructive">
-              <ShieldAlert className="h-4 w-4" />
-              <AlertTitle>Permissão Insuficiente</AlertTitle>
-              <AlertDescription>
-                Esta página é exclusiva para o Administrador Master do sistema.
-                Você será redirecionado para o dashboard.
-              </AlertDescription>
-            </Alert>
-            <Button 
-              onClick={() => setLocation("/dashboard")} 
-              className="w-full mt-4"
-              data-testid="button-back-dashboard"
-            >
-              Voltar ao Dashboard
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Verificar se a proteção por senha já foi validada
-  if (isPasswordProtected && !sessionStorage.getItem("employee_packages_auth")) {
-    return (
-      <PasswordProtectionDialog 
-        onAuthenticated={() => setIsPasswordProtected(false)}
-        onDenied={() => setLocation("/dashboard")}
-      />
-    );
-  }
-  
-  const [filterStatus, setFilterStatus] = useState<string>("todos");
-  const [searchTerm, setSearchTerm] = useState("");
-  
-  const [activateDialogOpen, setActivateDialogOpen] = useState(false);
-  const [reprocessDialogOpen, setReprocessDialogOpen] = useState(false);
-  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
-  
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedPackageType, setSelectedPackageType] = useState("pacote_5");
-  const [selectedQuantity, setSelectedQuantity] = useState(5);
-  const [selectedPrice, setSelectedPrice] = useState(39.90);
-  
-  const [reprocessPaymentId, setReprocessPaymentId] = useState("");
-  
-  const [paymentDetails, setPaymentDetails] = useState<any>(null);
-
+  // Mover ALL hooks aqui - ANTES dos early returns
   const { data: users = [], isLoading: loadingUsers } = useQuery<any[]>({
     queryKey: ["/api/users"],
   });
@@ -293,6 +245,52 @@ export default function AssinaturasFuncionarios() {
       });
     },
   });
+
+  // Se não é o usuário master, mostrar mensagem de acesso negado
+  if (!user || user.email !== "pavisoft.suporte@gmail.com" || user.is_admin !== "true") {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="h-8 w-8 text-red-600" />
+              <div>
+                <CardTitle className="text-red-600">Acesso Negado</CardTitle>
+                <CardDescription>Área Restrita</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Alert variant="destructive">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Permissão Insuficiente</AlertTitle>
+              <AlertDescription>
+                Esta página é exclusiva para o Administrador Master do sistema.
+                Você será redirecionado para o dashboard.
+              </AlertDescription>
+            </Alert>
+            <Button 
+              onClick={() => setLocation("/dashboard")} 
+              className="w-full mt-4"
+              data-testid="button-back-dashboard"
+            >
+              Voltar ao Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Verificar se a proteção por senha já foi validada
+  if (isPasswordProtected && !sessionStorage.getItem("employee_packages_auth")) {
+    return (
+      <PasswordProtectionDialog 
+        onAuthenticated={() => setIsPasswordProtected(false)}
+        onDenied={() => setLocation("/dashboard")}
+      />
+    );
+  }
 
   const handleActivate = () => {
     if (!selectedUserId) {
