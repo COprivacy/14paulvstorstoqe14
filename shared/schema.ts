@@ -60,6 +60,17 @@ export const clientes = pgTable("clientes", {
   data_cadastro: text("data_cadastro").notNull(),
 });
 
+export const registrosClientes = pgTable("registros_clientes", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  cliente_id: integer("cliente_id").notNull().references(() => clientes.id, { onDelete: 'cascade' }),
+  nome_registro: text("nome_registro").notNull(),
+  cpf_cnpj_registro: text("cpf_cnpj_registro"),
+  descricao: text("descricao"),
+  data_criacao: text("data_criacao").notNull(),
+  data_atualizacao: text("data_atualizacao"),
+});
+
 export const fornecedores = pgTable("fornecedores", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   user_id: text("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -203,6 +214,14 @@ export const insertClienteSchema = createInsertSchema(clientes).omit({
 }).extend({
   data_cadastro: z.string().optional(),
 });
+
+export const insertRegistroClienteSchema = createInsertSchema(registrosClientes).omit({
+  id: true,
+  data_criacao: true,
+  data_atualizacao: true,
+});
+export type RegistroCliente = typeof registrosClientes.$inferSelect;
+export type InsertRegistroCliente = z.infer<typeof insertRegistroClienteSchema>;
 
 export const insertCompraSchema = createInsertSchema(compras).omit({
   id: true,
