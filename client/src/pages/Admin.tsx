@@ -578,7 +578,7 @@ export default function Admin() {
   });
 
   const { data: allPermissions = {} } = useQuery({
-    queryKey: ["/api/funcionarios/permissoes", currentUser?.id],
+    queryKey: ["/api/funcionarios", currentUser?.id, "permissoes"],
     queryFn: async () => {
       if (!currentUser?.id || employees.length === 0) return {}; // Don't fetch if no user ID or no employees
       const perms: Record<string, Permission> = {};
@@ -823,8 +823,9 @@ export default function Admin() {
       }
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/funcionarios/permissoes", currentUser?.id] }); // Invalidate the correct query key
+    onSuccess: (data, variables) => {
+      // Invalidate the permissions query with the current user's ID to refresh all employees' permissions
+      queryClient.invalidateQueries({ queryKey: ["/api/funcionarios", currentUser?.id, "permissoes"] });
       toast({
         title: "Permissões atualizadas",
         description: "As permissões foram salvas com sucesso.",
