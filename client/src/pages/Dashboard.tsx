@@ -459,8 +459,11 @@ export default function Dashboard() {
                       >
                         Cancelar
                       </Button>
-                      <Button onClick={handleSaveMeta}>
-                        Salvar Meta
+                      <Button 
+                        onClick={handleSaveMeta}
+                        disabled={saveMetaMutation.isPending}
+                      >
+                        {saveMetaMutation.isPending ? "Aguardando..." : "Salvar Meta"}
                       </Button>
                     </div>
                   </div>
