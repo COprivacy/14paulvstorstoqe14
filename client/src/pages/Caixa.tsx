@@ -404,9 +404,49 @@ export default function Caixa() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Gerenciamento de Caixa</h1>
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          Gerenciamento de Caixa
+        </h1>
+        <p className="text-muted-foreground">Controle completo do seu fluxo de caixa</p>
       </div>
+
+      {caixaAberto && (
+        <div className="grid gap-4 md:grid-cols-4 mb-6">
+          <Card className="border-l-4 border-l-green-600">
+            <CardContent className="pt-6">
+              <div className="text-sm text-muted-foreground mb-1">Saldo Inicial</div>
+              <div className="text-2xl font-bold text-green-600">
+                R$ {(caixaAberto.saldo_inicial || 0).toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-blue-600">
+            <CardContent className="pt-6">
+              <div className="text-sm text-muted-foreground mb-1">Total Vendas</div>
+              <div className="text-2xl font-bold text-blue-600">
+                R$ {(caixaAberto.total_vendas || 0).toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-orange-600">
+            <CardContent className="pt-6">
+              <div className="text-sm text-muted-foreground mb-1">Suprimentos</div>
+              <div className="text-2xl font-bold text-orange-600">
+                R$ {(caixaAberto.total_suprimentos || 0).toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-l-4 border-l-red-600">
+            <CardContent className="pt-6">
+              <div className="text-sm text-muted-foreground mb-1">Saldo Atual</div>
+              <div className="text-2xl font-bold text-red-600">
+                R$ {calcularSaldoAtual().toFixed(2)}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card>

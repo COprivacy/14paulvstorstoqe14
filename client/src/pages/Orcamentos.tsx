@@ -522,13 +522,77 @@ export default function Orcamentos() {
 
   return (
     <div className="container mx-auto max-w-7xl space-y-6 p-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Orçamentos
           </h1>
-          <p className="text-muted-foreground mt-2">Gerencie suas propostas comerciais de forma profissional</p>
+          <p className="text-muted-foreground">Gerencie suas propostas comerciais de forma profissional</p>
         </div>
+
+        {!isLoading && (
+          <div className="grid gap-4 md:grid-cols-5">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="text-2xl font-bold">{statsData.total}</p>
+                  </div>
+                  <FileText className="h-8 w-8 text-blue-600 opacity-20" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-yellow-600">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Pendentes</p>
+                    <p className="text-2xl font-bold text-yellow-600">{statsData.statusChart.find(s => s.name === 'Pendente')?.value || 0}</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-yellow-600 opacity-20" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-green-600">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Aprovados</p>
+                    <p className="text-2xl font-bold text-green-600">{statsData.statusChart.find(s => s.name === 'Aprovado')?.value || 0}</p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-600 opacity-20" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-blue-600">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Convertidos</p>
+                    <p className="text-2xl font-bold text-blue-600">{statsData.statusChart.find(s => s.name === 'Convertido')?.value || 0}</p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-blue-600 opacity-20" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-l-4 border-l-red-600">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Rejeitados</p>
+                    <p className="text-2xl font-bold text-red-600">{statsData.statusChart.find(s => s.name === 'Rejeitado')?.value || 0}</p>
+                  </div>
+                  <XCircle className="h-8 w-8 text-red-600 opacity-20" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div />
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) {
