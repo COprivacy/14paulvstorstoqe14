@@ -148,7 +148,19 @@ function UserEditDialog({
         // Atualizar usuário existente
         const updateData: Partial<typeof formData> = { ...formData };
         if (!updateData.senha) delete updateData.senha; // Não enviar senha vazia
+        
+        console.log('[DEBUG] Enviando PATCH para usuario:', {
+          userId: user.id,
+          updates: updateData
+        });
+        
         const response = await apiRequest("PATCH", `/api/users/${user.id}`, updateData);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Erro ao atualizar usuário: ${response.status}`);
+        }
+        
         return response.json();
       } else {
         // Criar novo usuário
@@ -156,7 +168,8 @@ function UserEditDialog({
         return response.json();
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('[DEBUG] Usuário atualizado com sucesso:', data);
       toast({
         title: user ? "Usuário atualizado!" : "Usuário criado!",
         description: user ? "As informações foram atualizadas com sucesso." : "O novo usuário foi criado com sucesso.",
@@ -165,9 +178,10 @@ function UserEditDialog({
       onOpenChange(false);
     },
     onError: (error: Error) => {
+      console.error('[DEBUG] Erro ao salvar usuário:', error);
       toast({
         title: "Erro",
-        description: error.message,
+        description: error.message || "Falha ao salvar as informações",
         variant: "destructive",
       });
     },
