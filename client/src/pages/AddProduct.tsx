@@ -40,6 +40,7 @@ export default function AddProduct() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/produtos"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/produtos/${id}`] });
       toast({
         title: "Produto atualizado!",
         description: `${data.nome} foi atualizado`,
