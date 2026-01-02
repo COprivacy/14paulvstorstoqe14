@@ -4900,7 +4900,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const id = parseInt(req.params.id);
-      const conta = await storage.updateContaPagar(id, req.body);
+      const updates = { ...req.body };
+      
+      if (updates.data_vencimento) {
+        updates.data_vencimento = parseDateToISOSaoPaulo(updates.data_vencimento);
+      }
+      
+      const conta = await storage.updateContaPagar(id, updates);
       console.log(`✅ Conta a pagar atualizada: ID ${id}`);
       res.json(conta);
     } catch (error: any) {

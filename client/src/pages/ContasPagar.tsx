@@ -12,6 +12,8 @@ import { Plus, Pencil, Trash2, DollarSign, Calendar, TrendingDown } from "lucide
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 
+import { formatDateOnlyBR } from "@/lib/dateUtils";
+
 export default function ContasPagar() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -266,7 +268,7 @@ export default function ContasPagar() {
                     <TableCell>{conta.descricao}</TableCell>
                     <TableCell>{conta.categoria || "-"}</TableCell>
                     <TableCell>R$ {conta.valor.toFixed(2)}</TableCell>
-                    <TableCell>{new Date(conta.data_vencimento).toLocaleDateString()}</TableCell>
+                    <TableCell>{formatDateOnlyBR(conta.data_vencimento)}</TableCell>
                     <TableCell>
                       <Badge variant={conta.status === "pago" ? "default" : "destructive"}>
                         {conta.status === "pago" ? "Pago" : "Pendente"}
