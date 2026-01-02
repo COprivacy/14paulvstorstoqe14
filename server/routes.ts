@@ -3077,7 +3077,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         adminId,
         "MAINTENANCE_CLEANUP_SUBS",
         `Manutenção: ${removidas} assinatura(s) e ${pacotesRemovidos} pacote(s) de funcionários removido(s)`,
-        req
+        { 
+          ip: req.ip, 
+          userAgent: req.get("user-agent") || undefined 
+        }
       );
 
       res.json({

@@ -619,7 +619,7 @@ export const usoCupons = pgTable("uso_cupons", {
   id: serial("id").primaryKey(),
   cupom_id: integer("cupom_id").notNull().references(() => cupons.id),
   user_id: text("user_id").notNull().references(() => users.id),
-  subscription_id: integer("subscription_id").references(() => subscriptions.id),
+  subscription_id: integer("subscription_id").references(() => subscriptions.id, { onDelete: 'set null' }),
   valor_desconto: real("valor_desconto").notNull(),
   data_uso: text("data_uso").notNull(),
 }, (table) => ({
