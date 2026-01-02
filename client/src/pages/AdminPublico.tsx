@@ -2689,6 +2689,53 @@ export default function AdminPublico() {
   const [emailMassaSegmento, setEmailMassaSegmento] = useState<string>('todos');
   const [emailMassaAssunto, setEmailMassaAssunto] = useState<string>('');
   const [emailMassaConteudo, setEmailMassaConteudo] = useState<string>('');
+  const [testEmailAddress, setTestEmailAddress] = useState<string>('');
+
+  // Mutation para envio em massa
+  const enviarEmailMassaMutation = useMutation({
+    mutationFn: async (data: { segmento: string; assunto: string; conteudo: string }) => {
+      const response = await apiRequest("POST", "/api/admin/enviar-email-massa", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Envio Concluído!",
+        description: data.message,
+      });
+      setEmailMassaAssunto('');
+      setEmailMassaConteudo('');
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-history"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-stats"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao enviar emails",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation para envio de teste
+  const enviarTesteMutation = useMutation({
+    mutationFn: async (data: { email: string; assunto: string; conteudo: string }) => {
+      const response = await apiRequest("POST", "/api/admin/send-test-email", data);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Teste Enviado!",
+        description: data.message,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro no envio de teste",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<any>(null);
   const [configTab, setConfigTab] = useState<'config' | 'mercadopago'>('mercadopago');
@@ -2915,29 +2962,6 @@ export default function AdminPublico() {
   });
 
   // Mutation para envio de email em massa
-  const enviarEmailMassaMutation = useMutation({
-    mutationFn: async (data: { segmento: string; assunto: string; conteudo: string }) => {
-      const response = await apiRequest("POST", "/api/admin/email-send-mass", data);
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Emails enviados!",
-        description: `${data.enviados || 0} emails foram enviados com sucesso.`,
-      });
-      setEmailMassaAssunto('');
-      setEmailMassaConteudo('');
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-history"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-stats"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao enviar emails",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   // Mutation para criar/editar template
   const salvarTemplateMutation = useMutation({
@@ -4838,37 +4862,62 @@ export default function AdminPublico() {
                         </p>
                       </div>
 
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => enviarEmailMassaMutation.mutate({
-                            segmento: emailMassaSegmento,
-                            assunto: emailMassaAssunto,
-                            conteudo: emailMassaConteudo
-                          })}
-                          disabled={enviarEmailMassaMutation.isPending || !emailMassaAssunto || !emailMassaConteudo}
-                          data-testid="button-enviar-massa"
-                        >
-                          {enviarEmailMassaMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                          Enviar Emails
-                        </Button>
-                        <Select onValueChange={(templateId) => {
-                          const template = emailTemplates.find((t: any) => t.id.toString() === templateId);
-                          if (template) {
-                            setEmailMassaAssunto(template.assunto);
-                            setEmailMassaConteudo(template.conteudo);
-                          }
-                        }}>
-                          <SelectTrigger className="w-[200px]" data-testid="select-template">
-                            <SelectValue placeholder="Usar Template" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {emailTemplates.map((template: any) => (
-                              <SelectItem key={template.id} value={template.id.toString()}>
-                                {template.nome}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                      <div className="flex flex-col gap-4">
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={() => enviarEmailMassaMutation.mutate({
+                              segmento: emailMassaSegmento,
+                              assunto: emailMassaAssunto,
+                              conteudo: emailMassaConteudo
+                            })}
+                            disabled={enviarEmailMassaMutation.isPending || !emailMassaAssunto || !emailMassaConteudo}
+                            data-testid="button-enviar-massa"
+                          >
+                            {enviarEmailMassaMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Enviar Emails em Massa
+                          </Button>
+                          <Select onValueChange={(templateId) => {
+                            const template = emailTemplates.find((t: any) => t.id.toString() === templateId);
+                            if (template) {
+                              setEmailMassaAssunto(template.assunto);
+                              setEmailMassaConteudo(template.conteudo);
+                            }
+                          }}>
+                            <SelectTrigger className="w-[200px]" data-testid="select-template">
+                              <SelectValue placeholder="Usar Template" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {emailTemplates.map((template: any) => (
+                                <SelectItem key={template.id} value={template.id.toString()}>
+                                  {template.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="border-t pt-4 flex gap-2 items-end">
+                          <div className="flex-1 space-y-2">
+                            <Label>Email para Teste</Label>
+                            <Input 
+                              placeholder="exemplo@email.com" 
+                              value={testEmailAddress}
+                              onChange={(e) => setTestEmailAddress(e.target.value)}
+                            />
+                          </div>
+                          <Button 
+                            variant="outline"
+                            onClick={() => enviarTesteMutation.mutate({
+                              email: testEmailAddress,
+                              assunto: emailMassaAssunto,
+                              conteudo: emailMassaConteudo
+                            })}
+                            disabled={enviarTesteMutation.isPending || !testEmailAddress || !emailMassaAssunto || !emailMassaConteudo}
+                          >
+                            {enviarTesteMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                            Enviar Teste
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

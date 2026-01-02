@@ -2358,22 +2358,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/planos/:id", async (req, res) => {
+  // Enviar email em massa (apenas admin master)
+  app.post("/api/admin/enviar-email-massa", requireAdmin, async (req, res) => {
     try {
-      if (!storage.deletePlano) {
-        return res
-          .status(501)
-          .json({ error: "Método deletePlano não implementado" });
+      const { segmento, assunto, conteudo } = req.body;
+      const adminId = req.headers["x-user-id"] as string;
+
+      if (!assunto || !conteudo) {
+        return res.status(400).json({ error: "Assunto e conteúdo são obrigatórios" });
       }
-      const id = parseInt(req.params.id);
-      const deleted = await storage.deletePlano(id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Plano não encontrado" });
+
+      const users = await storage.getUsers();
+      let targets = [];
+
+      switch (segmento) {
+        case 'trial':
+          targets = users.filter(u => u.plano === 'trial');
+          break;
+        case 'premium':
+          targets = users.filter(u => u.plano === 'premium_mensal' || u.plano === 'premium_anual');
+          break;
+        case 'premium_mensal':
+          targets = users.filter(u => u.plano === 'premium_mensal');
+          break;
+        case 'premium_anual':
+          targets = users.filter(u => u.plano === 'premium_anual');
+          break;
+        case 'expirados':
+          targets = users.filter(u => u.status === 'bloqueado');
+          break;
+        case 'ativos':
+          targets = users.filter(u => u.status === 'ativo');
+          break;
+        default:
+          targets = users;
       }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Erro ao deletar plano:", error);
-      res.status(500).json({ error: "Erro ao deletar plano" });
+
+      logger.info(`Iniciando envio de email em massa para ${targets.length} destinatários`, 'ADMIN_EMAIL', { segmento, adminId });
+
+      // Envio assíncrono para não travar a resposta
+      const { emailService } = await import("./email-service");
+      
+      let successCount = 0;
+      for (const target of targets) {
+        if (!target.email) continue;
+        
+        // Personalização simples
+        const personalConteudo = conteudo
+          .replace(/\{\{nome\}\}/g, target.nome || 'Cliente')
+          .replace(/\{\{email\}\}/g, target.email)
+          .replace(/\{\{plano\}\}/g, target.plano || 'Trial');
+
+        const success = await emailService.sendCustomEmail({
+          to: target.email,
+          subject: assunto,
+          content: personalConteudo
+        });
+        
+        if (success) successCount++;
+        
+        // Registrar no histórico
+        if (storage.createEmailLog) {
+          await storage.createEmailLog({
+            user_id: target.id,
+            tipo: 'MASSA',
+            assunto: assunto,
+            status: success ? 'enviado' : 'falha',
+            data_envio: new Date().toISOString()
+          });
+        }
+      }
+
+      // NOVO: Adicionando endpoint para envio de teste para garantir consistência
+      app.post("/api/admin/send-test-email", requireAdmin, async (req, res) => {
+        try {
+          const { email, assunto, conteudo } = req.body;
+          if (!email || !assunto || !conteudo) {
+            return res.status(400).json({ error: "Email, assunto e conteúdo são obrigatórios" });
+          }
+          const { emailService } = await import("./email-service");
+          const success = await emailService.sendCustomEmail({
+            to: email,
+            subject: `[TESTE] ${assunto}`,
+            content: conteudo
+          });
+          if (!success) throw new Error("Falha no envio");
+          res.json({ success: true, message: "Email de teste enviado com sucesso!" });
+        } catch (error: any) {
+          res.status(500).json({ error: error.message });
+        }
+      });
+
+      await storage.logAdminAction?.(
+        adminId,
+        "EMAIL_MASSA_ENVIADO",
+        `Email em massa enviado: ${assunto} (${successCount}/${targets.length} sucessos)`,
+        req
+      );
+
+      res.json({ 
+        success: true, 
+        message: `Envio concluído: ${successCount} de ${targets.length} emails enviados com sucesso.`,
+        total: targets.length,
+        successCount
+      });
+    } catch (error: any) {
+      logger.error('Erro ao enviar email em massa', 'ADMIN_EMAIL', { error });
+      res.status(500).json({ error: error.message || "Erro ao enviar emails" });
+    }
+  });
+
+  // Enviar email de teste (apenas admin master)
+  app.post("/api/admin/send-test-email", requireAdmin, async (req, res) => {
+    try {
+      const { email, assunto, conteudo } = req.body;
+      const adminId = req.headers["x-user-id"] as string;
+
+      if (!email || !assunto || !conteudo) {
+        return res.status(400).json({ error: "Email, assunto e conteúdo são obrigatórios" });
+      }
+
+      const { emailService } = await import("./email-service");
+      const success = await emailService.sendCustomEmail({
+        to: email,
+        subject: `[TESTE] ${assunto}`,
+        content: conteudo
+      });
+
+      if (!success) {
+        throw new Error("Falha ao enviar email de teste. Verifique as configurações SMTP.");
+      }
+
+      res.json({ success: true, message: "Email de teste enviado com sucesso!" });
+    } catch (error: any) {
+      logger.error('Erro ao enviar email de teste', 'ADMIN_EMAIL', { error });
+      res.status(500).json({ error: error.message || "Erro ao enviar email de teste" });
     }
   });
 
