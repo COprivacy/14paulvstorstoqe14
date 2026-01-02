@@ -2117,6 +2117,32 @@ export class PostgresStorage implements IStorage {
     expires_at: Date;
   }): Promise<any> {
     try {
+      // ✅ Verificar se já existe uma sessão para este usuário e fingerprint para evitar duplicidade
+      const existingSessions = await this.db.execute(sql`
+        SELECT id FROM user_sessions 
+        WHERE user_id = ${data.user_id} 
+          AND device_fingerprint = ${data.device_fingerprint}
+          AND is_active = 'true'
+        LIMIT 1
+      `);
+
+      if (existingSessions.rows.length > 0) {
+        const sessionId = existingSessions.rows[0].id;
+        const result = await this.db.execute(sql`
+          UPDATE user_sessions SET
+            session_token = ${data.session_token},
+            device_info = ${JSON.stringify(data.device_info || {})}::jsonb,
+            ip_address = ${data.ip_address || null},
+            user_agent = ${data.user_agent || null},
+            expires_at = ${data.expires_at.toISOString()},
+            last_activity = NOW()
+          WHERE id = ${sessionId}
+          RETURNING *
+        `);
+        logger.info('[SESSION] Sessão existente atualizada', { userId: data.user_id });
+        return result.rows[0];
+      }
+
       const result = await this.db.execute(sql`
         INSERT INTO user_sessions (
           user_id, user_type, session_token, device_fingerprint,
@@ -2141,7 +2167,7 @@ export class PostgresStorage implements IStorage {
       });
       return result.rows[0];
     } catch (error) {
-      logger.error('[SESSION] Erro ao criar sessão:', { error });
+      logger.error('[SESSION] Erro ao criar/atualizar sessão:', { error });
       throw error;
     }
   }

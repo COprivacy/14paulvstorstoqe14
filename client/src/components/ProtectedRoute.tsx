@@ -75,7 +75,7 @@ export function ProtectedRoute({ children, requiredPermission }: ProtectedRouteP
   const { data: userStatus, isLoading: isCheckingStatus } = useQuery({
     queryKey: ["/api/user/check-blocked"],
     enabled: isAuthenticated && !isMasterUser && !isFuncionario, // Funcionários não verificam
-    refetchInterval: isFuncionario ? false : 5000, // Funcionários não refazem a verificação
+    refetchInterval: isFuncionario ? false : 30000, // Aumentado para 30 segundos para evitar carga excessiva e possíveis loops
   });
 
   // Se está verificando o status ou as permissões iniciais, mostrar loading
