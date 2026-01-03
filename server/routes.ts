@@ -6724,7 +6724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 quantidadeAdicional,
                 limiteAnterior: limiteAtual,
                 novoLimite,
-                dataVencimento: dataVencimento.toISOString(),
+                dataVencimento: dataVencimentoWebhook,
               });
 
               // Enviar email de confirmação de ativação
