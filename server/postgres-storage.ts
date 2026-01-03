@@ -2154,7 +2154,7 @@ export class PostgresStorage implements IStorage {
         LIMIT 1
       `);
 
-      if (existingSessions.rows.length > 0) {
+      if (existingSessions && existingSessions.rows && existingSessions.rows.length > 0) {
         const sessionId = existingSessions.rows[0].id;
         const result = await this.db.execute(sql`
           UPDATE user_sessions SET
