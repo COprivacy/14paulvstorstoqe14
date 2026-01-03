@@ -5624,15 +5624,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Enviar email de confirmação em segundo plano (não bloqueia a resposta)
-      import("./email-service").then(({ EmailService }) => {
-        const emailService = new EmailService();
-        emailService.sendEmployeePackagePurchased({
+      import("./email-service").then(({ emailService }) => {
+        emailService.sendCustomEmail({
           to: user.email,
-          userName: user.nome,
-          packageName: nomePacote,
-          quantity: quantidade,
-          price: valor,
-          paymentUrl: preference.init_point,
+          subject: "Pedido de Pacote de Funcionários - Pavisoft",
+          content: `Olá ${user.nome},\n\nRecebemos seu pedido para o pacote ${nomePacote} (+${quantidade} funcionários).\n\nPara concluir a ativação, realize o pagamento através do link abaixo:\n${preference.init_point}\n\nO limite será liberado automaticamente após a confirmação.`,
         }).then(() => {
           console.log(`📧 Email de compra enviado para ${user.email}`);
         }).catch((emailError) => {
