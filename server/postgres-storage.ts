@@ -143,7 +143,7 @@ export class PostgresStorage implements IStorage {
       `;
 
       const result = await this.db.execute(checkTableQuery);
-      const tableExists = result.rows[0]?.exists;
+      const tableExists = (result as any).rows?.[0]?.exists || result[0]?.exists;
 
       if (!tableExists) {
         console.log('📦 Criando tabelas de cupons...');
@@ -416,14 +416,9 @@ export class PostgresStorage implements IStorage {
   private async testConnection() {
     try {
       const result = await this.db.select().from(users).limit(1);
-      logger.info('[DB] Teste de conexão bem-sucedido', {
-        usuariosEncontrados: result.length
-      });
+      logger.info(`[DB] Teste de conexão bem-sucedido - Usuarios encontrados: ${result.length}`);
     } catch (error: any) {
-      logger.error('[DB] Erro no teste de conexão:', {
-        error: error.message,
-        stack: error.stack
-      });
+      logger.error(`[DB] Erro no teste de conexão: ${error.message}`);
     }
   }
 
@@ -569,7 +564,7 @@ export class PostgresStorage implements IStorage {
   }
 
   async createProduto(insertProduto: InsertProduto): Promise<Produto> {
-    const result = await this.db.insert(produtos).values(insertProduto).returning();
+    const result = await this.db.insert(produtos).values([insertProduto]).returning();
     return result[0];
   }
 
@@ -618,15 +613,15 @@ export class PostgresStorage implements IStorage {
         .where(eq(vendas.user_id, userId))
         .orderBy(desc(vendas.data));
 
-      return result as any[];
-    } catch (error) {
-      logger.error('[DB] Erro ao buscar vendas:', error);
+      return result as unknown as Venda[];
+    } catch (error: any) {
+      logger.error(`[DB] Erro ao buscar vendas: ${error.message}`);
       throw error;
     }
   }
 
   async createVenda(insertVenda: InsertVenda): Promise<Venda> {
-    const result = await this.db.insert(vendas).values(insertVenda).returning();
+    const result = await this.db.insert(vendas).values([insertVenda]).returning();
     return result[0];
   }
 
@@ -663,7 +658,7 @@ export class PostgresStorage implements IStorage {
       ...insertFornecedor,
       data_cadastro: new Date().toISOString(),
     };
-    const result = await this.db.insert(fornecedores).values(newFornecedor).returning();
+    const result = await this.db.insert(fornecedores).values([newFornecedor]).returning();
     return result[0];
   }
 
@@ -691,7 +686,7 @@ export class PostgresStorage implements IStorage {
       ...insertCliente,
       data_cadastro: insertCliente.data_cadastro || new Date().toISOString(),
     };
-    const result = await this.db.insert(clientes).values(newCliente).returning();
+    const result = await this.db.insert(clientes).values([newCliente]).returning();
     return result[0];
   }
 
@@ -731,7 +726,7 @@ export class PostgresStorage implements IStorage {
   }
 
   async createCompra(insertCompra: InsertCompra): Promise<Compra> {
-    const result = await this.db.insert(compras).values(insertCompra).returning();
+    const result = await this.db.insert(compras).values([insertCompra]).returning();
     return result[0];
   }
 
@@ -771,10 +766,10 @@ export class PostgresStorage implements IStorage {
   }
 
   async createPlano(plano: InsertPlano): Promise<Plano> {
-    const result = await this.db.insert(planos).values({
+    const result = await this.db.insert(planos).values([{
       ...plano,
       data_criacao: new Date().toISOString(),
-    }).returning();
+    }]).returning();
     return result[0];
   }
 
@@ -807,10 +802,10 @@ export class PostgresStorage implements IStorage {
       return result[0];
     }
 
-    const result = await this.db.insert(configMercadoPago).values({
+    const result = await this.db.insert(configMercadoPago).values([{
       ...config,
       updated_at: new Date().toISOString(),
-    }).returning();
+    }]).returning();
     return result[0];
   }
 
@@ -848,15 +843,15 @@ export class PostgresStorage implements IStorage {
   }
 
   async createLogAdmin(log: InsertLogAdmin): Promise<LogAdmin> {
-    const result = await this.db.insert(logsAdmin).values({
-      usuario_id: log.usuario_id,
-      conta_id: log.conta_id,
-      acao: log.acao,
-      detalhes: log.detalhes || null,
+    const result = await this.db.insert(logsAdmin).values([{
+      usuario_id: (log as any).usuario_id,
+      conta_id: (log as any).conta_id,
+      acao: (log as any).acao,
+      detalhes: (log as any).detalhes || null,
       data: new Date().toISOString(),
-      ip_address: log.ip_address || null,
-      user_agent: log.user_agent || null,
-    }).returning();
+      ip_address: (log as any).ip_address || null,
+      user_agent: (log as any).user_agent || null,
+    }]).returning();
     return result[0];
   }
 
@@ -944,10 +939,10 @@ export class PostgresStorage implements IStorage {
   }
 
   async createSubscription(subscription: InsertSubscription): Promise<Subscription> {
-    const result = await this.db.insert(subscriptions).values({
+    const result = await this.db.insert(subscriptions).values([{
       ...subscription,
       data_criacao: new Date().toISOString(),
-    }).returning();
+    }]).returning();
     return result[0];
   }
 
@@ -1048,15 +1043,15 @@ export class PostgresStorage implements IStorage {
     return await this.db.select().from(contasPagar).orderBy(desc(contasPagar.id));
   }
 
-  async createContaPagar(conta: InsertContasPagar): Promise<ContasPagar> {
-    const result = await this.db.insert(contasPagar).values({
+  async createContaPagar(conta: any): Promise<any> {
+    const result = await this.db.insert(contasPagar).values([{
       ...conta,
       data_cadastro: new Date().toISOString(),
-    }).returning();
+    }]).returning();
     return result[0];
   }
 
-  async updateContaPagar(id: number, updates: Partial<ContasPagar>): Promise<ContasPagar | undefined> {
+  async updateContaPagar(id: number, updates: any): Promise<any> {
     const result = await this.db.update(contasPagar).set(updates).where(eq(contasPagar.id, id)).returning();
     return result[0];
   }
@@ -1070,15 +1065,15 @@ export class PostgresStorage implements IStorage {
     return await this.db.select().from(contasReceber).orderBy(desc(contasReceber.id));
   }
 
-  async createContaReceber(conta: InsertContasReceber): Promise<ContasReceber> {
-    const result = await this.db.insert(contasReceber).values({
+  async createContaReceber(conta: any): Promise<any> {
+    const result = await this.db.insert(contasReceber).values([{
       ...conta,
       data_cadastro: new Date().toISOString(),
-    }).returning();
+    }]).returning();
     return result[0];
   }
 
-  async updateContaReceber(id: number, updates: Partial<ContasReceber>): Promise<ContasReceber | undefined> {
+  async updateContaReceber(id: number, updates: any): Promise<any> {
     const result = await this.db.update(contasReceber).set(updates).where(eq(contasReceber.id, id)).returning();
     return result[0];
   }
@@ -1122,7 +1117,7 @@ export class PostgresStorage implements IStorage {
   }
 
   async abrirCaixa(caixa: InsertCaixa): Promise<Caixa> {
-    const result = await this.db.insert(caixas).values(caixa).returning();
+    const result = await this.db.insert(caixas).values([caixa]).returning();
     return result[0];
   }
 
@@ -1198,7 +1193,7 @@ export class PostgresStorage implements IStorage {
   }
 
   async createMovimentacaoCaixa(movimentacao: InsertMovimentacaoCaixa): Promise<MovimentacaoCaixa> {
-    const result = await this.db.insert(movimentacoesCaixa).values(movimentacao).returning();
+    const result = await this.db.insert(movimentacoesCaixa).values([movimentacao]).returning();
     return result[0];
   }
 
