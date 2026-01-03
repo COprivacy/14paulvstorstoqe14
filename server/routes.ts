@@ -5313,7 +5313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Construir URL do webhook
-      let webhookUrl = config.webhook_url;
+      let webhookUrl = configMP?.webhook_url;
       if (!webhookUrl) {
         let baseUrl = process.env.APP_URL;
         if (!baseUrl) {
