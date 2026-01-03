@@ -564,7 +564,10 @@ export class PostgresStorage implements IStorage {
   }
 
   async createProduto(insertProduto: InsertProduto): Promise<Produto> {
-    const result = await this.db.insert(produtos).values([insertProduto]).returning();
+    const result = await this.db.insert(produtos).values([{
+      ...insertProduto,
+      data_cadastro: new Date().toISOString()
+    }]).returning();
     return result[0];
   }
 
@@ -621,7 +624,10 @@ export class PostgresStorage implements IStorage {
   }
 
   async createVenda(insertVenda: InsertVenda): Promise<Venda> {
-    const result = await this.db.insert(vendas).values([insertVenda]).returning();
+    const result = await this.db.insert(vendas).values([{
+      ...insertVenda,
+      data: new Date().toISOString()
+    }]).returning();
     return result[0];
   }
 
