@@ -9258,10 +9258,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/email-stats", requireAdmin, async (req, res) => {
     try {
       const stats = await storage.getEmailStats();
+      if (!stats) {
+        return res.json({
+          total: 0,
+          enviados: 0,
+          falhas: 0,
+          massa: 0,
+          manual: 0,
+          automatico: 0,
+          ultimas_24h: 0,
+          ultimos_7dias: 0
+        });
+      }
       res.json(stats);
     } catch (error: any) {
       logger.error('Erro ao buscar estatísticas:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error.message || 'Erro interno' });
     }
   });
 
