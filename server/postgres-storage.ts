@@ -1829,9 +1829,15 @@ export class PostgresStorage implements IStorage {
   async getEmployeePackages(userId: string): Promise<any[]> {
     try {
       const result = await this.db.execute(sql`
-        SELECT * FROM employee_packages 
-        WHERE user_id = ${userId} 
-        ORDER BY data_compra DESC
+        SELECT 
+          ep.*,
+          u.nome as user_name,
+          u.email as user_email,
+          u.plano as user_plan
+        FROM employee_packages ep
+        LEFT JOIN users u ON ep.user_id = u.id
+        WHERE ep.user_id = ${userId} 
+        ORDER BY ep.data_compra DESC
       `);
       return result.rows;
     } catch (error) {
@@ -1864,8 +1870,14 @@ export class PostgresStorage implements IStorage {
   async getAllEmployeePackages(): Promise<any[]> {
     try {
       const result = await this.db.execute(sql`
-        SELECT * FROM employee_packages 
-        ORDER BY data_compra DESC
+        SELECT 
+          ep.*,
+          u.nome as user_name,
+          u.email as user_email,
+          u.plano as user_plan
+        FROM employee_packages ep
+        LEFT JOIN users u ON ep.user_id = u.id
+        ORDER BY ep.data_compra DESC
       `);
       return result.rows;
     } catch (error) {

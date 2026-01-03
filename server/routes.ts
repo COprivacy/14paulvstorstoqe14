@@ -6074,19 +6074,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/employee-packages", requireAdmin, async (req, res) => {
     try {
       console.log('🔍 [ADMIN] Buscando pacotes de funcionários...');
-      const packages = await storage.db.execute(sql`
-        SELECT
-          ep.*,
-          u.nome as user_name,
-          u.email as user_email,
-          u.plano as user_plan
-        FROM employee_packages ep
-        LEFT JOIN users u ON ep.user_id = u.id
-        ORDER BY ep.data_compra DESC
-      `);
-
-      console.log(`✅ [ADMIN] ${packages.rows?.length || 0} pacotes encontrados`);
-      res.json(packages.rows || []);
+      const packages = await storage.getAllEmployeePackages();
+      console.log(`✅ [ADMIN] ${packages.length || 0} pacotes encontrados`);
+      res.json(packages || []);
     } catch (error) {
       console.error("❌ [ADMIN] Erro ao buscar pacotes de funcionários:", error);
       res.status(500).json({ error: "Erro ao buscar pacotes de funcionários" });
