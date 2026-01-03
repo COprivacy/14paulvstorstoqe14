@@ -1812,7 +1812,9 @@ export class PostgresStorage implements IStorage {
         RETURNING *
       `);
 
-      if (result.rows.length === 0 && packageData.payment_id) {
+      const rows = Array.isArray(result) ? result : (result?.rows || []);
+
+      if (rows.length === 0 && packageData.payment_id) {
         logger.warn('[DB] Pacote de funcionários já existe para este payment_id - ignorando duplicata', { 
           payment_id: packageData.payment_id 
         });
@@ -1820,7 +1822,7 @@ export class PostgresStorage implements IStorage {
         return existing;
       }
 
-      return result.rows[0];
+      return rows[0];
     } catch (error) {
       logger.error('[DB] Erro ao criar pacote de funcionários:', { error });
       throw error;
@@ -1840,7 +1842,7 @@ export class PostgresStorage implements IStorage {
         WHERE ep.user_id = ${userId} 
         ORDER BY ep.data_compra DESC
       `);
-      return result.rows;
+      return Array.isArray(result) ? result : (result?.rows || []);
     } catch (error) {
       logger.error('[DB] Erro ao buscar pacotes de funcionários:', { error });
       return [];
