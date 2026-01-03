@@ -6649,102 +6649,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const quantidadeAdicional = pacoteQuantidades[pacoteId];
 
           if (quantidadeAdicional && userId) {
-            const users = await storage.getUsers();
-            const user = users.find((u: any) => u.id === userId);
+            try {
+              const users = await storage.getUsers();
+              const user = users.find((u: any) => u.id === userId);
 
-            if (user) {
-              const limiteAtual = user.max_funcionarios || 1;
-              const novoLimite = limiteAtual + quantidadeAdicional;
+              if (user) {
+                const limiteAtual = user.max_funcionarios || 1;
+                const novoLimite = limiteAtual + quantidadeAdicional;
 
-              // Calcular data de vencimento (30 dias) usando timezone de São Paulo
-              const dataVencimentoWebhook = addDaysAndGetISOSaoPaulo(new Date(), 30);
+                // Calcular data de vencimento (30 dias) usando timezone de São Paulo
+                const dataVencimentoWebhook = addDaysAndGetISOSaoPaulo(new Date(), 30);
 
-              // Registrar pacote comprado (usar valor real do pagamento quando disponível)
-              if (storage.createEmployeePackage) {
-                await storage.createEmployeePackage({
-                  user_id: userId,
-                  package_type: pacoteId,
-                  quantity: quantidadeAdicional,
-                  price: paymentData.transaction_amount || pacotePrecos[pacoteId] || 0,
-                  status: "ativo",
-                  payment_id: paymentId.toString(),
-                  data_vencimento: dataVencimentoWebhook,
-                });
-              }
-
-              // Atualizar usuário
-              await storage.updateUser(userId, {
-                max_funcionarios: novoLimite,
-                max_funcionarios_base: user.max_funcionarios_base || 1,
-                data_expiracao_pacote_funcionarios: dataVencimentoWebhook,
-              });
-
-              // Reativar funcionários bloqueados POR FALTA DE LIMITE
-              if (user.status === 'ativo' && storage.getFuncionarios) {
-                const funcionarios = await storage.getFuncionarios();
-                const funcionariosBloqueados = funcionarios
-                  .filter(f => f.conta_id === userId && f.status === 'bloqueado')
-                  .sort((a, b) => new Date(a.data_criacao || 0).getTime() - new Date(b.data_criacao || 0).getTime())
-                  .slice(0, quantidadeAdicional);
-
-                for (const funcionario of funcionariosBloqueados) {
-                  await storage.updateFuncionario(funcionario.id, {
-                    status: 'ativo',
-                  });
-
-                  logger.info('Funcionário reativado após compra de pacote', 'MERCADOPAGO_WEBHOOK', {
-                    funcionarioId: funcionario.id,
-                    funcionarioNome: funcionario.nome,
-                    contaId: userId,
+                // Registrar pacote comprado (usar valor real do pagamento quando disponível)
+                if (storage.createEmployeePackage) {
+                  await storage.createEmployeePackage({
+                    user_id: userId,
+                    package_type: pacoteId,
+                    quantity: quantidadeAdicional,
+                    price: paymentData.transaction_amount || pacotePrecos[pacoteId] || 0,
+                    status: "ativo",
+                    payment_id: paymentId.toString(),
+                    data_vencimento: dataVencimentoWebhook,
                   });
                 }
 
-                if (funcionariosBloqueados.length > 0) {
-                  logger.info(`${funcionariosBloqueados.length} funcionário(s) reativado(s)`, "MERCADOPAGO_WEBHOOK", {
-                    userId,
-                    quantidade: funcionariosBloqueados.length,
+                // Atualizar usuário
+                if (storage.updateUser) {
+                  await storage.updateUser(userId, {
+                    max_funcionarios: novoLimite,
+                    max_funcionarios_base: user.max_funcionarios_base || 1,
+                    data_expiracao_pacote_funcionarios: dataVencimentoWebhook,
                   });
                 }
-              }
 
-              logger.info("Pacote de funcionários ativado com sucesso", "MERCADOPAGO_WEBHOOK", {
-                userId,
-                userEmail: user.email,
-                pacoteId,
-                quantidadeAdicional,
-                limiteAnterior: limiteAtual,
-                novoLimite,
-                dataVencimento: dataVencimentoWebhook,
-              });
+                // Reativar funcionários bloqueados POR FALTA DE LIMITE
+                if (user.status === 'ativo' && storage.getFuncionarios) {
+                  const funcionarios = await storage.getFuncionarios();
+                  const funcionariosBloqueados = funcionarios
+                    .filter(f => f.conta_id === userId && f.status === 'bloqueado')
+                    .sort((a, b) => new Date(a.data_criacao || 0).getTime() - new Date(b.data_criacao || 0).getTime())
+                    .slice(0, quantidadeAdicional);
 
-              // Enviar email de confirmação de ativação
-              try {
-                const { EmailService } = await import("./email-service");
-                const emailService = new EmailService();
-                const nomePacote = `Pacote ${quantidadeAdicional} Funcionários`;
+                  for (const funcionario of funcionariosBloqueados) {
+                    if (storage.updateFuncionario) {
+                      await storage.updateFuncionario(funcionario.id, {
+                        status: 'ativo',
+                      });
+                    }
 
-                await emailService.sendEmployeePackageActivated({
-                  to: user.email,
-                  userName: user.nome,
-                  packageName: nomePacote,
-                  quantity: quantidadeAdicional,
-                  newLimit: novoLimite,
-                  price: paymentData.transaction_amount || 0,
-                });
+                    logger.info('Funcionário reativado após compra de pacote', 'MERCADOPAGO_WEBHOOK', {
+                      funcionarioId: funcionario.id,
+                      funcionarioNome: funcionario.nome,
+                      contaId: userId,
+                    });
+                  }
 
-                logger.info("Email de ativação enviado", "MERCADOPAGO_WEBHOOK", {
+                  if (funcionariosBloqueados.length > 0) {
+                    logger.info(`${funcionariosBloqueados.length} funcionário(s) reativado(s)`, "MERCADOPAGO_WEBHOOK", {
+                      userId,
+                      quantidade: funcionariosBloqueados.length,
+                    });
+                  }
+                }
+
+                logger.info("Pacote de funcionários ativado com sucesso", "MERCADOPAGO_WEBHOOK", {
+                  userId,
                   userEmail: user.email,
+                  pacoteId,
+                  quantidadeAdicional,
+                  limiteAnterior: limiteAtual,
+                  novoLimite,
+                  dataVencimento: dataVencimentoWebhook,
                 });
-              } catch (emailError) {
-                logger.error("Erro ao enviar email de ativação (não crítico)", "MERCADOPAGO_WEBHOOK", {
-                  error: emailError,
-                });
-              }
 
-              return res.json({
-                success: true,
-                message: "Pacote de funcionários ativado com sucesso"
+                // Enviar email de confirmação de ativação
+                try {
+                  const { EmailService } = await import("./email-service");
+                  const emailService = new EmailService();
+                  const nomePacote = `Pacote ${quantidadeAdicional} Funcionários`;
+
+                  await emailService.sendEmployeePackageActivated({
+                    to: user.email,
+                    userName: user.nome,
+                    packageName: nomePacote,
+                    quantity: quantidadeAdicional,
+                    newLimit: novoLimite,
+                    price: paymentData.transaction_amount || 0,
+                  });
+
+                  logger.info("Email de ativação enviado", "MERCADOPAGO_WEBHOOK", {
+                    userEmail: user.email,
+                  });
+                } catch (emailError) {
+                  logger.error("Erro ao enviar email de ativação (não crítico)", "MERCADOPAGO_WEBHOOK", {
+                    error: emailError,
+                  });
+                }
+
+                return res.json({
+                  success: true,
+                  message: "Pacote de funcionários ativado com sucesso"
+                });
+              } else {
+                logger.error("Usuário não encontrado para processamento de pacote", "MERCADOPAGO_WEBHOOK", { userId });
+                return res.status(404).json({ error: "Usuário não encontrado" });
+              }
+            } catch (processError: any) {
+              logger.error("Erro interno ao processar pacote de funcionários", "MERCADOPAGO_WEBHOOK", {
+                error: processError.message,
+                userId,
+                pacoteId
               });
+              return res.status(500).json({ error: "Erro interno ao processar pacote" });
             }
           }
 
@@ -6786,63 +6802,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Processar status do pagamento
         if (status === "approved") {
-          console.log("💰 [WEBHOOK] Pagamento APROVADO - Iniciando atualização do banco...");
-          console.log("  - Subscription ID:", subscription.id);
-          console.log("  - User ID:", subscription.user_id);
-          console.log("  - Plano:", subscription.plano);
-          
-          logger.info("Pagamento aprovado - Ativando assinatura", "MERCADOPAGO_WEBHOOK", {
-            subscriptionId: subscription.id,
-            userId: subscription.user_id,
-            plano: subscription.plano,
-          });
+          try {
+            console.log("💰 [WEBHOOK] Pagamento APROVADO - Iniciando atualização do banco...");
+            console.log("  - Subscription ID:", subscription.id);
+            console.log("  - User ID:", subscription.user_id);
+            console.log("  - Plano:", subscription.plano);
+            
+            logger.info("Pagamento aprovado - Ativando assinatura", "MERCADOPAGO_WEBHOOK", {
+              subscriptionId: subscription.id,
+              userId: subscription.user_id,
+              plano: subscription.plano,
+            });
 
-          // Atualizar assinatura
-          console.log("📝 [WEBHOOK] Atualizando assinatura no banco...");
-          await storage.updateSubscription?.(subscription.id, {
-            status: "ativo",
-            status_pagamento: "approved",
-            mercadopago_payment_id: paymentId.toString(),
-            data_inicio: new Date().toISOString(),
-            data_atualizacao: new Date().toISOString(),
-          });
-          console.log("✅ [WEBHOOK] Assinatura atualizada com sucesso");
+            // Atualizar assinatura
+            console.log("📝 [WEBHOOK] Atualizando assinatura no banco...");
+            if (storage.updateSubscription) {
+              await storage.updateSubscription(subscription.id, {
+                status: "ativo",
+                status_pagamento: "approved",
+                mercadopago_payment_id: paymentId.toString(),
+                data_inicio: new Date().toISOString(),
+                data_atualizacao: new Date().toISOString(),
+              });
+            }
+            console.log("✅ [WEBHOOK] Assinatura atualizada com sucesso");
 
-          // Atualizar plano do usuário
-          console.log("📝 [WEBHOOK] Atualizando plano do usuário no banco...");
-          console.log("  - Novo plano:", subscription.plano);
-          console.log("  - Data expiração:", subscription.data_vencimento);
-          await storage.updateUser?.(subscription.user_id, {
-            plano: subscription.plano,
-            data_expiracao_plano: subscription.data_vencimento,
-            status: "ativo",
-          });
-          console.log("✅ [WEBHOOK] Plano do usuário atualizado com sucesso");
-
-          // CRÍTICO: Reativar todos os funcionários bloqueados desta conta
-          if (storage.getFuncionarios) {
-            const funcionarios = await storage.getFuncionarios();
-            const funcionariosDaConta = funcionarios.filter(
-              (f) => f.conta_id === subscription.user_id && f.status === "bloqueado"
-            );
-
-            for (const funcionario of funcionariosDaConta) {
-              await storage.updateFuncionario(funcionario.id, {
+            // Atualizar plano do usuário
+            console.log("📝 [WEBHOOK] Atualizando plano do usuário no banco...");
+            console.log("  - Novo plano:", subscription.plano);
+            console.log("  - Data expiração:", subscription.data_vencimento);
+            if (storage.updateUser) {
+              await storage.updateUser(subscription.user_id, {
+                plano: subscription.plano,
+                data_expiracao_plano: subscription.data_vencimento,
                 status: "ativo",
               });
             }
+            console.log("✅ [WEBHOOK] Plano do usuário atualizado com sucesso");
 
-            if (funcionariosDaConta.length > 0) {
-              logger.info("Funcionários reativados após pagamento aprovado", "MERCADOPAGO_WEBHOOK", {
-                userId: subscription.user_id,
-                funcionariosReativados: funcionariosDaConta.length,
-              });
+            // CRÍTICO: Reativar todos os funcionários bloqueados desta conta
+            if (storage.getFuncionarios) {
+              const funcionarios = await storage.getFuncionarios();
+              const funcionariosDaConta = funcionarios.filter(
+                (f) => f.conta_id === subscription.user_id && f.status === "bloqueado"
+              );
+
+              for (const funcionario of funcionariosDaConta) {
+                if (storage.updateFuncionario) {
+                  await storage.updateFuncionario(funcionario.id, {
+                    status: "ativo",
+                  });
+                }
+              }
+
+              if (funcionariosDaConta.length > 0) {
+                logger.info("Funcionários reativados após pagamento aprovado", "MERCADOPAGO_WEBHOOK", {
+                  userId: subscription.user_id,
+                  funcionariosReativados: funcionariosDaConta.length,
+                });
+              }
             }
-          }
 
-          logger.info("Assinatura ativada com sucesso", "MERCADOPAGO_WEBHOOK", {
-            subscriptionId: subscription.id,
-          });
+            logger.info("Assinatura ativada com sucesso", "MERCADOPAGO_WEBHOOK", {
+              subscriptionId: subscription.id,
+            });
+          } catch (subscriptionError: any) {
+            logger.error("Erro interno ao processar aprovação de assinatura", "MERCADOPAGO_WEBHOOK", {
+              error: subscriptionError.message,
+              subscriptionId: subscription.id,
+              userId: subscription.user_id
+            });
+            throw subscriptionError; // Deixa o catch externo tratar o erro 500
+          }
 
         } else if (status === "rejected" || status === "cancelled") {
           logger.warn("Pagamento recusado/cancelado", "MERCADOPAGO_WEBHOOK", {
@@ -6851,13 +6882,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             statusDetail,
           });
 
-          await storage.updateSubscription?.(subscription.id, {
-            status: "cancelado",
-            status_pagamento: status,
-            mercadopago_payment_id: paymentId.toString(),
-            motivo_cancelamento: `Pagamento ${status} - ${statusDetail || 'sem detalhes'}`,
-            data_atualizacao: new Date().toISOString(),
-          });
+          if (storage.updateSubscription) {
+            await storage.updateSubscription(subscription.id, {
+              status: "cancelado",
+              status_pagamento: status,
+              mercadopago_payment_id: paymentId.toString(),
+              motivo_cancelamento: `Pagamento ${status} - ${statusDetail || 'sem detalhes'}`,
+              data_atualizacao: new Date().toISOString(),
+            });
+          }
 
         } else if (status === "pending" || status === "in_process") {
           logger.info("Pagamento pendente", "MERCADOPAGO_WEBHOOK", {
@@ -6865,11 +6898,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status,
           });
 
-          await storage.updateSubscription?.(subscription.id, {
-            status_pagamento: status,
-            mercadopago_payment_id: paymentId.toString(),
-            data_atualizacao: new Date().toISOString(),
-          });
+          if (storage.updateSubscription) {
+            await storage.updateSubscription(subscription.id, {
+              status_pagamento: status,
+              mercadopago_payment_id: paymentId.toString(),
+              data_atualizacao: new Date().toISOString(),
+            });
+          }
         }
       }
 
