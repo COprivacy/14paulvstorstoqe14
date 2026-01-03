@@ -186,6 +186,13 @@ export default function AssinaturasFuncionarios() {
     queryKey: ["/api/admin/employee-packages"],
   });
 
+  // Log para depuração
+  useEffect(() => {
+    if (employeePackages.length > 0) {
+      console.log("📦 Pacotes carregados do Supabase:", employeePackages);
+    }
+  }, [employeePackages]);
+
   const activateMutation = useMutation({
     mutationFn: async (data: any) => {
       const res = await apiRequest("POST", "/api/admin/employee-packages/activate-manual", data);
@@ -466,11 +473,12 @@ export default function AssinaturasFuncionarios() {
                       if (opt) {
                         setSelectedQuantity(opt.quantity);
                         setSelectedPrice(opt.price);
+                        console.log("🔄 Pacote selecionado:", opt);
                       }
                     }}
                   >
                     <SelectTrigger data-testid="select-package-type">
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione um pacote" />
                     </SelectTrigger>
                     <SelectContent>
                       {packageTypeOptions.map((opt) => (
@@ -484,21 +492,27 @@ export default function AssinaturasFuncionarios() {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Quantidade</Label>
+                    <Label>Quantidade de Funcionários</Label>
                     <Input 
                       type="number" 
                       value={selectedQuantity}
-                      onChange={(e) => setSelectedQuantity(parseInt(e.target.value))}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value);
+                        setSelectedQuantity(isNaN(val) ? 0 : val);
+                      }}
                       data-testid="input-quantity"
                     />
                   </div>
                   <div>
-                    <Label>Valor (R$)</Label>
+                    <Label>Valor Total (R$)</Label>
                     <Input 
                       type="number" 
                       step="0.01"
                       value={selectedPrice}
-                      onChange={(e) => setSelectedPrice(parseFloat(e.target.value))}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setSelectedPrice(isNaN(val) ? 0 : val);
+                      }}
                       data-testid="input-price"
                     />
                   </div>
