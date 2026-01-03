@@ -5575,7 +5575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const externalReference = `${pacoteId}_${userId}_${Date.now()}`;
 
       // Construir URL do webhook para pacotes de funcionários
-      let webhookUrl = config.webhook_url;
+      let webhookUrl = configMP?.webhook_url;
       if (!webhookUrl) {
         let baseUrl = process.env.APP_URL;
         if (!baseUrl) {
