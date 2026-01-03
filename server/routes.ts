@@ -6073,6 +6073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Obter todos os pacotes de funcionários do sistema (Admin Master)
   app.get("/api/admin/employee-packages", requireAdmin, async (req, res) => {
     try {
+      console.log('🔍 [ADMIN] Buscando pacotes de funcionários...');
       const packages = await storage.db.execute(sql`
         SELECT
           ep.*,
@@ -6084,9 +6085,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ORDER BY ep.data_compra DESC
       `);
 
+      console.log(`✅ [ADMIN] ${packages.rows?.length || 0} pacotes encontrados`);
       res.json(packages.rows || []);
     } catch (error) {
-      logger.error("Erro ao buscar pacotes de funcionários", "ADMIN", { error });
+      console.error("❌ [ADMIN] Erro ao buscar pacotes de funcionários:", error);
       res.status(500).json({ error: "Erro ao buscar pacotes de funcionários" });
     }
   });

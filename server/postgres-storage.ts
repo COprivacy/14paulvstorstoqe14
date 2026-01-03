@@ -2425,18 +2425,41 @@ export class PostgresStorage implements IStorage {
   }
 
   async getEmailStats(): Promise<any> {
-    const result = await this.db.execute(sql`
-      SELECT 
-        COUNT(*) as total,
-        COUNT(CASE WHEN status = 'enviado' THEN 1 END) as enviados,
-        COUNT(CASE WHEN status = 'falha' THEN 1 END) as falhas,
-        COUNT(CASE WHEN tipo = 'massa' THEN 1 END) as massa,
-        COUNT(CASE WHEN tipo = 'manual' THEN 1 END) as manual,
-        COUNT(CASE WHEN tipo = 'automatico' THEN 1 END) as automatico,
-        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '24 hours' THEN 1 END) as ultimas_24h,
-        COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END) as ultimos_7dias
-      FROM email_history
-    `);
-    return result.rows[0];
+    try {
+      const result = await this.db.execute(sql`
+        SELECT 
+          COUNT(*)::int as total,
+          COUNT(CASE WHEN status = 'enviado' THEN 1 END)::int as enviados,
+          COUNT(CASE WHEN status = 'falha' THEN 1 END)::int as falhas,
+          COUNT(CASE WHEN tipo = 'massa' THEN 1 END)::int as massa,
+          COUNT(CASE WHEN tipo = 'manual' THEN 1 END)::int as manual,
+          COUNT(CASE WHEN tipo = 'automatico' THEN 1 END)::int as automatico,
+          COUNT(CASE WHEN created_at >= NOW() - INTERVAL '24 hours' THEN 1 END)::int as ultimas_24h,
+          COUNT(CASE WHEN created_at >= NOW() - INTERVAL '7 days' THEN 1 END)::int as ultimos_7dias
+        FROM email_history
+      `);
+      return result.rows[0] || {
+        total: 0,
+        enviados: 0,
+        falhas: 0,
+        massa: 0,
+        manual: 0,
+        automatico: 0,
+        ultimas_24h: 0,
+        ultimos_7dias: 0
+      };
+    } catch (error) {
+      logger.error('[DB] Erro ao buscar estatísticas de email:', error);
+      return {
+        total: 0,
+        enviados: 0,
+        falhas: 0,
+        massa: 0,
+        manual: 0,
+        automatico: 0,
+        ultimas_24h: 0,
+        ultimos_7dias: 0
+      };
+    }
   }
 }
