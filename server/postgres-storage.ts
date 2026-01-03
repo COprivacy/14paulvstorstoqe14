@@ -1,5 +1,5 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import { eq, and, or, gte, lte, lt, desc, sql, inArray, isNull } from 'drizzle-orm';
 import {
   users,
@@ -92,7 +92,6 @@ import {
 } from '@shared/schema';
 import type { IStorage } from './storage';
 import { randomUUID } from 'crypto';
-import ws from 'ws';
 import { logger } from './logger';
 
 // Helper para obter data UTC atual no formato ISO
@@ -100,7 +99,9 @@ function getUTCNow(): string {
   return new Date().toISOString();
 }
 
-neonConfig.webSocketConstructor = ws;
+// Remover imports do Neon
+// import { Pool, neonConfig } from '@neondatabase/serverless';
+// neonConfig.webSocketConstructor = ws;
 
 // Verificar se DATABASE_URL está configurada
 if (!process.env.DATABASE_URL) {
@@ -115,13 +116,13 @@ const dbUrl = process.env.DATABASE_URL;
 const maskedUrl = dbUrl.replace(/:([^@]+)@/, ':****@');
 console.log(`🔌 Conectando ao PostgreSQL: ${maskedUrl}`);
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const queryClient = postgres(process.env.DATABASE_URL);
 
 export class PostgresStorage implements IStorage {
   private db;
 
   constructor() {
-    this.db = drizzle(pool);
+    this.db = drizzle(queryClient);
     console.log('✅ PostgreSQL conectado com sucesso');
 
     // Testar conexão e seed de dados

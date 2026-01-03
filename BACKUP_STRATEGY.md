@@ -1,24 +1,23 @@
-
 # 🔐 Estratégia de Backup - SmartEstoque
 
-## Backup Automático do Neon PostgreSQL
+## Backup Automático do Supabase PostgreSQL
 
-O sistema utiliza **Neon PostgreSQL** como banco de dados principal, que oferece:
+O sistema utiliza **Supabase PostgreSQL** como banco de dados principal, que oferece:
 
 ### ✅ Recursos de Backup Nativos
 
 1. **Backups Automáticos**
    - Backups diários automáticos
-   - Retenção de 7 dias (plano gratuito) ou 30 dias (plano pago)
-   - Point-in-time recovery disponível
+   - Retenção de 7 dias (plano gratuito) ou 30 dias (plano Pro)
+   - Point-in-time recovery (PITR) disponível no plano Pro
 
-2. **Branching**
-   - Criar branches do banco para testes
-   - Não afeta produção
+2. **Segurança e Alta Disponibilidade**
+   - Réplicas de leitura e failover automático
+   - Criptografia em repouso e em trânsito
 
 3. **Recuperação**
-   - Restauração rápida via dashboard
-   - Clone de databases
+   - Restauração rápida via dashboard do Supabase
+   - Download de dumps de banco de dados
 
 ### 📋 Boas Práticas Implementadas
 
@@ -38,19 +37,19 @@ O sistema utiliza **Neon PostgreSQL** como banco de dados principal, que oferece
 
 Em caso de necessidade:
 
-1. Acesse o [Dashboard Neon](https://console.neon.tech)
-2. Selecione o projeto
-3. Vá em "Backups"
-4. Escolha o ponto de restauração
-5. Confirme a operação
+1. Acesse o [Dashboard Supabase](https://supabase.com/dashboard)
+2. Selecione o seu projeto
+3. Vá em "Database" -> "Backups"
+4. Escolha o ponto de restauração ou baixe o dump
+5. Siga as instruções para restaurar
 
 ### 💡 Recomendações Adicionais
 
 - ✅ Mantenha migrations atualizadas
 - ✅ Teste restaurações periodicamente
 - ✅ Monitore logs de erros
-- ✅ Considere upgrade para plano pago para maior retenção
+- ✅ Considere upgrade para plano Pro para PITR e maior retenção
 
 ---
 
-**Última atualização:** Novembro 2025
+**Última atualização:** Janeiro 2026

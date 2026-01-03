@@ -4,16 +4,13 @@ import { setupVite, serveStatic, log } from "./vite";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import compression from "compression";
-// Backup local do SQLite removido - usando backups do Neon PostgreSQL
+// Backup local do SQLite removido - usando backups do Supabase PostgreSQL
 import { logger } from './logger';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import { sql } from 'drizzle-orm';
-import ws from 'ws';
 import { autoCleanupService } from './auto-cleanup';
 import { validateEmail } from "./lib/validators";
-
-neonConfig.webSocketConstructor = ws;
 
 // Configurar timezone para São Paulo (UTC-3)
 process.env.TZ = 'America/Sao_Paulo';
@@ -25,8 +22,8 @@ async function autoFixDatabaseSchema() {
     return;
   }
 
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const db = drizzle(pool);
+  const queryClient = postgres(process.env.DATABASE_URL);
+  const db = drizzle(queryClient);
 
   try {
     logger.info('[AUTO-FIX] Verificando schema do banco de dados...');
@@ -275,9 +272,9 @@ app.use((req, res, next) => {
     log(`📍 Ambiente: ${app.get("env")}`);
   });
 
-  // Sistema de backup automático desativado - usando backups do Neon PostgreSQL
+  // Sistema de backup automático desativado - usando backups do Supabase PostgreSQL
   // backupManager.startAutoBackup();
-  logger.info('[BACKUP] Sistema de backup local desativado. Usando backups do Neon PostgreSQL.');
+  logger.info('[BACKUP] Sistema de backup local desativado. Usando backups do Supabase PostgreSQL.');
 
   // Sistema de lembretes de pagamento
   const { paymentReminderService } = await import('./payment-reminder');
