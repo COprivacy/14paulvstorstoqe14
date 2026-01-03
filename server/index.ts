@@ -110,7 +110,7 @@ async function autoFixDatabaseSchema() {
   } catch (error: any) {
     logger.error('[AUTO-FIX] Erro ao verificar schema:', { error: error.message });
   } finally {
-    await pool.end();
+    await queryClient.end();
   }
 }
 

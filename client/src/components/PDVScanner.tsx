@@ -180,7 +180,9 @@ export default function PDVScanner({ onSaleComplete, onProductNotFound, onFetchP
   }, [cart, isProcessing, quantidadeMultiplicador, formaPagamento]);
 
   useEffect(() => {
-    if (barcode.length >= 8) {
+    // Apenas processa automaticamente se o código for longo (código de barras padrão)
+    // Para códigos curtos, o operador deve pressionar Enter
+    if (barcode.length >= 12) {
       handleScan(barcode);
     }
   }, [barcode]);
