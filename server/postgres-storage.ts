@@ -1812,7 +1812,19 @@ export class PostgresStorage implements IStorage {
         RETURNING *
       `);
 
-      const rows = Array.isArray(result) ? result : (result?.rows || []);
+      // Tratar diferentes formatos de retorno do db.execute
+      let rows: any[] = [];
+      if (Array.isArray(result)) {
+        rows = result;
+      } else if (result && typeof result === 'object') {
+        if ('rows' in result && Array.isArray(result.rows)) {
+          rows = result.rows;
+        } else if ('rowCount' in result && result.rowCount === 0) {
+          rows = [];
+        } else {
+          rows = [result];
+        }
+      }
 
       if (rows.length === 0 && packageData.payment_id) {
         logger.warn('[DB] Pacote de funcionários já existe para este payment_id - ignorando duplicata', { 
