@@ -5293,22 +5293,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const valorOriginal = planoValues[plano as keyof typeof planoValues];
       const items = [
         {
+          id: plano,
           title: `Assinatura ${planoNomes[plano as keyof typeof planoNomes]} - Pavisoft Sistemas`,
           quantity: 1,
           unit_price: valorOriginal,
           currency_id: "BRL",
           description: `Plano ${planoNomes[plano as keyof typeof planoNomes]}`,
+          category_id: "services",
         },
       ];
 
       // Se houver cupom, adicionar como item de desconto
       if (cupomAplicado && valorDesconto > 0) {
         items.push({
+          id: `discount_${cupomAplicado.codigo}`,
           title: `Desconto - Cupom ${cupomAplicado.codigo}`,
           quantity: 1,
           unit_price: -valorDesconto,
           currency_id: "BRL",
           description: `Cupom de desconto: ${cupomAplicado.codigo} (${cupomAplicado.tipo === 'percentual' ? cupomAplicado.valor + '%' : 'R$ ' + cupomAplicado.valor.toFixed(2)})`,
+          category_id: "services",
         });
       }
 
@@ -5598,11 +5602,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const preference = await mercadopago.createPreference({
         items: [
           {
+            id: pacoteId,
             title: `${nomePacote} - Pavisoft Sistemas (Recorrente)`,
             quantity: 1,
             unit_price: valor,
             currency_id: "BRL",
             description: `Pacote com ${quantidade} funcionários adicionais - Renovação automática mensal`,
+            category_id: "services",
           },
         ],
         payer: {
