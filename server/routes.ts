@@ -6073,12 +6073,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Obter todos os pacotes de funcionários do sistema (Admin Master)
   app.get("/api/admin/employee-packages", requireAdmin, async (req, res) => {
     try {
-      console.log('🔍 [ADMIN] Buscando pacotes de funcionários...');
       const packages = await storage.getAllEmployeePackages();
-      console.log(`✅ [ADMIN] ${packages.length || 0} pacotes encontrados`);
-      res.json(packages || []);
-    } catch (error) {
-      console.error("❌ [ADMIN] Erro ao buscar pacotes de funcionários:", error);
+      const safePackages = Array.isArray(packages) ? packages : [];
+      console.log(`[ADMIN] Returning ${safePackages.length} packages`);
+      res.json(safePackages);
+    } catch (error: any) {
+      console.error("[ADMIN] Error fetching employee packages:", error);
       res.status(500).json({ error: "Erro ao buscar pacotes de funcionários" });
     }
   });

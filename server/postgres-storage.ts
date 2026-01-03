@@ -1872,7 +1872,16 @@ export class PostgresStorage implements IStorage {
     try {
       const result = await this.db.execute(sql`
         SELECT 
-          ep.*,
+          ep.id,
+          ep.user_id,
+          ep.package_type,
+          ep.quantity,
+          ep.price,
+          ep.status,
+          ep.payment_id,
+          ep.data_compra,
+          ep.data_vencimento,
+          ep.data_cancelamento,
           u.nome as user_name,
           u.email as user_email,
           u.plano as user_plan
@@ -1880,9 +1889,12 @@ export class PostgresStorage implements IStorage {
         LEFT JOIN users u ON ep.user_id = u.id
         ORDER BY ep.data_compra DESC
       `);
-      return result.rows;
+      
+      const rows = Array.isArray(result) ? result : (result?.rows || []);
+      console.log(`[DB] getAllEmployeePackages: ${rows.length} rows found`);
+      return rows;
     } catch (error) {
-      logger.error('[DB] Erro ao buscar todos os pacotes de funcionários:', { error });
+      console.error('[DB] Error fetching all employee packages:', error);
       return [];
     }
   }
