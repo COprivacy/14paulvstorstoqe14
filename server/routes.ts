@@ -5272,8 +5272,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const config = await storage.getConfigMercadoPago();
-      if (!config || !config.access_token) {
+      const configMP = await storage.getConfigMercadoPago();
+      const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || configMP?.access_token;
+
+      if (!accessToken) {
         return res.status(500).json({
           error:
             "Sistema de pagamento não configurado. Entre em contato com o suporte.",
@@ -5282,7 +5284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { MercadoPagoService } = await import("./mercadopago");
       const mercadopago = new MercadoPagoService({
-        accessToken: config.access_token,
+        accessToken: accessToken,
       });
 
       const externalReference = `${plano}_${Date.now()}`;
@@ -5555,8 +5557,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Configurar Mercado Pago
-      const config = await storage.getConfigMercadoPago();
-      if (!config || !config.access_token) {
+      const configMP = await storage.getConfigMercadoPago();
+      const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || configMP?.access_token;
+
+      if (!accessToken) {
         return res.status(500).json({
           error:
             "Sistema de pagamento não configurado. Entre em contato com o suporte.",
@@ -5565,7 +5569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { MercadoPagoService } = await import("./mercadopago");
       const mercadopago = new MercadoPagoService({
-        accessToken: config.access_token,
+        accessToken: accessToken,
       });
 
       const externalReference = `${pacoteId}_${userId}_${Date.now()}`;
