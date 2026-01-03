@@ -1805,7 +1805,9 @@ export class PostgresStorage implements IStorage {
           ${packageData.payment_id}, ${packageData.data_compra}, 
           ${packageData.data_vencimento}, ${packageData.data_cancelamento}
         )
-        ON CONFLICT (payment_id) WHERE payment_id IS NOT NULL DO NOTHING
+        ON CONFLICT (payment_id) DO UPDATE SET
+          status = EXCLUDED.status,
+          data_vencimento = EXCLUDED.data_vencimento
         RETURNING *
       `);
 
